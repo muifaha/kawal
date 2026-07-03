@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-26T12:02:30.000Z",
+  "title": "Design System: Kawal",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Indigo Action (Light)", "canonical": "oklch(53% 0.23 268)", "tonalRamp": ["#312e81", "#3730a3", "#4338ca", "#4f46e5", "#6366f1", "#818cf8", "#a5b4fc", "#c7d2fe"] },
+      "primary-dark": { "role": "primary", "displayName": "Indigo Action (Dark)", "canonical": "oklch(67% 0.17 268)", "tonalRamp": ["#1e1b4b", "#312e81", "#3730a3", "#4338ca", "#4f46e5", "#6366f1", "#818cf8", "#a5b4fc"] },
+      "background": { "role": "neutral", "displayName": "Slate Background (Dark)", "canonical": "oklch(14% 0.035 264)", "tonalRamp": ["#020617", "#090d1f", "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8"] },
+      "background-light": { "role": "neutral", "displayName": "Slate Background (Light)", "canonical": "oklch(98% 0.005 264)", "tonalRamp": ["#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9", "#f8fafc", "#ffffff", "#ffffff"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display Heading", "purpose": "Main page-level dashboard titles." },
+      "body": { "displayName": "Body & UI Text", "purpose": "Table logs, inputs, descriptions, and summaries." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "transition-standard", "value": "background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease", "purpose": "Standard interactive feedback." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Used for main calls to action, form submissions, and primary dashboard operations.",
+      "html": "<button class=\"ds-btn-primary\">SIMPAN DATA</button>",
+      "css": ".ds-btn-primary { background-color: #4f46e5; color: #ffffff; font-family: system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; padding: 8px 16px; border: none; border-radius: 10px; cursor: pointer; transition: background-color 0.2s ease; } .ds-btn-primary:hover { background-color: #4338ca; } @media (prefers-color-scheme: dark) { .ds-btn-primary { background-color: #818cf8; color: #020617; } .ds-btn-primary:hover { background-color: #a5b4fc; } }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Standard input field for search queries and form entry.",
+      "html": "<input type=\"text\" class=\"ds-input-text\" placeholder=\"Cari nama siswa...\" />",
+      "css": ".ds-input-text { background-color: transparent; color: #0f172a; font-family: system-ui, sans-serif; font-size: 0.875rem; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 10px; outline: none; width: 100%; box-sizing: border-box; transition: border-color 0.2s ease; } .ds-input-text:focus { border-color: #4f46e5; } @media (prefers-color-scheme: dark) { .ds-input-text { color: #f8fafc; border-color: #1e293b; } .ds-input-text:focus { border-color: #818cf8; } }"
+    },
+    {
+      "name": "Violation Status Badge",
+      "kind": "chip",
+      "refersTo": "rose",
+      "description": "Tag used to call out active violations or unexcused absence (Alpha) status.",
+      "html": "<span class=\"ds-tag-violation\">ALFA</span>",
+      "css": ".ds-tag-violation { display: inline-flex; align-items: center; background-color: rgba(225, 29, 72, 0.1); color: #e11d48; font-family: system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 6px; letter-spacing: 0.05em; } @media (prefers-color-scheme: dark) { .ds-tag-violation { background-color: rgba(248, 113, 113, 0.1); color: #f87171; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Disciplined Anchor",
+    "overview": "The Kawal design system represents stability, structure, and institutional reliability. Designed for guidance counselors, homeroom teachers, and school administrators, the interface acts as a definitive source of truth. The interface is optimized for high-density, high-legibility layout patterns that allow staff to log records quickly during a fast-paced school day. Kawal explicitly rejects cartoonish illustrations, overly spacious card-based layouts, and playful color gradients.",
+    "keyCharacteristics": [
+      "High-density information grids and clear border demarcations.",
+      "Context-specific color-coding for behavioral severity and attendance status.",
+      "Minimalist flat layout that maximizes content scanning speed."
+    ],
+    "rules": [
+      {
+        "name": "The Alert Rarity Rule",
+        "body": "Status colors (rose, orange, emerald) must only be used on badges, tags, or indicator lights to draw attention. Never use status colors as background fills for large areas.",
+        "section": "colors"
+      },
+      {
+        "name": "The Context-Preservation Rule",
+        "body": "Emerald is strictly reserved for 'Present/Hadir' and 'Approved' states. Rose is strictly for 'Alpha' and 'Violations'. Never swap them or use them for unrelated actions.",
+        "section": "colors"
+      },
+      {
+        "name": "The Readable Data Rule",
+        "body": "Body text for tables and student logs must maintain a line-height of at least 1.5 to guarantee rapid scanning without ocular fatigue.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Surfaces are flat at rest. Box shadows are forbidden on standard containers. A subtle border-color shift or background tint must be used instead to show container structure.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use 1px border lines and background tone shifts to separate data sections.",
+      "Do keep container corners rounded at exactly 10px (rounded-xl or {rounded.md}).",
+      "Do ensure text contrast matches WCAG AA (at least 4.5:1 ratio) on both light and dark themes.",
+      "Do use text-wrap: balance on display and section headings to prevent awkward orphans."
+    ],
+    "donts": [
+      "Don't use cartoonish or overly playful UI patterns that compromise professional authority.",
+      "Don't use cluttered or fragmented layouts that resemble legacy school software.",
+      "Don't use generic AI/SaaS design tropes like purple-to-blue gradients, glassmorphism blurs, or saturated warm cream backgrounds.",
+      "Don't use drop shadows with blur radius greater than 4px on cards or containers.",
+      "Don't use side-stripe borders (e.g., border-left thicker than 1px) on alerts or cards."
+    ]
+  }
+}

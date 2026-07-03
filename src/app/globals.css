@@ -1,26 +1,141 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+  
+  --text-white: #ffffff;
+  
+  --orange-300: #fdba74;
+  --orange-400: #fb923c;
+  --emerald-300: #6ee7b7;
+  --emerald-400: #34d399;
+  --indigo-300: #a5b4fc;
+  --indigo-400: #818cf8;
+  --rose-300: #fda4af;
+  --rose-400: #f87171;
+  --purple-300: #d8b4fe;
+  --purple-400: #c084fc;
+  --sky-300: #7dd3fc;
+  --sky-400: #38bdf8;
+  --amber-300: #fcd34d;
+  --amber-400: #fbbf24;
+  
+  --background: #020617;
+  --foreground: #f8fafc;
 }
 
-@theme inline {
+:root.light, .light {
+  --slate-50: #020617;
+  --slate-100: #0f172a;
+  --slate-200: #1e293b;
+  --slate-300: #334155;
+  --slate-400: #475569;
+  --slate-500: #64748b;
+  --slate-600: #94a3b8;
+  --slate-700: #cbd5e1;
+  --slate-800: #cbd5e1;
+  --slate-900: #e2e8f0;
+  --slate-950: #f8fafc;
+  
+  --text-white: #0f172a;
+  
+  --orange-300: #c2410c;
+  --orange-400: #ea580c;
+  --emerald-300: #15803d;
+  --emerald-400: #16a34a;
+  --indigo-300: #4338ca;
+  --indigo-400: #4f46e5;
+  --rose-300: #be123c;
+  --rose-400: #e11d48;
+  --purple-300: #7e22ce;
+  --purple-400: #9333ea;
+  --sky-300: #0369a1;
+  --sky-400: #0284c7;
+  --amber-300: #b45309;
+  --amber-400: #d97706;
+  
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+@theme {
+  --color-slate-50: var(--slate-50);
+  --color-slate-100: var(--slate-100);
+  --color-slate-200: var(--slate-200);
+  --color-slate-300: var(--slate-300);
+  --color-slate-400: var(--slate-400);
+  --color-slate-500: var(--slate-500);
+  --color-slate-600: var(--slate-600);
+  --color-slate-700: var(--slate-700);
+  --color-slate-800: var(--slate-800);
+  --color-slate-900: var(--slate-900);
+  --color-slate-950: var(--slate-950);
+
+  --color-white: var(--text-white);
+
+  --color-orange-300: var(--orange-300);
+  --color-orange-400: var(--orange-400);
+  --color-emerald-300: var(--emerald-300);
+  --color-emerald-400: var(--emerald-400);
+  --color-indigo-300: var(--indigo-300);
+  --color-indigo-400: var(--indigo-400);
+  --color-rose-300: var(--rose-300);
+  --color-rose-400: var(--rose-400);
+  --color-purple-300: var(--purple-300);
+  --color-purple-400: var(--purple-400);
+  --color-sky-300: var(--sky-300);
+  --color-sky-400: var(--sky-400);
+  --color-amber-300: var(--amber-300);
+  --color-amber-400: var(--amber-400);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-size-xxs: 0.625rem;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Make sure text elements that used text-white turn dark in light mode */
+.light .text-white {
+  color: var(--slate-50) !important;
+}
+
+/* Keep text color white ONLY for solid background elements, alerts, and their children */
+.light [class*="bg-emerald-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-indigo-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-rose-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-purple-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-sky-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-amber-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-orange-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-emerald-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
+.light [class*="bg-indigo-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
+.light [class*="bg-rose-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
+.light [class*="bg-purple-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
+.light [class*="bg-sky-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
+.light [class*="bg-amber-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
+.light [class*="bg-orange-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) * {
+  color: #ffffff !important;
+}
+
+/* Fix input placeholders in light mode */
+.light ::placeholder {
+  color: #94a3b8 !important;
 }

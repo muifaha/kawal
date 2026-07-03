@@ -1,0 +1,347 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  WAKA
+  BK
+  WALAS
+  GURU
+}
+
+enum AttendanceStatus {
+  H // Hadir
+  S // Sakit
+  I // Izin
+  A // Alpha
+  D // Dispensasi
+}
+
+enum ViolationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id              String   @id @default(uuid())
+  nip             String?  @unique // Tambahan Nomor Induk Pegawai
+  username        String   @unique
+  passwordHash    String
+  nama            String
+  role            Role
+  whatsappNumber  String?  // Untuk Wali Kelas menerima notifikasi
+
+  // Relasi jika user adalah Walas kelas tertentu
+  kelasWalas      Kelas?   @relation("WalasRelation")
+
+  // Relasi jika user adalah Guru BK penanggung jawab kelas-kelas tertentu
+  kelasBK         Kelas[]  @relation("BkRelation")
+
+  // Relasi laporan pelanggaran
+  pelanggaranDilaporkan LaporanPelanggaran[] @relation("ReporterRelation")
+  pelanggaranDisetujui  LaporanPelanggaran[] @relation("ApproverRelation")
+  remisiDisetujui       TransaksiRemisi[]    @relation("RemisiApproverRelation")
+  absensiDicatat        Absensi[]            @relation("AbsensiRecorderRelation")
+  penangananSiswa       PenangananSiswa[]    @relation("PenangananPetugasRelation")
+  rujukanDibuat         RujukanSiswa[]       @relation("ReferralMakerRelation")
+  bimbinganDilakukan    BimbinganKonseling[] @relation("BimbinganKonselorRelation")
+  jadwalMengajar        JadwalPelajaran[]
+  jurnalMengajar        JurnalMengajar[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TahunAjaran {
+  id            String   @id @default(uuid())
+  nama          String   @unique // Contoh: "2025/2026"
+  isActive      Boolean  @default(false)
+  semesterAktif String   @default("GANJIL") // "GANJIL" atau "GENAP"
+  ganjilMulai   DateTime? @db.Date
+  ganjilSelesai DateTime? @db.Date
+  genapMulai    DateTime? @db.Date
+  genapSelesai  DateTime? @db.Date
+  kelas         Kelas[]
+  siswaKelas    SiswaKelas[]
+  createdAt     DateTime @default(now())
+}
+
+model Kelas {
+  id            String      @id @default(uuid())
+  nama          String      // Contoh: "X RPL 1"
+  tahunAjaranId String
+  tahunAjaran   TahunAjaran @relation(fields: [tahunAjaranId], references: [id])
+  
+  walasId       String?     @unique
+  walas         User?       @relation("WalasRelation", fields: [walasId], references: [id])
+  
+  bkId          String?
+  bk            User?       @relation("BkRelation", fields: [bkId], references: [id])
+  
+  siswaKelas    SiswaKelas[]
+  jadwal        JadwalPelajaran[]
+  jurnal        JurnalMengajar[]
+  createdAt     DateTime    @default(now())
+}
+
+model Siswa {
+  id        String   @id @default(uuid())
+  nis       String   @unique
+  nama      String
+  status    String   @default("AKTIF") // AKTIF, LULUS, PINDAH
+
+  riwayatKelas SiswaKelas[]
+
+  absensi     Absensi[]
+  pelanggaran LaporanPelanggaran[]
+  remisi      TransaksiRemisi[]
+  pemanggilan PemanggilanSiswa[]
+  penanganan  PenangananSiswa[]
+  rujukan     RujukanSiswa[]
+  bimbingan   BimbinganKonseling[]
+  jurnalAbsensi   JurnalAbsensi[]
+  jurnalPenilaian JurnalPenilaian[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiswaKelas {
+  id            String      @id @default(uuid())
+  siswaId       String
+  siswa         Siswa       @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  kelasId       String
+  kelas         Kelas       @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+  tahunAjaranId String
+  tahunAjaran   TahunAjaran @relation(fields: [tahunAjaranId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime    @default(now())
+
+  @@unique([siswaId, tahunAjaranId]) // Satu siswa hanya boleh terdaftar di satu kelas per tahun ajaran
+}
+
+
+model KategoriPelanggaran {
+  id        String              @id @default(uuid())
+  nama      String              @unique // Kerapian, Kedisiplinan, dll
+  details   DetailPelanggaran[]
+}
+
+model DetailPelanggaran {
+  id         String              @id @default(uuid())
+  kategoriId String
+  kategori   KategoriPelanggaran @relation(fields: [kategoriId], references: [id])
+  nama       String              // Contoh: "Tidak memakai dasi"
+  poin       Int                 // Contoh: 5
+
+  laporan    LaporanPelanggaran[]
+}
+
+model LaporanPelanggaran {
+  id                  String            @id @default(uuid())
+  siswaId             String
+  siswa               Siswa             @relation(fields: [siswaId], references: [id])
+  detailPelanggaranId String
+  detailPelanggaran   DetailPelanggaran @relation(fields: [detailPelanggaranId], references: [id])
+  
+  pelaporId           String
+  pelapor             User              @relation("ReporterRelation", fields: [pelaporId], references: [id])
+  
+  tanggal             DateTime          @default(now())
+  status              ViolationStatus   @default(PENDING)
+  
+  approverId          String?
+  approver            User?             @relation("ApproverRelation", fields: [approverId], references: [id])
+  approvedAt          DateTime?
+
+  notes               String?
+  bukti               String[]          @default([])
+  isCensored          Boolean           @default(false)
+}
+
+model MasterRemisi {
+  id                    String            @id @default(uuid())
+  nama                  String            @unique // Contoh: Bawa Pohon
+  persentasePengurangan Int               // Contoh: 10 (artinya 10%)
+  transaksi             TransaksiRemisi[]
+}
+
+model TransaksiRemisi {
+  id             String        @id @default(uuid())
+  siswaId        String
+  siswa          Siswa         @relation(fields: [siswaId], references: [id])
+  jenis          String        // "OTOMATIS" atau "KONDISIONAL"
+  
+  masterRemisiId String?
+  masterRemisi   MasterRemisi? @relation(fields: [masterRemisiId], references: [id])
+  
+  poinDikurangi  Int
+  tanggal        DateTime      @default(now())
+  
+  approverId     String?
+  approver       User?         @relation("RemisiApproverRelation", fields: [approverId], references: [id])
+  bukti          String[]      @default([])
+}
+
+model Absensi {
+  id         String           @id @default(uuid())
+  siswaId    String
+  siswa      Siswa            @relation(fields: [siswaId], references: [id])
+  tanggal    DateTime         @db.Date
+  status     AttendanceStatus @default(H)
+  
+  pencatatId String
+  pencatat   User             @relation("AbsensiRecorderRelation", fields: [pencatatId], references: [id])
+
+  createdAt  DateTime         @default(now())
+
+  @@unique([siswaId, tanggal]) // Satu siswa hanya boleh memiliki satu record per tanggal
+}
+
+model HariLibur {
+  id          String   @id @default(uuid())
+  tanggal     DateTime @unique @db.Date // Tanggal libur
+  keterangan  String   // Contoh: "Hari Raya Idul Fitri", "Tidak Efektif"
+  createdAt   DateTime @default(now())
+}
+
+model AppSetting {
+  id    String @id @default(uuid())
+  key   String @unique // e.g. "threshold_1", "threshold_2", "threshold_3"
+  value String // e.g. "25", "50", "75"
+}
+
+model PemanggilanSiswa {
+  id              String      @id @default(uuid())
+  siswaId         String
+  siswa           Siswa       @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  thresholdPoints Int         // Poin batas (25, 50, atau 75)
+  status          String      @default("PENDING") // PENDING, SELESAI
+  suratPerjanjian String?     // Nama file/path surat perjanjian yang diunggah
+  createdAt       DateTime    @default(now())
+  resolvedAt      DateTime?
+
+  @@unique([siswaId, thresholdPoints]) // 1 pemanggilan per tingkatan poin per siswa
+}
+
+model PenangananSiswa {
+  id          String   @id @default(uuid())
+  siswaId     String
+  siswa       Siswa    @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  kasus       String   // Pelanggaran / Masalah yang ditangani
+  solusi      String   // Solusi / Tindak lanjut dari penanganan
+  bukti       String[] @default([]) // Path file bukti penanganan (foto/dokumen)
+  petugasId   String
+  petugas     User     @relation("PenangananPetugasRelation", fields: [petugasId], references: [id], onDelete: Cascade)
+  tanggal     DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+
+model RujukanSiswa {
+  id            String   @id @default(uuid())
+  siswaId       String
+  siswa         Siswa    @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  pembuatId     String
+  pembuat       User     @relation("ReferralMakerRelation", fields: [pembuatId], references: [id], onDelete: Cascade)
+  kategori      String   // "PERILAKU" | "AKADEMIS" | "EMOSIONAL" | "SOSIAL" | "LAINNYA"
+  deskripsi     String   // Deskripsi masalah/observasi awal
+  status        String   @default("PENDING") // "PENDING" | "DIPROSES" | "SELESAI"
+  tindakLanjut  String?  // Solusi / Catatan dari BK
+  tanggal       DateTime @default(now())
+  createdAt     DateTime @default(now())
+}
+
+model BimbinganKonseling {
+  id             String   @id @default(uuid())
+  siswaId        String
+  siswa          Siswa    @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  pembimbingId   String
+  pembimbing     User     @relation("BimbinganKonselorRelation", fields: [pembimbingId], references: [id], onDelete: Cascade)
+  bidang         String   // "PRIBADI" | "SOSIAL" | "BELAJAR" | "KARIR"
+  masalah        String   // Deskripsi masalah siswa
+  solusi         String   // Solusi/tindak lanjut
+  catatanRahasia String?  // Catatan Rahasia (Confidential Notes) - ONLY visible to BK & WAKA
+  tanggal        DateTime @default(now())
+  createdAt      DateTime @default(now())
+}
+
+model MataPelajaran {
+  id        String            @id @default(uuid())
+  kode      String            @unique // Contoh: "MAT-01"
+  nama      String            // Contoh: "Matematika"
+  jadwal    JadwalPelajaran[]
+  jurnal    JurnalMengajar[]
+  createdAt DateTime          @default(now())
+}
+
+model JamPelajaran {
+  id           String   @id @default(uuid())
+  hariTipe     String   // "SENIN-KAMIS" | "JUMAT"
+  jamKe        Int      // Jam ke-1, 2, dll
+  waktuMulai   String   // Contoh: "07:00"
+  waktuSelesai String   // Contoh: "07:45"
+  isIstirahat  Boolean  @default(false)
+  keterangan   String?  // Contoh: "Istirahat I"
+}
+
+model JadwalPelajaran {
+  id          String        @id @default(uuid())
+  kelasId     String
+  kelas       Kelas         @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+  guruId      String
+  guru        User          @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  mapelId     String
+  mapel       MataPelajaran @relation(fields: [mapelId], references: [id], onDelete: Cascade)
+  hari        Int           // 1 = Senin, 2 = Selasa, 3 = Rabu, 4 = Kamis, 5 = Jumat, 6 = Sabtu
+  jamMulai    Int           // Jam ke-
+  jamSelesai  Int           // Jam ke-
+  jurnal      JurnalMengajar[]
+  createdAt   DateTime      @default(now())
+}
+
+model JurnalMengajar {
+  id             String           @id @default(uuid())
+  jadwalId       String?
+  jadwal         JadwalPelajaran? @relation(fields: [jadwalId], references: [id], onDelete: SetNull)
+  kelasId        String
+  kelas          Kelas            @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+  guruId         String
+  guru           User             @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  mapelId        String
+  mapel          MataPelajaran    @relation(fields: [mapelId], references: [id], onDelete: Cascade)
+  jamMulai       Int
+  jamSelesai     Int
+  tanggal        DateTime         @db.Date
+  namaJurnal     String           // Contoh: "Pertemuan 1"
+  kegiatan       String           // Deskripsi kegiatan
+  foto           String?          // File path foto kegiatan
+  fotoKeterangan String?          // Keterangan foto
+  absensi        JurnalAbsensi[]
+  penilaian      JurnalPenilaian[]
+  createdAt      DateTime         @default(now())
+}
+
+model JurnalAbsensi {
+  id        String         @id @default(uuid())
+  jurnalId  String
+  jurnal    JurnalMengajar @relation(fields: [jurnalId], references: [id], onDelete: Cascade)
+  siswaId   String
+  siswa     Siswa          @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  status    String         // "H" | "S" | "I" | "A" | "D"
+}
+
+model JurnalPenilaian {
+  id         String         @id @default(uuid())
+  jurnalId   String
+  jurnal     JurnalMengajar @relation(fields: [jurnalId], references: [id], onDelete: Cascade)
+  siswaId    String
+  siswa      Siswa          @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  nilai      Int
+  keterangan String?        // Contoh: "Tugas Harian 1"
+}
