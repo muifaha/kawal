@@ -320,56 +320,60 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
             />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-800">
-              <thead>
-                <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="pb-3 px-3 w-10">No</th>
-                  <th className="pb-3 px-3 w-32">Siswa</th>
-                  <th className="pb-3 px-3 w-20">Kelas</th>
-                  <th className="pb-3 px-3 w-32">Kategori</th>
-                  <th className="pb-3 px-3">Deskripsi Masalah / Observasi</th>
-                  {isBKOrWaka && <th className="pb-3 px-3 w-28">Pelapor</th>}
-                  <th className="pb-3 px-3 w-24 text-center">Status</th>
-                  {isBKOrWaka && <th className="pb-3 px-3 w-20 text-right">Aksi</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {filteredReferrals.length === 0 ? (
-                  <tr>
-                    <td colSpan={isBKOrWaka ? 8 : 7} className="text-center py-10 text-slate-500 text-sm">
-                      Belum ada data rujukan siswa.
-                    </td>
+          {filteredReferrals.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-slate-900/10 border border-dashed border-slate-900 rounded-2xl">
+              <Inbox className="w-16 h-16 text-slate-600 mb-4" />
+              <h3 className="text-lg font-bold text-white">Kotak Masuk Bersih!</h3>
+              <p className="text-slate-500 text-sm mt-1">
+                {statusFilter === "PENDING"
+                  ? "Tidak ada rujukan siswa yang pending saat ini."
+                  : "Tidak ada data rujukan siswa yang ditemukan saat ini."}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
+              <table className="min-w-full divide-y divide-slate-800">
+                <thead className="bg-slate-900/60">
+                  <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="py-3 px-4 w-12">No</th>
+                    <th className="py-3 px-4 w-36">Siswa</th>
+                    <th className="py-3 px-4 w-24">Kelas</th>
+                    <th className="py-3 px-4 w-36">Kategori</th>
+                    <th className="py-3 px-4">Deskripsi Masalah / Observasi</th>
+                    {isBKOrWaka && <th className="py-3 px-4 w-32">Pelapor</th>}
+                    <th className="py-3 px-4 w-28 text-center">Status</th>
+                    {isBKOrWaka && <th className="py-3 px-4 w-24 text-right">Aksi</th>}
                   </tr>
-                ) : (
-                  filteredReferrals.map((item, index) => (
-                    <tr key={item.id} className="text-sm">
-                      <td className="py-4 text-slate-500">{index + 1}</td>
-                      <td className="py-4 font-semibold text-white">
-                        {item.studentName}
-                        <div className="text-xs text-slate-400 font-normal">NIS: {item.studentNis}</div>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {filteredReferrals.map((item, index) => (
+                    <tr key={item.id} className="text-xs hover:bg-slate-900/10 transition-colors">
+                      <td className="py-3 px-4 text-slate-500 font-medium">{index + 1}</td>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-white">{item.studentName}</div>
+                        <div className="text-[10px] text-slate-400">NIS: {item.studentNis}</div>
                       </td>
-                      <td className="py-4 text-slate-300">{item.kelasNama}</td>
-                      <td className="py-4 text-slate-300">{CATEGORY_MAP[item.kategori] || item.kategori}</td>
-                      <td className="py-4 pr-4">
-                        <p className="text-slate-300 line-clamp-2" title={item.deskripsi}>
+                      <td className="py-3 px-4 text-slate-300 font-medium">{item.kelasNama}</td>
+                      <td className="py-3 px-4 text-slate-300 font-medium">{CATEGORY_MAP[item.kategori] || item.kategori}</td>
+                      <td className="py-3 px-4 pr-4">
+                        <p className="text-slate-300 leading-relaxed max-w-md break-words" title={item.deskripsi}>
                           {item.deskripsi}
                         </p>
                         {item.tindakLanjut && (
-                          <div className="mt-1 text-xs bg-emerald-500/5 border border-emerald-500/10 rounded px-2 py-1 text-emerald-400">
+                          <div className="mt-1.5 text-[10px] bg-emerald-500/5 border border-emerald-500/10 rounded px-2.5 py-1 text-emerald-400 leading-snug">
                             <strong>BK:</strong> {item.tindakLanjut}
                           </div>
                         )}
                       </td>
                       {isBKOrWaka && (
-                        <td className="py-4 text-slate-300">
-                          {item.pembuatNama}
-                          <div className="text-xs text-slate-400">{item.pembuatRole}</div>
+                        <td className="py-3 px-4 text-slate-300 whitespace-nowrap">
+                          <div className="font-semibold">{item.pembuatNama}</div>
+                          <div className="text-[10px] text-slate-400">{item.pembuatRole}</div>
                         </td>
                       )}
-                      <td className="py-4 text-center">
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                             item.status === "PENDING"
                               ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
                               : item.status === "DIPROSES"
@@ -381,7 +385,7 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
                         </span>
                       </td>
                       {isBKOrWaka && (
-                        <td className="py-4 text-right">
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
                           <button
                             onClick={() => {
                               setActiveReferral(item);
@@ -396,11 +400,11 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
                         </td>
                       )}
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
