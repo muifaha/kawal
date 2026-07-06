@@ -235,16 +235,16 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
 
   return (
     <div className="space-y-6 pb-24">
-      {/* Controls: Dropdown Kelas & Picker Tanggal */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900/40 p-6 rounded-xl border border-slate-900">
-        <div>
+      {/* Controls: Dropdown Kelas, Picker Tanggal & Cari Siswa */}
+      <div className="flex flex-col md:flex-row md:items-end gap-4 bg-slate-900/40 p-6 rounded-xl border border-slate-900">
+        <div className="w-full md:w-56 shrink-0">
           <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
             Pilih Kelas
           </label>
           <select
             value={selectedClassId}
             onChange={(e) => setSelectedClassId(e.target.value)}
-            className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm cursor-pointer"
           >
             <option value="">-- Pilih Kelas --</option>
             {classes.map((c) => (
@@ -255,7 +255,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
           </select>
         </div>
 
-        <div>
+        <div className="w-full md:w-44 shrink-0">
           <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
             Tanggal Absensi
           </label>
@@ -263,8 +263,30 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="block w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="block w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm cursor-pointer"
           />
+        </div>
+
+        <div className="w-full md:flex-1 relative">
+          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            Cari Nama / NIS Siswa
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="w-4 h-4 text-slate-400" />
+            </div>
+            <input
+              type="text"
+              placeholder={selectedClassId && students.length > 0 ? "Cari nama atau NIS siswa..." : "Pilih kelas terlebih dahulu..."}
+              disabled={!selectedClassId || students.length === 0}
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setFocusedIndex(null);
+              }}
+              className="block w-full pl-9 pr-3 py-2 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
         </div>
       </div>
 
@@ -324,23 +346,6 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
             <div className="text-slate-500 font-medium">
               Total: {students.length} Siswa {searchQuery && `(${filteredStudents.length} ditemukan)`}
             </div>
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="w-4 h-4 text-slate-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Cari nama atau NIS siswa..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setFocusedIndex(null);
-              }}
-              className="block w-full pl-9 pr-3 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-            />
           </div>
 
           {/* 2-Column Layout: Table + Recap Sidebar */}
