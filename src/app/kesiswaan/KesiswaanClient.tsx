@@ -654,6 +654,7 @@ export default function KesiswaanClient({
             <table className="min-w-full divide-y divide-slate-900">
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
                 <tr>
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Lengkap</th>
                   <th className="py-3.5 px-4">NIP</th>
                   <th className="py-3.5 px-4">Username</th>
@@ -665,11 +666,12 @@ export default function KesiswaanClient({
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
                 {initialUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-500">Belum ada data guru/staff.</td>
+                    <td colSpan={7} className="py-8 text-center text-slate-500">Belum ada data guru/staff.</td>
                   </tr>
                 ) : (
-                  initialUsers.map((u) => (
+                  initialUsers.map((u, index) => (
                     <tr key={u.id} className="hover:bg-slate-900/25 transition-all">
+                      <td className="py-3 px-4 text-center text-slate-500 font-medium">{index + 1}</td>
                       <td className="py-3 px-4 font-semibold text-white">{u.nama}</td>
                       <td className="py-3 px-4 font-mono text-slate-400">{u.nip || "-"}</td>
                       <td className="py-3 px-4 text-emerald-400 font-mono">{u.username}</td>
@@ -748,6 +750,7 @@ export default function KesiswaanClient({
             <table className="min-w-full divide-y divide-slate-900">
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
                 <tr>
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Kelas</th>
                   <th className="py-3.5 px-4">Wali Kelas (Walas)</th>
                   <th className="py-3.5 px-4">Guru BK Penanggung Jawab</th>
@@ -758,11 +761,12 @@ export default function KesiswaanClient({
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
                 {initialClasses.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-500">Belum ada data kelas.</td>
+                    <td colSpan={6} className="py-8 text-center text-slate-500">Belum ada data kelas.</td>
                   </tr>
                 ) : (
-                  initialClasses.map((c) => (
+                  initialClasses.map((c, index) => (
                     <tr key={c.id} className="hover:bg-slate-900/25 transition-all">
+                      <td className="py-3 px-4 text-center text-slate-500 font-medium">{index + 1}</td>
                       <td className="py-3 px-4 font-semibold text-white">{c.nama}</td>
                       <td className="py-3 px-4 text-slate-300">
                         {c.walas?.nama || <span className="text-slate-500 italic">Belum ditugaskan</span>}
@@ -841,6 +845,7 @@ export default function KesiswaanClient({
             <table className="min-w-full divide-y divide-slate-900">
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
                 <tr>
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Lengkap</th>
                   <th className="py-3.5 px-4">NIS</th>
                   <th className="py-3.5 px-4">Kelas</th>
@@ -850,11 +855,12 @@ export default function KesiswaanClient({
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
                 {initialStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-500">Belum ada data siswa.</td>
+                    <td colSpan={5} className="py-8 text-center text-slate-500">Belum ada data siswa.</td>
                   </tr>
                 ) : (
-                  initialStudents.map((s) => (
+                  initialStudents.map((s, index) => (
                     <tr key={s.id} className="hover:bg-slate-900/25 transition-all">
+                      <td className="py-3 px-4 text-center text-slate-500 font-medium">{index + 1}</td>
                       <td className="py-3 px-4 font-semibold text-white">{s.nama}</td>
                       <td className="py-3 px-4 font-mono text-slate-400">{s.nis}</td>
                       <td className="py-3 px-4 text-emerald-400 font-semibold">{s.kelas.nama}</td>
@@ -942,6 +948,7 @@ export default function KesiswaanClient({
             <table className="min-w-full divide-y divide-slate-900">
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
                 <tr>
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4 w-1/4">Kategori</th>
                   <th className="py-3.5 px-4 w-1/2">Nama Pelanggaran</th>
                   <th className="py-3.5 px-4">Bobot Poin</th>
@@ -949,43 +956,48 @@ export default function KesiswaanClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
-                {categories.length === 0 || categories.every(cat => cat.details.length === 0) ? (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-500">Belum ada data jenis pelanggaran.</td>
-                  </tr>
-                ) : (
-                  categories.flatMap((cat) =>
-                    cat.details.map((d) => (
-                      <tr key={d.id} className="hover:bg-slate-900/25 transition-all">
-                        <td className="py-3 px-4 text-slate-400 font-medium">{cat.nama}</td>
-                        <td className="py-3 px-4 font-semibold text-white">{d.nama}</td>
-                        <td className="py-3 px-4 text-rose-400 font-bold">+{d.poin} Poin</td>
-                        <td className="py-3 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => {
-                                setEditingViolation({ ...d, categoryId: cat.id });
-                                setIsNewCategory(false);
-                                setShowViolationModal(true);
-                              }}
-                              className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
-                              title="Edit Pelanggaran"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteViolation(d.id, d.nama)}
-                              className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-                              title="Hapus Pelanggaran"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
+                {(() => {
+                  const allDetails = categories.flatMap((cat) =>
+                    cat.details.map((d) => ({ ...d, categoryId: cat.id, categoryName: cat.nama }))
+                  );
+                  if (allDetails.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-slate-500">Belum ada data jenis pelanggaran.</td>
                       </tr>
-                    ))
-                  )
-                )}
+                    );
+                  }
+                  return allDetails.map((d, index) => (
+                    <tr key={d.id} className="hover:bg-slate-900/25 transition-all">
+                      <td className="py-3 px-4 text-center text-slate-500 font-medium">{index + 1}</td>
+                      <td className="py-3 px-4 text-slate-400 font-medium">{d.categoryName}</td>
+                      <td className="py-3 px-4 font-semibold text-white">{d.nama}</td>
+                      <td className="py-3 px-4 text-rose-400 font-bold">+{d.poin} Poin</td>
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setEditingViolation({ ...d, categoryId: d.categoryId });
+                              setIsNewCategory(false);
+                              setShowViolationModal(true);
+                            }}
+                            className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                            title="Edit Pelanggaran"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteViolation(d.id, d.nama)}
+                            className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                            title="Hapus Pelanggaran"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </table>
           </div>
@@ -1019,6 +1031,7 @@ export default function KesiswaanClient({
             <table className="min-w-full divide-y divide-slate-900">
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
                 <tr>
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4 w-2/3">Nama Aksi Remisi</th>
                   <th className="py-3.5 px-4">Persentase Pengurangan Poin</th>
                   <th className="py-3.5 px-4 text-center w-28">Aksi</th>
@@ -1027,11 +1040,12 @@ export default function KesiswaanClient({
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
                 {initialRemissions.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-8 text-center text-slate-500">Belum ada data jenis remisi.</td>
+                    <td colSpan={4} className="py-8 text-center text-slate-500">Belum ada data jenis remisi.</td>
                   </tr>
                 ) : (
-                  initialRemissions.map((r) => (
+                  initialRemissions.map((r, index) => (
                     <tr key={r.id} className="hover:bg-slate-900/25 transition-all">
+                      <td className="py-3 px-4 text-center text-slate-500 font-medium">{index + 1}</td>
                       <td className="py-3 px-4 font-semibold text-white">{r.nama}</td>
                       <td className="py-3 px-4 text-emerald-400 font-bold">{r.persentasePengurangan}% Poin</td>
                       <td className="py-3 px-4 text-center">
