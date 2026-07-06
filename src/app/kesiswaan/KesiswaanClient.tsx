@@ -178,16 +178,25 @@ export default function KesiswaanClient({
 
   // States untuk Edit Mode di setiap menu
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
+  const [editingKelas, setEditingKelas] = useState<KelasType | null>(null);
   const [editingSiswa, setEditingSiswa] = useState<SiswaType | null>(null);
   const [editingViolation, setEditingViolation] = useState<(DetailType & { categoryId: string }) | null>(null);
   const [editingRemission, setEditingRemission] = useState<RemissionType | null>(null);
   const [editingHoliday, setEditingHoliday] = useState<HolidayType | null>(null);
   const [editingTahunAjaran, setEditingTahunAjaran] = useState<TahunAjaranType | null>(null);
 
+  // Modal open states
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [showKelasModal, setShowKelasModal] = useState(false);
+  const [showSiswaModal, setShowSiswaModal] = useState(false);
+  const [showViolationModal, setShowViolationModal] = useState(false);
+  const [showRemissionModal, setShowRemissionModal] = useState(false);
+
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setAlert(null);
     setEditingUser(null);
+    setEditingKelas(null);
     setEditingSiswa(null);
     setEditingViolation(null);
     setEditingRemission(null);
@@ -195,6 +204,11 @@ export default function KesiswaanClient({
     setEditingTahunAjaran(null);
     setEditingKelasId("");
     setEditKelasNama("");
+    setShowUserModal(false);
+    setShowKelasModal(false);
+    setShowSiswaModal(false);
+    setShowViolationModal(false);
+    setShowRemissionModal(false);
   };
 
   // Form Reset Helper
@@ -224,6 +238,7 @@ export default function KesiswaanClient({
       if (res.success) {
         (e.target as HTMLFormElement).reset();
         setEditingUser(null);
+        setShowUserModal(false);
       }
     });
   };
@@ -245,7 +260,10 @@ export default function KesiswaanClient({
     startTransition(async () => {
       const res = await createKelasAction(formData);
       handleAlert(res);
-      if (res.success) (e.target as HTMLFormElement).reset();
+      if (res.success) {
+        (e.target as HTMLFormElement).reset();
+        setShowKelasModal(false);
+      }
     });
   };
 
@@ -327,6 +345,7 @@ export default function KesiswaanClient({
       if (res.success) {
         (e.target as HTMLFormElement).reset();
         setEditingSiswa(null);
+        setShowSiswaModal(false);
       }
     });
   };
@@ -363,6 +382,7 @@ export default function KesiswaanClient({
         (e.target as HTMLFormElement).reset();
         setIsNewCategory(false);
         setEditingViolation(null);
+        setShowViolationModal(false);
       }
     });
   };
@@ -416,6 +436,7 @@ export default function KesiswaanClient({
       if (res.success) {
         (e.target as HTMLFormElement).reset();
         setEditingRemission(null);
+        setShowRemissionModal(false);
       }
     });
   };
@@ -603,815 +624,437 @@ export default function KesiswaanClient({
 
       {/* -------------------- TAB 1: USERS -------------------- */}
       {activeTab === "users" && (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl">
-              <h3 className="text-lg font-bold text-white tracking-tight mb-5 flex items-center gap-2">
-                {editingUser ? (
-                  <Pencil className="w-5 h-5 text-emerald-400" />
-                ) : (
-                  <PlusCircle className="w-5 h-5 text-emerald-400" />
-                )}
-                {editingUser ? "Edit Akun Guru/Staff" : "Registrasi Guru / Staff Baru"}
-              </h3>
-              <form key={editingUser ? editingUser.id : "new"} onSubmit={handleUserSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Nomor Induk Pegawai (NIP)
-                  </label>
-                  <input
-                    name="nip"
-                    type="text"
-                    defaultValue={editingUser?.nip || ""}
-                    placeholder="Contoh: 198501012010121001 (Opsional)"
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Nama Lengkap
-                  </label>
-                  <input
-                    required
-                    name="nama"
-                    type="text"
-                    defaultValue={editingUser?.nama || ""}
-                    placeholder="Contoh: Budi Santoso, S.Pd."
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Username Login
-                  </label>
-                  <input
-                    required
-                    name="username"
-                    type="text"
-                    defaultValue={editingUser?.username || ""}
-                    placeholder="Contoh: budi_guru"
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Password
-                  </label>
-                  <input
-                    required={!editingUser}
-                    name="password"
-                    type="password"
-                    placeholder={editingUser ? "•••••••• (Kosongkan jika tidak diubah)" : "••••••••"}
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Akses Sistem (Role)
-                  </label>
-                  <select
-                    required
-                    name="role"
-                    defaultValue={editingUser?.role || "GURU"}
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="GURU">Guru Piket / Guru Umum</option>
-                    <option value="WALAS">Wali Kelas (Walas)</option>
-                    <option value="BK">Guru BK (Super Admin/Approver)</option>
-                    <option value="WAKA">Waka Kesiswaan (Master Admin)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    No. WhatsApp (Opsional)
-                  </label>
-                  <input
-                    name="whatsappNumber"
-                    type="text"
-                    defaultValue={editingUser?.whatsappNumber || ""}
-                    placeholder="Contoh: +6281234567890"
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={isPending}
-                    className="flex-1 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all"
-                  >
-                    {isPending ? "Memproses..." : editingUser ? "Simpan Perubahan" : "Buat Akun"}
-                  </button>
-                  {editingUser && (
-                    <button
-                      type="button"
-                      onClick={() => setEditingUser(null)}
-                      className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all"
-                    >
-                      Batal
-                    </button>
-                  )}
-                </div>
-              </form>
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-white tracking-tight">Daftar Pengguna Guru & Staff</h3>
+              <p className="text-xs text-slate-400 mt-1">Kelola data seluruh akun guru, wali kelas, guru BK, dan staff kesiswaan.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setEditingUser(null);
+                  setShowUserModal(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all shadow cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                Tambah Guru/Staff Baru
+              </button>
+              {importButton("users")}
             </div>
           </div>
 
-          {/* List */}
-          <div className="lg:col-span-3">
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 h-[550px] flex flex-col">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-white tracking-tight">Daftar Pengguna Guru & Staff</h3>
-                {importButton("users")}
-              </div>
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                {initialUsers.map((u) => (
-                  <div
-                    key={u.id}
-                    className="p-4 bg-slate-950/40 border border-slate-900 rounded-xl flex justify-between items-center gap-4 hover:border-slate-850 transition-all"
-                  >
-                    <div>
-                      <h4 className="font-semibold text-white text-sm">{u.nama}</h4>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        NIP: <span className="text-slate-300 font-mono">{u.nip || "-"}</span> | Username:{" "}
-                        <code className="text-emerald-400">{u.username}</code>
-                      </p>
-                      <p className="text-xs text-slate-400">WA: {u.whatsappNumber || "-"}</p>
-                      <span className="inline-flex mt-1 text-[10px] bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded-full font-bold">
-                        {u.role}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        onClick={() => setEditingUser(u)}
-                        disabled={isPending}
-                        title="Edit Akun Guru"
-                        className="p-2.5 text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 hover:border-emerald-500/20 rounded-xl transition-all"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteUser(u.id, u.nama)}
-                        disabled={isPending}
-                        title="Hapus Akun Guru"
-                        className="p-2.5 text-rose-400 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 hover:border-rose-500/20 rounded-xl transition-all shrink-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="overflow-x-auto border border-slate-800 rounded-xl">
+            <table className="min-w-full divide-y divide-slate-900">
+              <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
+                <tr>
+                  <th className="py-3.5 px-4">Nama Lengkap</th>
+                  <th className="py-3.5 px-4">NIP</th>
+                  <th className="py-3.5 px-4">Username</th>
+                  <th className="py-3.5 px-4">Role</th>
+                  <th className="py-3.5 px-4">No. WhatsApp</th>
+                  <th className="py-3.5 px-4 text-center w-28">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
+                {initialUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-slate-500">Belum ada data guru/staff.</td>
+                  </tr>
+                ) : (
+                  initialUsers.map((u) => (
+                    <tr key={u.id} className="hover:bg-slate-900/25 transition-all">
+                      <td className="py-3 px-4 font-semibold text-white">{u.nama}</td>
+                      <td className="py-3 px-4 font-mono text-slate-400">{u.nip || "-"}</td>
+                      <td className="py-3 px-4 text-emerald-400 font-mono">{u.username}</td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex text-[9px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md font-bold">
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">{u.whatsappNumber || "-"}</td>
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setEditingUser(u);
+                              setShowUserModal(true);
+                            }}
+                            className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                            title="Edit Akun"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(u.id, u.nama)}
+                            className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                            title="Hapus Akun"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
       {/* -------------------- TAB 2: CLASSES -------------------- */}
       {activeTab === "classes" && (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 animate-fade-in">
-          {/* Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl">
-              <h3 className="text-lg font-bold text-white tracking-tight mb-5 flex items-center gap-2">
-                <PlusCircle className="w-5 h-5 text-emerald-400" />
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-white tracking-tight">Daftar Kelas Aktif</h3>
+              <p className="text-xs text-slate-400 mt-1">Kelola data kelas, penugasan Wali Kelas, dan Guru BK penanggung jawab.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => {
+                  setEditingKelas(null);
+                  setEditKelasNama("");
+                  setEditWalasId("");
+                  setEditBkId("");
+                  setShowKelasModal(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all shadow cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
                 Buat Kelas Baru
-              </h3>
-              <form onSubmit={handleCreateKelas} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Nama Kelas
-                  </label>
-                  <input
-                    required
-                    name="nama"
-                    type="text"
-                    placeholder="Contoh: XI RPL 3"
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Wali Kelas (Walas)
-                  </label>
-                  <select
-                    name="walasId"
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="">-- Tanpa Wali Kelas --</option>
-                    {walasUsers.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.nama}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Guru BK Penanggung Jawab
-                  </label>
-                  <select
-                    name="bkId"
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="">-- Tanpa Guru BK --</option>
-                    {bkUsers.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.nama}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="w-full bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all"
-                >
-                  {isPending ? "Memproses..." : "Buat Kelas"}
-                </button>
-              </form>
+              </button>
+              <button
+                type="button"
+                onClick={handleDuplicateClassStructure}
+                disabled={isPending}
+                className="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 font-bold px-3 py-2 rounded-xl border border-slate-700 transition-all cursor-pointer"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                Salin Kelas dari Tahun Lalu
+              </button>
+              {importButton("classes")}
             </div>
           </div>
 
-          {/* List */}
-          <div className="lg:col-span-3">
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 h-[550px] flex flex-col">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-white tracking-tight">Daftar Kelas Aktif</h3>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleDuplicateClassStructure}
-                    disabled={isPending}
-                    className="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 font-bold px-3 py-1.5 rounded-lg border border-slate-700 transition-all cursor-pointer"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    Salin Kelas dari Tahun Lalu
-                  </button>
-                  {importButton("classes")}
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                {initialClasses.map((c) => {
-                  const isEditing = editingKelasId === c.id;
-                  return (
-                    <div
-                      key={c.id}
-                      className="p-4 bg-slate-950/40 border border-slate-900 rounded-xl flex justify-between items-center gap-4 hover:border-slate-850 transition-all"
-                    >
-                      <div className="flex-1 min-w-0">
-                        {isEditing ? (
-                          <div className="mb-3">
-                            <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
-                              Nama Kelas
-                            </label>
-                            <input
-                              type="text"
-                              value={editKelasNama}
-                              onChange={(e) => setEditKelasNama(e.target.value)}
-                              className="block w-full py-1.5 px-2.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            />
-                          </div>
-                        ) : (
-                          <h4 className="font-semibold text-white text-sm">{c.nama}</h4>
-                        )}
-                        <p className="text-xs text-slate-400 mt-1">
-                          Tahun Ajaran: <span className="text-emerald-400">{c.tahunAjaran.nama}</span>
-                        </p>
-                        
-                        {isEditing ? (
-                          <div className="mt-3 space-y-2">
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
-                                Wali Kelas
-                              </label>
-                              <select
-                                value={editWalasId}
-                                onChange={(e) => setEditWalasId(e.target.value)}
-                                className="block w-full py-1.5 px-2.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                              >
-                                <option value="">-- Tanpa Wali Kelas --</option>
-                                {walasUsers.map((w) => (
-                                  <option key={w.id} value={w.id}>
-                                    {w.nama}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
-                                Guru BK
-                              </label>
-                              <select
-                                value={editBkId}
-                                onChange={(e) => setEditBkId(e.target.value)}
-                                className="block w-full py-1.5 px-2.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                              >
-                                <option value="">-- Tanpa Guru BK --</option>
-                                {bkUsers.map((b) => (
-                                  <option key={b.id} value={b.id}>
-                                    {b.nama}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="mt-2 space-y-0.5">
-                            <p className="text-xs text-slate-300">
-                              Wali Kelas:{" "}
-                              <span className="font-medium text-slate-100">
-                                {c.walas?.nama || "(Belum ditugaskan)"}
-                              </span>
-                            </p>
-                            <p className="text-xs text-slate-300">
-                              Guru BK:{" "}
-                              <span className="font-medium text-slate-100">
-                                {c.bk?.nama || "(Belum ditugaskan)"}
-                              </span>
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {isEditing ? (
-                          <>
-                            <button
-                              onClick={() => handleSaveAssignment(c.id)}
-                              disabled={isPending}
-                              title="Simpan Penugasan"
-                              className="p-2.5 text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 hover:border-emerald-500/20 rounded-xl transition-all"
-                            >
-                              <Check className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setEditingKelasId("")}
-                              disabled={isPending}
-                              title="Batal"
-                              className="p-2.5 text-slate-400 bg-slate-800/10 hover:bg-slate-800/20 border border-slate-800/20 rounded-xl transition-all"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => handleGraduateClassStudents(c.id, c.nama)}
-                              disabled={isPending}
-                              title="Luluskan Semua Siswa di Kelas Ini"
-                              className="p-2.5 text-amber-400 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/10 hover:border-amber-500/20 rounded-xl transition-all shrink-0"
-                            >
-                              <GraduationCap className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleStartEditAssignment(c)}
-                              disabled={isPending}
-                              title="Edit Penugasan Kelas"
-                              className="p-2.5 text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 hover:border-emerald-500/20 rounded-xl transition-all"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteKelas(c.id, c.nama)}
-                              disabled={isPending}
-                              title="Hapus Kelas"
-                              className="p-2.5 text-rose-400 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 hover:border-rose-500/20 rounded-xl transition-all shrink-0"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+          <div className="overflow-x-auto border border-slate-800 rounded-xl">
+            <table className="min-w-full divide-y divide-slate-900">
+              <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
+                <tr>
+                  <th className="py-3.5 px-4">Nama Kelas</th>
+                  <th className="py-3.5 px-4">Wali Kelas (Walas)</th>
+                  <th className="py-3.5 px-4">Guru BK Penanggung Jawab</th>
+                  <th className="py-3.5 px-4">Tahun Pelajaran</th>
+                  <th className="py-3.5 px-4 text-center w-36">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
+                {initialClasses.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-500">Belum ada data kelas.</td>
+                  </tr>
+                ) : (
+                  initialClasses.map((c) => (
+                    <tr key={c.id} className="hover:bg-slate-900/25 transition-all">
+                      <td className="py-3 px-4 font-semibold text-white">{c.nama}</td>
+                      <td className="py-3 px-4 text-slate-300">
+                        {c.walas?.nama || <span className="text-slate-500 italic">Belum ditugaskan</span>}
+                      </td>
+                      <td className="py-3 px-4 text-slate-300">
+                        {c.bk?.nama || <span className="text-slate-500 italic">Belum ditugaskan</span>}
+                      </td>
+                      <td className="py-3 px-4 text-emerald-400 font-semibold">{c.tahunAjaran.nama}</td>
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              handleGraduateClassStudents(c.id, c.nama);
+                            }}
+                            disabled={isPending}
+                            className="p-1.5 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-all"
+                            title="Luluskan Semua Siswa"
+                          >
+                            <GraduationCap className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingKelas(c);
+                              setEditKelasNama(c.nama);
+                              setEditWalasId(c.walasId || "");
+                              setEditBkId(c.bkId || "");
+                              setShowKelasModal(true);
+                            }}
+                            className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                            title="Edit Kelas & Penugasan"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteKelas(c.id, c.nama)}
+                            className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                            title="Hapus Kelas"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
       {/* -------------------- TAB 3: STUDENTS -------------------- */}
       {activeTab === "students" && (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl">
-              <h3 className="text-lg font-bold text-white tracking-tight mb-5 flex items-center gap-2">
-                {editingSiswa ? (
-                  <Pencil className="w-5 h-5 text-emerald-400" />
-                ) : (
-                  <PlusCircle className="w-5 h-5 text-emerald-400" />
-                )}
-                {editingSiswa ? "Edit Data Siswa" : "Daftarkan Siswa Baru"}
-              </h3>
-              <form key={editingSiswa ? editingSiswa.id : "new"} onSubmit={handleSiswaSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Nomor Induk Siswa (NIS)
-                  </label>
-                  <input
-                    required
-                    name="nis"
-                    type="text"
-                    defaultValue={editingSiswa?.nis || ""}
-                    placeholder="Contoh: 10295"
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Nama Lengkap
-                  </label>
-                  <input
-                    required
-                    name="nama"
-                    type="text"
-                    defaultValue={editingSiswa?.nama || ""}
-                    placeholder="Contoh: Eka Saputra"
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Daftar Kelas
-                  </label>
-                  <select
-                    required
-                    name="kelasId"
-                    defaultValue={editingSiswa?.kelasId || ""}
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="">-- Pilih Kelas --</option>
-                    {initialClasses.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nama}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={isPending}
-                    className="flex-1 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all"
-                  >
-                    {isPending ? "Memproses..." : editingSiswa ? "Simpan Perubahan" : "Daftarkan Siswa"}
-                  </button>
-                  {editingSiswa && (
-                    <button
-                      type="button"
-                      onClick={() => setEditingSiswa(null)}
-                      className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all"
-                    >
-                      Batal
-                    </button>
-                  )}
-                </div>
-              </form>
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-white tracking-tight">Daftar Siswa Aktif</h3>
+              <p className="text-xs text-slate-400 mt-1">Kelola data seluruh siswa aktif yang terdaftar di sekolah.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setEditingSiswa(null);
+                  setShowSiswaModal(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all shadow cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                Daftarkan Siswa Baru
+              </button>
+              {importButton("students")}
             </div>
           </div>
 
-          {/* List */}
-          <div className="lg:col-span-3">
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 h-[550px] flex flex-col">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-white tracking-tight">Daftar Siswa Aktif</h3>
-                {importButton("students")}
-              </div>
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                {initialStudents.map((s) => (
-                  <div
-                    key={s.id}
-                    className="p-4 bg-slate-950/40 border border-slate-900 rounded-xl flex justify-between items-center gap-4 hover:border-slate-850 transition-all"
-                  >
-                    <div>
-                      <h4 className="font-semibold text-white text-sm">{s.nama}</h4>
-                      <p className="text-xs text-slate-400">
-                        NIS: <span className="text-slate-300 font-mono">{s.nis}</span> | Kelas:{" "}
-                        <span className="text-emerald-400 font-semibold">{s.kelas.nama}</span>
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        onClick={() => setEditingSiswa(s)}
-                        disabled={isPending}
-                        title="Edit Data Siswa"
-                        className="p-2.5 text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 hover:border-emerald-500/20 rounded-xl transition-all"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteSiswa(s.id, s.nama)}
-                        disabled={isPending}
-                        title="Hapus Data Siswa"
-                        className="p-2.5 text-rose-400 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 hover:border-rose-500/20 rounded-xl transition-all shrink-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="overflow-x-auto border border-slate-800 rounded-xl">
+            <table className="min-w-full divide-y divide-slate-900">
+              <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
+                <tr>
+                  <th className="py-3.5 px-4">Nama Lengkap</th>
+                  <th className="py-3.5 px-4">NIS</th>
+                  <th className="py-3.5 px-4">Kelas</th>
+                  <th className="py-3.5 px-4 text-center w-28">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
+                {initialStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-slate-500">Belum ada data siswa.</td>
+                  </tr>
+                ) : (
+                  initialStudents.map((s) => (
+                    <tr key={s.id} className="hover:bg-slate-900/25 transition-all">
+                      <td className="py-3 px-4 font-semibold text-white">{s.nama}</td>
+                      <td className="py-3 px-4 font-mono text-slate-400">{s.nis}</td>
+                      <td className="py-3 px-4 text-emerald-400 font-semibold">{s.kelas.nama}</td>
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setEditingSiswa(s);
+                              setShowSiswaModal(true);
+                            }}
+                            className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                            title="Edit Siswa"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSiswa(s.id, s.nama)}
+                            className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                            title="Hapus Siswa"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
       {/* -------------------- TAB 4: VIOLATIONS -------------------- */}
       {activeTab === "violations" && (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl">
-              <h3 className="text-lg font-bold text-white tracking-tight mb-5 flex items-center gap-2">
-                {editingViolation ? (
-                  <Pencil className="w-5 h-5 text-emerald-400" />
-                ) : (
-                  <PlusCircle className="w-5 h-5 text-emerald-400" />
-                )}
-                {editingViolation ? "Edit Jenis Pelanggaran" : "Tambah Jenis Pelanggaran"}
-              </h3>
-              <form key={editingViolation ? editingViolation.id : "new"} onSubmit={handleViolationSubmit} className="space-y-4">
-                {/* Checkbox Kategori Baru */}
-                <div className="flex items-center gap-2 p-1">
-                  <input
-                    type="checkbox"
-                    id="isNewCategory"
-                    checked={isNewCategory}
-                    onChange={(e) => setIsNewCategory(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-800 bg-slate-950 text-emerald-400 focus:ring-emerald-500"
-                  />
-                  <label htmlFor="isNewCategory" className="text-xs text-slate-300 font-semibold cursor-pointer">
-                    Buat Kategori Baru
-                  </label>
-                </div>
-
-                {isNewCategory ? (
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      Nama Kategori Baru
-                    </label>
-                    <input
-                      required
-                      name="categoryName"
-                      type="text"
-                      placeholder="Contoh: Sikap & Perilaku"
-                      className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      Pilih Kategori Pelanggaran (Parent)
-                    </label>
-                    <select
-                      required
-                      name="categoryId"
-                      defaultValue={editingViolation?.categoryId || ""}
-                      className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    >
-                      <option value="">-- Pilih Kategori --</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.nama}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Nama Detail Pelanggaran
-                  </label>
-                  <input
-                    required
-                    name="detailName"
-                    type="text"
-                    defaultValue={editingViolation?.nama || ""}
-                    placeholder="Contoh: Berkata kasar di kelas"
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Bobot Poin Pelanggaran
-                  </label>
-                  <input
-                    required
-                    name="points"
-                    type="number"
-                    min="1"
-                    defaultValue={editingViolation?.poin || ""}
-                    placeholder="Contoh: 15"
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={isPending}
-                    className="flex-1 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all"
-                  >
-                    {isPending ? "Memproses..." : editingViolation ? "Simpan Perubahan" : "Tambahkan Pelanggaran"}
-                  </button>
-                  {editingViolation && (
-                    <button
-                      type="button"
-                      onClick={() => setEditingViolation(null)}
-                      className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all"
-                    >
-                      Batal
-                    </button>
-                  )}
-                </div>
-              </form>
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-white tracking-tight">Daftar Jenis Pelanggaran & Poin</h3>
+              <p className="text-xs text-slate-400 mt-1">Kelola data jenis tata tertib sekolah, kategori, dan bobot poin pelanggarannya.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setEditingViolation(null);
+                  setIsNewCategory(false);
+                  setShowViolationModal(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all shadow cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                Tambah Jenis Pelanggaran
+              </button>
+              {importButton("violations")}
             </div>
           </div>
 
-          {/* List */}
-          <div className="lg:col-span-3">
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 h-[550px] flex flex-col">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-white tracking-tight">Daftar Jenis Pelanggaran & Poin</h3>
-                {importButton("violations")}
-              </div>
-              <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-                {categories.map((cat) => (
-                  <div key={cat.id} className="space-y-2 border-b border-slate-900/60 pb-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">
-                        {cat.nama}
-                      </h4>
-                      <div className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => handleEditCategory(cat.id, cat.nama)}
-                          disabled={isPending}
-                          title="Edit Nama Kategori"
-                          className="text-emerald-400 hover:text-emerald-300 p-1 rounded hover:bg-slate-900/50"
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCategory(cat.id, cat.nama)}
-                          disabled={isPending}
-                          title="Hapus Kategori & Semua Sub-item"
-                          className="text-rose-500 hover:text-rose-400 p-1 rounded hover:bg-slate-900/50"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5 pl-2">
-                      {cat.details.length === 0 ? (
-                        <p className="text-xs text-slate-600">Tidak ada detail pelanggaran.</p>
-                      ) : (
-                        cat.details.map((d) => (
-                          <div
-                            key={d.id}
-                            className="p-3 bg-slate-950/20 border border-slate-900/50 rounded-lg flex justify-between items-center text-xs shadow"
-                          >
-                            <span className="text-slate-200">{d.nama}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-rose-400 mr-1.5">+{d.poin} Poin</span>
-                              <button
-                                onClick={() => setEditingViolation({ ...d, categoryId: cat.id })}
-                                disabled={isPending}
-                                title="Edit Pelanggaran"
-                                className="text-emerald-400 hover:text-emerald-300 shrink-0"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteViolation(d.id, d.nama)}
-                                disabled={isPending}
-                                title="Hapus Pelanggaran"
-                                className="text-rose-500 hover:text-rose-400 shrink-0"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+          {/* Categories Management Tags */}
+          {categories.length > 0 && (
+            <div className="flex flex-wrap gap-2 items-center p-3.5 bg-slate-950/40 border border-slate-900 rounded-xl text-xs">
+              <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] mr-2">Kelola Kategori:</span>
+              {categories.map((cat) => (
+                <div key={cat.id} className="inline-flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-300">
+                  <span>{cat.nama}</span>
+                  <button
+                    onClick={() => handleEditCategory(cat.id, cat.nama)}
+                    className="text-emerald-400 hover:text-emerald-300 p-0.5 transition-colors"
+                    title="Edit Nama Kategori"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCategory(cat.id, cat.nama)}
+                    className="text-rose-400 hover:text-rose-350 p-0.5 transition-colors"
+                    title="Hapus Kategori"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
             </div>
+          )}
+
+          <div className="overflow-x-auto border border-slate-800 rounded-xl">
+            <table className="min-w-full divide-y divide-slate-900">
+              <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
+                <tr>
+                  <th className="py-3.5 px-4 w-1/4">Kategori</th>
+                  <th className="py-3.5 px-4 w-1/2">Nama Pelanggaran</th>
+                  <th className="py-3.5 px-4">Bobot Poin</th>
+                  <th className="py-3.5 px-4 text-center w-28">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
+                {categories.length === 0 || categories.every(cat => cat.details.length === 0) ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-slate-500">Belum ada data jenis pelanggaran.</td>
+                  </tr>
+                ) : (
+                  categories.flatMap((cat) =>
+                    cat.details.map((d) => (
+                      <tr key={d.id} className="hover:bg-slate-900/25 transition-all">
+                        <td className="py-3 px-4 text-slate-400 font-medium">{cat.nama}</td>
+                        <td className="py-3 px-4 font-semibold text-white">{d.nama}</td>
+                        <td className="py-3 px-4 text-rose-400 font-bold">+{d.poin} Poin</td>
+                        <td className="py-3 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setEditingViolation({ ...d, categoryId: cat.id });
+                                setIsNewCategory(false);
+                                setShowViolationModal(true);
+                              }}
+                              className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                              title="Edit Pelanggaran"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteViolation(d.id, d.nama)}
+                              className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                              title="Hapus Pelanggaran"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
       {/* -------------------- TAB 5: REMISSIONS -------------------- */}
       {activeTab === "remissions" && (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl">
-              <h3 className="text-lg font-bold text-white tracking-tight mb-5 flex items-center gap-2">
-                {editingRemission ? (
-                  <Pencil className="w-5 h-5 text-emerald-400" />
-                ) : (
-                  <PlusCircle className="w-5 h-5 text-emerald-400" />
-                )}
-                {editingRemission ? "Edit Kategori Remisi" : "Tambah Kategori Remisi Baru"}
-              </h3>
-              <form key={editingRemission ? editingRemission.id : "new"} onSubmit={handleRemissionSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Nama Aksi Remisi
-                  </label>
-                  <input
-                    required
-                    name="nama"
-                    type="text"
-                    defaultValue={editingRemission?.nama || ""}
-                    placeholder="Contoh: Membawa pohon pot"
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Persentase Pengurangan Poin (%)
-                  </label>
-                  <input
-                    required
-                    name="persentase"
-                    type="number"
-                    min="1"
-                    max="100"
-                    defaultValue={editingRemission?.persentasePengurangan || ""}
-                    placeholder="Contoh: 15 (artinya potong 15%)"
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={isPending}
-                    className="flex-1 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all"
-                  >
-                    {isPending ? "Memproses..." : editingRemission ? "Simpan Perubahan" : "Tambahkan Remisi"}
-                  </button>
-                  {editingRemission && (
-                    <button
-                      type="button"
-                      onClick={() => setEditingRemission(null)}
-                      className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all"
-                    >
-                      Batal
-                    </button>
-                  )}
-                </div>
-              </form>
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-white tracking-tight">Daftar Jenis Remisi & Potongan</h3>
+              <p className="text-xs text-slate-400 mt-1">Kelola data kegiatan positif siswa dan besaran persentase pengurangan poin pelanggarannya.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setEditingRemission(null);
+                  setShowRemissionModal(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all shadow cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                Tambah Jenis Remisi Baru
+              </button>
+              {importButton("remissions")}
             </div>
           </div>
 
-          {/* List */}
-          <div className="lg:col-span-3">
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 h-[550px] flex flex-col">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-white tracking-tight">Daftar Jenis Remisi & Potongan</h3>
-                {importButton("remissions")}
-              </div>
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                {initialRemissions.map((r) => (
-                  <div
-                    key={r.id}
-                    className="p-4 bg-slate-950/40 border border-slate-900 rounded-xl flex justify-between items-center gap-4 hover:border-slate-850 transition-all"
-                  >
-                    <div>
-                      <h4 className="font-semibold text-white text-sm">{r.nama}</h4>
-                      <p className="text-xs text-emerald-400 font-semibold mt-1">
-                        Persentase Potongan: {r.persentasePengurangan}% Poin
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        onClick={() => setEditingRemission(r)}
-                        disabled={isPending}
-                        title="Edit Remisi"
-                        className="p-2.5 text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 hover:border-emerald-500/20 rounded-xl transition-all"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRemission(r.id, r.nama)}
-                        disabled={isPending}
-                        title="Hapus Remisi"
-                        className="p-2.5 text-rose-400 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 hover:border-rose-500/20 rounded-xl transition-all shrink-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="overflow-x-auto border border-slate-800 rounded-xl">
+            <table className="min-w-full divide-y divide-slate-900">
+              <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
+                <tr>
+                  <th className="py-3.5 px-4 w-2/3">Nama Aksi Remisi</th>
+                  <th className="py-3.5 px-4">Persentase Pengurangan Poin</th>
+                  <th className="py-3.5 px-4 text-center w-28">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
+                {initialRemissions.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-8 text-center text-slate-500">Belum ada data jenis remisi.</td>
+                  </tr>
+                ) : (
+                  initialRemissions.map((r) => (
+                    <tr key={r.id} className="hover:bg-slate-900/25 transition-all">
+                      <td className="py-3 px-4 font-semibold text-white">{r.nama}</td>
+                      <td className="py-3 px-4 text-emerald-400 font-bold">{r.persentasePengurangan}% Poin</td>
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setEditingRemission(r);
+                              setShowRemissionModal(true);
+                            }}
+                            className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                            title="Edit Remisi"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRemission(r.id, r.nama)}
+                            className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                            title="Hapus Remisi"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -1945,6 +1588,229 @@ export default function KesiswaanClient({
               {isPending ? "Menyimpan..." : "Simpan Pengaturan"}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* -------------------- MODAL: USER -------------------- */}
+      {showUserModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                {editingUser ? <Pencil className="w-4 h-4 text-emerald-400" /> : <PlusCircle className="w-4 h-4 text-emerald-400" />}
+                {editingUser ? "Edit Akun Guru/Staff" : "Registrasi Guru / Staff Baru"}
+              </h3>
+              <button onClick={() => { setShowUserModal(false); setEditingUser(null); }} className="text-slate-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form key={editingUser ? editingUser.id : "new"} onSubmit={handleUserSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nomor Induk Pegawai (NIP)</label>
+                <input name="nip" type="text" defaultValue={editingUser?.nip || ""} placeholder="Contoh: 198501012010121001 (Opsional)" className="block w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nama Lengkap</label>
+                <input required name="nama" type="text" defaultValue={editingUser?.nama || ""} placeholder="Contoh: Budi Santoso, S.Pd." className="block w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Username Login</label>
+                <input required name="username" type="text" defaultValue={editingUser?.username || ""} placeholder="Contoh: budi_guru" className="block w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Password</label>
+                <input required={!editingUser} name="password" type="password" placeholder={editingUser ? "•••••••• (Kosongkan jika tidak diubah)" : "••••••••"} className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Akses Sistem (Role)</label>
+                <select required name="role" defaultValue={editingUser?.role || "GURU"} className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs">
+                  <option value="GURU">Guru Piket / Guru Umum</option>
+                  <option value="WALAS">Wali Kelas (Walas)</option>
+                  <option value="BK">Guru BK (Super Admin/Approver)</option>
+                  <option value="WAKA">Waka Kesiswaan (Master Admin)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">No. WhatsApp (Opsional)</label>
+                <input name="whatsappNumber" type="text" defaultValue={editingUser?.whatsappNumber || ""} placeholder="Contoh: +6281234567890" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="submit" disabled={isPending} className="flex-1 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all text-xs cursor-pointer">{isPending ? "Memproses..." : editingUser ? "Simpan Perubahan" : "Buat Akun"}</button>
+                <button type="button" onClick={() => { setShowUserModal(false); setEditingUser(null); }} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all text-xs cursor-pointer">Batal</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* -------------------- MODAL: KELAS -------------------- */}
+      {showKelasModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                {editingKelas ? <Pencil className="w-4 h-4 text-emerald-400" /> : <PlusCircle className="w-4 h-4 text-emerald-400" />}
+                {editingKelas ? "Edit Kelas & Penugasan" : "Buat Kelas Baru"}
+              </h3>
+              <button onClick={() => { setShowKelasModal(false); setEditingKelas(null); }} className="text-slate-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={editingKelas ? (e) => { e.preventDefault(); handleSaveAssignment(editingKelas.id); } : handleCreateKelas} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nama Kelas</label>
+                <input required name="nama" type="text" value={editKelasNama} onChange={(e) => setEditKelasNama(e.target.value)} placeholder="Contoh: XI RPL 3" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Wali Kelas (Walas)</label>
+                <select name="walasId" value={editWalasId} onChange={(e) => setEditWalasId(e.target.value)} className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs">
+                  <option value="">-- Tanpa Wali Kelas --</option>
+                  {walasUsers.map((w) => (
+                    <option key={w.id} value={w.id}>{w.nama}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Guru BK Penanggung Jawab</label>
+                <select name="bkId" value={editBkId} onChange={(e) => setEditBkId(e.target.value)} className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs">
+                  <option value="">-- Tanpa Guru BK --</option>
+                  {bkUsers.map((b) => (
+                    <option key={b.id} value={b.id}>{b.nama}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="submit" disabled={isPending} className="flex-1 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all text-xs cursor-pointer">{isPending ? "Memproses..." : editingKelas ? "Simpan Perubahan" : "Buat Kelas"}</button>
+                <button type="button" onClick={() => { setShowKelasModal(false); setEditingKelas(null); }} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all text-xs cursor-pointer">Batal</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* -------------------- MODAL: SISWA -------------------- */}
+      {showSiswaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                {editingSiswa ? <Pencil className="w-4 h-4 text-emerald-400" /> : <PlusCircle className="w-4 h-4 text-emerald-400" />}
+                {editingSiswa ? "Edit Data Siswa" : "Daftarkan Siswa Baru"}
+              </h3>
+              <button onClick={() => { setShowSiswaModal(false); setEditingSiswa(null); }} className="text-slate-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form key={editingSiswa ? editingSiswa.id : "new"} onSubmit={handleSiswaSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nomor Induk Siswa (NIS)</label>
+                <input required name="nis" type="text" defaultValue={editingSiswa?.nis || ""} placeholder="Contoh: 10295" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nama Lengkap</label>
+                <input required name="nama" type="text" defaultValue={editingSiswa?.nama || ""} placeholder="Contoh: Eka Saputra" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Daftar Kelas</label>
+                <select required name="kelasId" defaultValue={editingSiswa?.kelasId || ""} className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs">
+                  <option value="">-- Pilih Kelas --</option>
+                  {initialClasses.map((c) => (
+                    <option key={c.id} value={c.id}>{c.nama}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="submit" disabled={isPending} className="flex-1 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all text-xs cursor-pointer">{isPending ? "Memproses..." : editingSiswa ? "Simpan Perubahan" : "Daftarkan Siswa"}</button>
+                <button type="button" onClick={() => { setShowSiswaModal(false); setEditingSiswa(null); }} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all text-xs cursor-pointer">Batal</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* -------------------- MODAL: PELANGGARAN -------------------- */}
+      {showViolationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                {editingViolation ? <Pencil className="w-4 h-4 text-emerald-400" /> : <PlusCircle className="w-4 h-4 text-emerald-400" />}
+                {editingViolation ? "Edit Jenis Pelanggaran" : "Tambah Jenis Pelanggaran"}
+              </h3>
+              <button onClick={() => { setShowViolationModal(false); setEditingViolation(null); setIsNewCategory(false); }} className="text-slate-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form key={editingViolation ? editingViolation.id : "new"} onSubmit={handleViolationSubmit} className="p-6 space-y-4">
+              <div className="flex items-center gap-2 p-1">
+                <input type="checkbox" id="isNewCategory" checked={isNewCategory} onChange={(e) => setIsNewCategory(e.target.checked)} className="w-4 h-4 rounded border-slate-800 bg-slate-950 text-emerald-400 focus:ring-emerald-500 cursor-pointer" />
+                <label htmlFor="isNewCategory" className="text-xs text-slate-300 font-semibold cursor-pointer select-none">Buat Kategori Baru</label>
+              </div>
+
+              {isNewCategory ? (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nama Kategori Baru</label>
+                  <input required name="categoryName" type="text" placeholder="Contoh: Sikap & Perilaku" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Pilih Kategori Pelanggaran (Parent)</label>
+                  <select required name="categoryId" defaultValue={editingViolation?.categoryId || ""} className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs">
+                    <option value="">-- Pilih Kategori --</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.nama}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nama Detail Pelanggaran</label>
+                <input required name="detailName" type="text" defaultValue={editingViolation?.nama || ""} placeholder="Contoh: Berkata kasar di kelas" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Bobot Poin Pelanggaran</label>
+                <input required name="points" type="number" min="1" defaultValue={editingViolation?.poin || ""} placeholder="Contoh: 15" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button type="submit" disabled={isPending} className="flex-1 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all text-xs cursor-pointer">{isPending ? "Memproses..." : editingViolation ? "Simpan Perubahan" : "Tambahkan Pelanggaran"}</button>
+                <button type="button" onClick={() => { setShowViolationModal(false); setEditingViolation(null); setIsNewCategory(false); }} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all text-xs cursor-pointer">Batal</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* -------------------- MODAL: REMISI -------------------- */}
+      {showRemissionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                {editingRemission ? <Pencil className="w-4 h-4 text-emerald-400" /> : <PlusCircle className="w-4 h-4 text-emerald-400" />}
+                {editingRemission ? "Edit Kategori Remisi" : "Tambah Kategori Remisi Baru"}
+              </h3>
+              <button onClick={() => { setShowRemissionModal(false); setEditingRemission(null); }} className="text-slate-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form key={editingRemission ? editingRemission.id : "new"} onSubmit={handleRemissionSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nama Aksi Remisi</label>
+                <input required name="nama" type="text" defaultValue={editingRemission?.nama || ""} placeholder="Contoh: Membawa pohon pot" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Persentase Pengurangan Poin (%)</label>
+                <input required name="persentase" type="number" min="1" max="100" defaultValue={editingRemission?.persentasePengurangan || ""} placeholder="Contoh: 15 (artinya potong 15%)" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="submit" disabled={isPending} className="flex-1 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all text-xs cursor-pointer">{isPending ? "Memproses..." : editingRemission ? "Simpan Perubahan" : "Tambahkan Remisi"}</button>
+                <button type="button" onClick={() => { setShowRemissionModal(false); setEditingRemission(null); }} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all text-xs cursor-pointer">Batal</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
