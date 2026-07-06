@@ -1364,7 +1364,7 @@ export default function DashboardClient({
               )}
               {/* Peringatan & Pemanggilan Orang Tua Section */}
               {isWakaOrBK && (
-                <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-md shadow-amber-500/5">
+                <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-6">
                       <AlertTriangle className="w-5 h-5 text-amber-400" />
@@ -1423,7 +1423,7 @@ export default function DashboardClient({
                                     summons.level === 3 
                                       ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" 
                                       : summons.level === 2 
-                                      ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" 
+                                      ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" 
                                       : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                                   }`}>
                                     {summons.level === 3 ? "Ketiga" : summons.level === 2 ? "Kedua" : "Pertama"}
@@ -1666,7 +1666,7 @@ export default function DashboardClient({
                   {user.role === "WAKA" && (
                     <Link
                       href="/kesiswaan"
-                      className="flex items-center gap-3 p-3 bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/20 text-orange-300 text-sm font-semibold rounded-xl transition-all"
+                      className="flex items-center gap-3 p-3 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-xl transition-all"
                     >
                       <Settings className="w-5 h-5 shrink-0" />
                       Manajemen Kesiswaan

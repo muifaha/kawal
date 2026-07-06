@@ -299,11 +299,11 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
             <div className="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 {schoolLogo ? (
-                  <div className="w-6 h-6 rounded bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                  <div className="w-6 h-6 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
                     <img src={schoolLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
                   </div>
                 ) : (
-                  <div className="w-6 h-6 rounded bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0">
                     K
                   </div>
                 )}
@@ -380,7 +380,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
               <form action={logoutAction}>
                 <button
                   type="submit"
-                  className="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-rose-400 rounded-xl transition-all"
+                  className="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-rose-400 rounded-xl transition-all border border-transparent hover:border-slate-800"
                 >
                   <LogOut className="mr-3 h-5 w-5" />
                   Keluar

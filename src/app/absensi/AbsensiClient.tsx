@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { saveAttendanceAction, getAttendanceAction } from "@/app/actions/attendance";
-import { AlertCircle, CheckCircle, Keyboard, Save, Search } from "lucide-react";
+import { AlertCircle, CalendarCheck, CheckCircle, Keyboard, Save, Search } from "lucide-react";
 
 interface Siswa {
   id: string;
@@ -263,7 +263,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="block w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm cursor-pointer"
+            className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm cursor-pointer"
           />
         </div>
 
@@ -318,12 +318,12 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
 
       {/* Main Student Roster Grid */}
       {holidayInfo.isHoliday ? (
-        <div className="bg-slate-950/80 border border-slate-900 rounded-2xl p-8 text-center space-y-4 max-w-xl mx-auto my-10 shadow-2xl backdrop-blur-xl animate-fade-in font-sans">
-          <div className="inline-flex w-16 h-16 items-center justify-center rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-2xl">
-            📅
+        <div className="bg-slate-900/40 border border-amber-500/20 rounded-xl p-6 text-center space-y-4 max-w-xl mx-auto my-10 animate-fade-in font-sans">
+          <div className="inline-flex w-12 h-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <CalendarCheck className="w-6 h-6" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-lg font-bold text-white uppercase tracking-wider">Hari Libur Terdeteksi</h3>
+            <h3 className="text-base font-bold text-white">Hari Libur Terdeteksi</h3>
             <p className="text-slate-400 text-sm leading-relaxed">
               Anda tidak dapat mencatat atau mengubah absensi harian pada tanggal ini karena merupakan:
             </p>
@@ -351,7 +351,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
           {/* 2-Column Layout: Table + Recap Sidebar */}
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4">
             {/* Left: Attendance Table */}
-            <div className="bg-slate-900/20 border border-slate-900 rounded-xl overflow-hidden shadow-xl">
+            <div className="bg-slate-900/40 border border-slate-900 rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-900">
                   <thead className="bg-slate-900/50">
@@ -422,7 +422,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
                                       setStatus(student.id, s);
                                       setFocusedIndex(index);
                                     }}
-                                    className={`w-10 h-9 rounded-lg text-sm border flex items-center justify-center transition-all ${
+                                    className={`w-10 h-9 rounded-xl text-sm border flex items-center justify-center transition-all ${
                                       isActive ? activeColors[s] : inactiveColors[s]
                                     } ${isReadOnly ? "opacity-60 cursor-not-allowed" : ""}`}
                                   >
@@ -441,7 +441,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
             </div>
 
             {/* Right: Recap Sidebar - Siswa Tidak Hadir */}
-            <div className="bg-slate-900/30 border border-slate-900 rounded-xl p-4 space-y-4 h-fit xl:sticky xl:top-4">
+            <div className="bg-slate-900/40 border border-slate-900 rounded-xl p-6 space-y-4 h-fit xl:sticky xl:top-4">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-amber-400" />
                 Rekap Tidak Hadir

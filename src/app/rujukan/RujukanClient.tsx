@@ -174,14 +174,14 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
   return (
     <div className="space-y-6">
       {actionError && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-2xl flex items-start gap-3">
+        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <span>{actionError}</span>
         </div>
       )}
 
       {actionSuccess && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm rounded-2xl flex items-start gap-3">
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm rounded-xl flex items-start gap-3">
           <Check className="w-5 h-5 shrink-0 mt-0.5" />
           <span>{actionSuccess}</span>
         </div>
@@ -210,7 +210,7 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
                     setSelectedClassId(e.target.value);
                     setSelectedStudentId("");
                   }}
-                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="block w-full px-3 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">-- Pilih Kelas --</option>
                   {classes.map((c) => (
@@ -227,7 +227,7 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
                   value={selectedStudentId}
                   disabled={!selectedClassId}
                   onChange={(e) => setSelectedStudentId(e.target.value)}
-                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                  className="block w-full px-3 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                 >
                   <option value="">-- Pilih Siswa --</option>
                   {classStudents.map((s) => (
@@ -243,7 +243,7 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="block w-full px-3 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="PERILAKU">Perilaku / Sikap Terganggu</option>
                   <option value="AKADEMIS">Akademis / Penurunan Nilai Drastis</option>
@@ -260,14 +260,14 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
                   placeholder="Deskripsikan secara detail perilaku atau tanda-tanda yang Anda observasi pada siswa ini..."
-                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="block w-full px-3 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-xs font-bold text-white rounded-xl transition-all cursor-pointer shadow-lg shadow-indigo-600/10"
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-400 hover:bg-emerald-300 disabled:bg-emerald-800 text-xs font-bold text-emerald-950 rounded-xl transition-all cursor-pointer"
               >
                 <Send className="w-4 h-4" />
                 Kirim Rujukan
@@ -324,14 +324,14 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
             <table className="min-w-full divide-y divide-slate-800">
               <thead>
                 <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="pb-3 w-10">No</th>
-                  <th className="pb-3 w-32">Siswa</th>
-                  <th className="pb-3 w-20">Kelas</th>
-                  <th className="pb-3 w-32">Kategori</th>
-                  <th className="pb-3">Deskripsi Masalah / Observasi</th>
-                  {isBKOrWaka && <th className="pb-3 w-28">Pelapor</th>}
-                  <th className="pb-3 w-24 text-center">Status</th>
-                  {isBKOrWaka && <th className="pb-3 w-20 text-right">Aksi</th>}
+                  <th className="pb-3 px-3 w-10">No</th>
+                  <th className="pb-3 px-3 w-32">Siswa</th>
+                  <th className="pb-3 px-3 w-20">Kelas</th>
+                  <th className="pb-3 px-3 w-32">Kategori</th>
+                  <th className="pb-3 px-3">Deskripsi Masalah / Observasi</th>
+                  {isBKOrWaka && <th className="pb-3 px-3 w-28">Pelapor</th>}
+                  <th className="pb-3 px-3 w-24 text-center">Status</th>
+                  {isBKOrWaka && <th className="pb-3 px-3 w-20 text-right">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">

@@ -509,7 +509,7 @@ export default function ViolationClient({ user, classes, categories, initialHist
                         </div>
                         <div className="flex items-center gap-1.5">
                           {item.isCensored && (
-                            <span className="inline-flex items-center gap-1 text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider">
+                            <span className="inline-flex items-center gap-1 text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-semibold uppercase tracking-wider">
                               Disensor
                             </span>
                           )}

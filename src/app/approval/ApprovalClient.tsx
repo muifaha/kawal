@@ -274,7 +274,7 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 h-[650px] items-stretch">
         
         {/* Left Side: Inbox List (40% width) */}
-        <div className="lg:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-4 flex flex-col h-full overflow-hidden">
+        <div className="lg:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 flex flex-col h-full overflow-hidden">
           
           {/* List Toolbar */}
           <div className="flex items-center justify-between pb-4 border-b border-slate-900 mb-4 gap-2">
@@ -292,7 +292,7 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
               <button
                 onClick={handleBulkApprove}
                 disabled={isPending}
-                className="flex items-center gap-1.5 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                className="flex items-center gap-1.5 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
               >
                 <CheckSquare className="w-3.5 h-3.5" />
                 ACC Terpilih ({bulkSelection.length})
@@ -480,7 +480,7 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
                             }
                             setShowEditViolationDropdown(false);
                           }}
-                          className="px-3 py-1.5 border border-slate-800 text-slate-400 hover:text-white rounded-lg text-xs transition-colors"
+                          className="px-3 py-1.5 border border-slate-800 text-slate-400 hover:text-white rounded-xl text-xs transition-colors"
                         >
                           Batal
                         </button>
@@ -488,7 +488,7 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
                           type="button"
                           onClick={handleSaveEdit}
                           disabled={isPending}
-                          className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-450 disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-all"
+                          className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-450 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition-all"
                         >
                           Simpan
                         </button>
@@ -577,7 +577,7 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
                 <button
                   onClick={() => handleReject(activeReport.id)}
                   disabled={isPending || isEditing}
-                  className="flex-1 py-3 px-4 border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 active:scale-98"
+                  className="flex-1 py-3 px-4 border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 rounded-xl text-sm font-bold transition-all disabled:opacity-50 active:scale-98"
                 >
                   Tolak Laporan
                 </button>

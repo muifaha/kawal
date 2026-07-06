@@ -339,7 +339,7 @@ export default function PenangananClient({ user, students, initialLogs, classes 
                           <select
                             value={selectValue}
                             onChange={(e) => handleCaseSelection(e.target.value)}
-                            className="block w-full py-2 px-2.5 border border-slate-800 rounded-lg bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs cursor-pointer font-sans"
+                            className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs cursor-pointer font-sans"
                           >
                             <option value="kustom">Masalah Lain / Kustom (Tulis Manual)</option>
 
@@ -461,7 +461,7 @@ export default function PenangananClient({ user, students, initialLogs, classes 
         <div className={`bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl ${isBK ? "lg:col-span-2" : "col-span-1"} space-y-6`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <FileText className="w-5 h-5 text-indigo-400" />
+              <FileText className="w-5 h-5 text-emerald-400" />
               Log Riwayat Penanganan Siswa
             </h3>
 

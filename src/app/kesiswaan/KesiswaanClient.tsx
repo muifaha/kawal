@@ -565,7 +565,7 @@ export default function KesiswaanClient({
   const importButton = (type: TabType) => (
     <button
       onClick={() => openImportModal(type)}
-      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-300 transition-all shadow"
+      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-300 transition-all shadow"
     >
       <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
       Impor Excel
@@ -590,7 +590,7 @@ export default function KesiswaanClient({
               setPageSize(Number(e.target.value));
               setCurrentPage(1);
             }}
-            className="py-1 px-2 border border-slate-800 rounded-lg bg-slate-950 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer text-xs"
+            className="py-1 px-2 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer text-xs"
           >
             <option value={50}>50 Baris</option>
             <option value={100}>100 Baris</option>
@@ -615,7 +615,7 @@ export default function KesiswaanClient({
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer font-semibold"
+              className="px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer font-semibold"
             >
               Sebelumnya
             </button>
@@ -625,7 +625,7 @@ export default function KesiswaanClient({
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer font-semibold"
+              className="px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer font-semibold"
             >
               Selanjutnya
             </button>

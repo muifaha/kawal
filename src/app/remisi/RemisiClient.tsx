@@ -321,7 +321,7 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
                         className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                           item.jenis === "OTOMATIS"
                             ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
-                            : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            : "bg-sky-500/10 text-sky-400 border-sky-500/20"
                         }`}
                       >
                         {item.jenis === "OTOMATIS" ? "OTOMATIS" : "KONDISIONAL"}
