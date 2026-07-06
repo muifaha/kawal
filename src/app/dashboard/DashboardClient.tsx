@@ -1200,7 +1200,7 @@ export default function DashboardClient({
               : "border-transparent text-slate-400 hover:text-white"
           }`}
         >
-          Ringkasan & Statistik
+          Ringkasan
         </button>
         {isWakaOrBKOrWalas && (
           <>
@@ -1216,7 +1216,7 @@ export default function DashboardClient({
                   : "border-transparent text-slate-400 hover:text-white"
               }`}
             >
-              Rekap Absensi Siswa
+              Rekap Absensi
             </button>
             <button
               onClick={() => {
@@ -1230,7 +1230,7 @@ export default function DashboardClient({
                   : "border-transparent text-slate-400 hover:text-white"
               }`}
             >
-              Rekap Pelanggaran Siswa
+              Rekap Pelanggaran
             </button>
           </>
         )}

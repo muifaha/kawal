@@ -1816,6 +1816,7 @@ export default function KesiswaanClient({
                   <option value="WALAS">Wali Kelas (Walas)</option>
                   <option value="BK">Guru BK (Super Admin/Approver)</option>
                   <option value="WAKA">Waka Kesiswaan (Master Admin)</option>
+                  <option value="OSIS">Pengurus OSIS (Lapor Poin Upacara)</option>
                 </select>
               </div>
               <div>

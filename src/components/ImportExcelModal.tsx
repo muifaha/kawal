@@ -49,7 +49,7 @@ export default function ImportExcelModal({
         return {
           filename: "template_guru.xlsx",
           headers: [
-            ["NIP", "Username", "Password", "Nama Lengkap", "Role (WAKA/BK/WALAS/GURU)", "No WhatsApp"],
+            ["NIP", "Username", "Password", "Nama Lengkap", "Role (WAKA/BK/WALAS/GURU/OSIS)", "No WhatsApp"],
             ["198501012010121001", "budi_walas", "walas123", "Budi Harjo, S.Kom", "WALAS", "+628123456789"],
             ["199004052015012002", "ani_bk", "bk123", "Ani Lestari, S.Pd", "BK", "+628123456780"],
           ],

@@ -12,6 +12,7 @@ enum Role {
   BK
   WALAS
   GURU
+  OSIS
 }
 
 enum AttendanceStatus {

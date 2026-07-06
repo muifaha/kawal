@@ -26,6 +26,7 @@ async function main() {
   const hashBK = await bcrypt.hash("admin123", 10);
   const hashWalas = await bcrypt.hash("walas123", 10);
   const hashGuru = await bcrypt.hash("guru123", 10);
+  const hashOsis = await bcrypt.hash("osis123", 10);
 
   // 3. Create Users
   const userWaka = await prisma.user.create({
@@ -66,6 +67,15 @@ async function main() {
       passwordHash: hashGuru,
       nama: "Joko Susilo, S.Pd. (Guru Mapel)",
       role: Role.GURU,
+    },
+  });
+
+  const userOsis = await prisma.user.create({
+    data: {
+      username: "osis_siswa",
+      passwordHash: hashOsis,
+      nama: "Rian Hidayat (Ketua OSIS)",
+      role: Role.OSIS,
     },
   });
 
@@ -150,6 +160,8 @@ async function main() {
       { kategoriId: katKedisiplinan.id, nama: "Terlambat masuk kelas", poin: 5 },
       { kategoriId: katKedisiplinan.id, nama: "Membolos jam pelajaran", poin: 15 },
       { kategoriId: katKedisiplinan.id, nama: "Meninggalkan sekolah tanpa izin", poin: 20 },
+      { kategoriId: katKedisiplinan.id, nama: "Terlambat mengikuti upacara bendera", poin: 10 },
+      { kategoriId: katKedisiplinan.id, nama: "Tidak memakai atribut upacara lengkap", poin: 5 },
     ],
   });
 

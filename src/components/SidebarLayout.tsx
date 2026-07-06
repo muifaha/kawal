@@ -100,7 +100,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       name: "Dashboard",
       href: "/dashboard",
       icon: LayoutDashboard,
-      roles: ["WAKA", "BK", "WALAS", "GURU"],
+      roles: ["WAKA", "BK", "WALAS", "GURU", "OSIS"],
     },
     {
       name: "Absensi Harian",
@@ -111,12 +111,12 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
     {
       name: "Pelanggaran",
       icon: AlertTriangle,
-      roles: ["BK", "WALAS", "GURU", "WAKA"],
+      roles: ["BK", "WALAS", "GURU", "WAKA", "OSIS"],
       children: [
         {
           name: "Tambah Pelanggaran",
           href: "/pelanggaran",
-          roles: ["BK", "WALAS", "GURU"],
+          roles: ["BK", "WALAS", "GURU", "OSIS"],
         },
         {
           name: "Persetujuan Pelanggaran",
@@ -186,6 +186,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
     BK: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
     WALAS: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
     GURU: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+    OSIS: "bg-sky-500/10 text-sky-400 border-sky-500/20",
   };
 
   return (

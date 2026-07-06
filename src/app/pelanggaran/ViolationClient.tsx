@@ -76,9 +76,23 @@ export default function ViolationClient({ user, classes, categories, initialHist
     );
   }, [classes]);
 
+  // Filter categories for OSIS (only allow upacara related items)
+  const filteredCategories = React.useMemo(() => {
+    if (user.role !== "OSIS") return categories;
+    return categories
+      .map((cat) => {
+        const matchingDetails = cat.details.filter((det) =>
+          det.nama.toLowerCase().includes("upacara") ||
+          cat.nama.toLowerCase().includes("upacara")
+        );
+        return { ...cat, details: matchingDetails };
+      })
+      .filter((cat) => cat.details.length > 0);
+  }, [categories, user.role]);
+
   // Flatten all violations for keyword autocomplete
   const allViolations = React.useMemo(() => {
-    return categories.flatMap((cat) =>
+    return filteredCategories.flatMap((cat) =>
       cat.details.map((d) => ({
         id: d.id,
         nama: d.nama,
@@ -87,7 +101,7 @@ export default function ViolationClient({ user, classes, categories, initialHist
         searchString: `${cat.nama} ${d.nama} ${d.poin}`.toLowerCase(),
       }))
     );
-  }, [categories]);
+  }, [filteredCategories]);
 
   const [selectedStudents, setSelectedStudents] = useState<Array<{ id: string; nama: string; kelasNama: string; nis: string }>>([]);
   const [studentSearch, setStudentSearch] = useState("");

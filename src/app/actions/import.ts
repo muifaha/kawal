@@ -56,8 +56,8 @@ export async function importUsersAction(rows: UserImportRow[]) {
 
       // Validasi Role
       const cleanRole = role.trim().toUpperCase();
-      if (!["WAKA", "BK", "WALAS", "GURU"].includes(cleanRole)) {
-        return { error: `Role "${role}" tidak valid. Gunakan salah satu dari: WAKA, BK, WALAS, GURU.` };
+      if (!["WAKA", "BK", "WALAS", "GURU", "OSIS"].includes(cleanRole)) {
+        return { error: `Role "${role}" tidak valid. Gunakan salah satu dari: WAKA, BK, WALAS, GURU, OSIS.` };
       }
 
       // Check duplicate username in db

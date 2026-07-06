@@ -28,6 +28,23 @@ export async function reportViolationAction(
   }
 
   try {
+    // Constraint check for OSIS role
+    if (user.role === "OSIS") {
+      const violationDetail = await prisma.detailPelanggaran.findUnique({
+        where: { id: violationDetailId },
+        include: { kategori: true },
+      });
+      if (!violationDetail) {
+        return { error: "Jenis pelanggaran tidak ditemukan." };
+      }
+      const isUpacara =
+        violationDetail.nama.toLowerCase().includes("upacara") ||
+        violationDetail.kategori.nama.toLowerCase().includes("upacara");
+      if (!isUpacara) {
+        return { error: "OSIS hanya diperbolehkan melaporkan poin terkait upacara." };
+      }
+    }
+
     // 1. Proses upload file bukti jika ada
     let uploadedBukti: string[] = [];
     if (filesFormData) {
