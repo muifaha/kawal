@@ -993,27 +993,30 @@ export async function saveSettingsAction(formData: FormData) {
     const wakaName = formData.get("waka_name") as string;
     const wakaNip = formData.get("waka_nip") as string;
 
-    if (!threshold1 || !threshold2 || !threshold3) {
-      return { error: "Semua batas poin wajib diisi." };
-    }
+    const updates = [];
 
-    const updates = [
-      prisma.appSetting.upsert({
-        where: { key: "threshold_1" },
-        update: { value: threshold1 },
-        create: { key: "threshold_1", value: threshold1 },
-      }),
-      prisma.appSetting.upsert({
-        where: { key: "threshold_2" },
-        update: { value: threshold2 },
-        create: { key: "threshold_2", value: threshold2 },
-      }),
-      prisma.appSetting.upsert({
-        where: { key: "threshold_3" },
-        update: { value: threshold3 },
-        create: { key: "threshold_3", value: threshold3 },
-      }),
-    ];
+    if (threshold1 || threshold2 || threshold3) {
+      if (!threshold1 || !threshold2 || !threshold3) {
+        return { error: "Semua batas poin wajib diisi." };
+      }
+      updates.push(
+        prisma.appSetting.upsert({
+          where: { key: "threshold_1" },
+          update: { value: threshold1 },
+          create: { key: "threshold_1", value: threshold1 },
+        }),
+        prisma.appSetting.upsert({
+          where: { key: "threshold_2" },
+          update: { value: threshold2 },
+          create: { key: "threshold_2", value: threshold2 },
+        }),
+        prisma.appSetting.upsert({
+          where: { key: "threshold_3" },
+          update: { value: threshold3 },
+          create: { key: "threshold_3", value: threshold3 },
+        })
+      );
+    }
 
     if (schoolName !== null) {
       updates.push(

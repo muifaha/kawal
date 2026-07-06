@@ -50,6 +50,7 @@ import {
   X,
   GraduationCap,
   Sliders,
+  Building,
 } from "lucide-react";
 
 interface UserType {
@@ -146,7 +147,7 @@ interface KesiswaanClientProps {
   wakaUser?: { nama: string; nip: string | null } | null;
 }
 
-type TabType = "users" | "classes" | "students" | "violations" | "remissions" | "holidays" | "tahun_ajaran" | "settings";
+type TabType = "users" | "classes" | "students" | "violations" | "remissions" | "holidays" | "tahun_ajaran" | "settings" | "identity";
 
 export default function KesiswaanClient({
   initialUsers,
@@ -619,6 +620,10 @@ export default function KesiswaanClient({
         <button onClick={() => handleTabChange("settings")} className={tabClass("settings")}>
           <Sliders className="w-4 h-4" />
           Batas Pemanggilan
+        </button>
+        <button onClick={() => handleTabChange("identity")} className={tabClass("identity")}>
+          <Building className="w-4 h-4" />
+          Identitas & Kop Instansi
         </button>
       </div>
 
@@ -1425,7 +1430,7 @@ export default function KesiswaanClient({
           <p className="text-xs text-slate-400 mb-6">
             Batas nilai akumulasi poin pelanggaran siswa yang akan memicu surat peringatan dan pemanggilan orang tua di Dashboard BK dan Waka Kesiswaan.
           </p>
-          <form onSubmit={handleSaveSettings} encType="multipart/form-data" className="space-y-6">
+          <form onSubmit={handleSaveSettings} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
@@ -1436,7 +1441,7 @@ export default function KesiswaanClient({
                   name="threshold_1"
                   type="number"
                   defaultValue={settings.threshold_1 || "25"}
-                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
                 />
               </div>
               <div>
@@ -1448,7 +1453,7 @@ export default function KesiswaanClient({
                   name="threshold_2"
                   type="number"
                   defaultValue={settings.threshold_2 || "50"}
-                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
                 />
               </div>
               <div>
@@ -1460,15 +1465,33 @@ export default function KesiswaanClient({
                   name="threshold_3"
                   type="number"
                   defaultValue={settings.threshold_3 || "75"}
-                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
                 />
               </div>
             </div>
             
-            <hr className="border-slate-800 my-6" />
-            
-            <h3 className="text-lg font-bold text-white mb-4 tracking-tight">Identitas & Kop Surat Instansi</h3>
-            
+            <button
+              type="submit"
+              disabled={isPending}
+              className="bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 px-6 py-2.5 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-98 cursor-pointer animate-fade-in text-xs"
+            >
+              {isPending ? "Menyimpan..." : "Simpan Pengaturan"}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* -------------------- TAB 9: IDENTITY -------------------- */}
+      {activeTab === "identity" && (
+        <div className="max-w-2xl bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl animate-fade-in">
+          <h3 className="text-lg font-bold text-white mb-4 tracking-tight flex items-center gap-2">
+            <Building className="w-5 h-5 text-emerald-400" />
+            Identitas & Kop Surat Instansi
+          </h3>
+          <p className="text-xs text-slate-400 mb-6">
+            Konfigurasi nama instansi sekolah, logo resmi, nama penanggung jawab kesiswaan, dan letterhead/kop surat untuk dokumen resmi.
+          </p>
+          <form onSubmit={handleSaveSettings} encType="multipart/form-data" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
@@ -1583,7 +1606,7 @@ export default function KesiswaanClient({
             <button
               type="submit"
               disabled={isPending}
-              className="bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 px-6 py-2.5 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-98 cursor-pointer animate-fade-in"
+              className="bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 px-6 py-2.5 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-98 cursor-pointer animate-fade-in text-xs"
             >
               {isPending ? "Menyimpan..." : "Simpan Pengaturan"}
             </button>
