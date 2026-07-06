@@ -329,15 +329,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 px-1 gap-2">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <span className="font-semibold text-slate-300">Keterangan Kehadiran:</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>Hadir (H)</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500"></span>Sakit (S)</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-sky-500"></span>Izin (I)</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span>Alpha (A)</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-500"></span>Dispensasi (D)</span>
-            </div>
+          <div className="flex flex-wrap items-center justify-end text-xs text-slate-400 px-1 gap-2">
             <div className="text-slate-500 font-medium">
               Total: {students.length} Siswa {searchQuery && `(${filteredStudents.length} ditemukan)`}
             </div>
@@ -577,12 +569,12 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
               {isSaving ? (
                 <span className="flex items-center gap-2">
                   <span className="w-4 h-4 border-2 border-slate-950/20 border-t-slate-950 rounded-full animate-spin"></span>
-                  Menyimpan Absensi...
+                  {hasExistingRecords ? "Memperbaharui Kehadiran..." : "Menyimpan Kehadiran..."}
                 </span>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  <span>Simpan Absensi</span>
+                  <span>{hasExistingRecords ? "Perbaharui Kehadiran" : "Simpan Kehadiran"}</span>
                 </>
               )}
             </button>
