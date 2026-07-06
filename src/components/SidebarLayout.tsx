@@ -32,19 +32,31 @@ interface SidebarLayoutProps {
   };
 }
 
+let cachedSettings: { schoolName: string; schoolLogo: string } | null = null;
+
 export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [schoolName, setSchoolName] = useState("KAWAL");
-  const [schoolLogo, setSchoolLogo] = useState("");
+  const [schoolName, setSchoolName] = useState(() => cachedSettings?.schoolName || "KAWAL");
+  const [schoolLogo, setSchoolLogo] = useState(() => cachedSettings?.schoolLogo || "");
 
   useEffect(() => {
+    const localName = localStorage.getItem("cachedSchoolName");
+    const localLogo = localStorage.getItem("cachedSchoolLogo");
+    if (localName && !cachedSettings) setSchoolName(localName);
+    if (localLogo && !cachedSettings) setSchoolLogo(localLogo);
+
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
-        if (data.schoolName) setSchoolName(data.schoolName);
-        if (data.schoolLogo) setSchoolLogo(data.schoolLogo);
+        const name = data.schoolName || "KAWAL";
+        const logo = data.schoolLogo || "";
+        cachedSettings = { schoolName: name, schoolLogo: logo };
+        localStorage.setItem("cachedSchoolName", name);
+        localStorage.setItem("cachedSchoolLogo", logo);
+        setSchoolName(name);
+        setSchoolLogo(logo);
       })
       .catch((err) => console.error("Error fetching settings:", err));
   }, []);
