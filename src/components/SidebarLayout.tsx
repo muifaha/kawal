@@ -71,7 +71,19 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
     }
   };
 
-  const navigation = [
+  interface NavigationItem {
+    name: string;
+    href?: string;
+    icon?: any;
+    roles: string[];
+    children?: {
+      name: string;
+      href: string;
+      roles: string[];
+    }[];
+  }
+
+  const navigation: NavigationItem[] = [
     {
       name: "Dashboard",
       href: "/dashboard",
@@ -85,40 +97,48 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       roles: ["BK"],
     },
     {
-      name: "Pelanggaran Siswa",
-      href: "/pelanggaran",
+      name: "Pelanggaran",
       icon: AlertTriangle,
-      roles: ["BK", "WALAS", "GURU"],
-    },
-    {
-      name: "Persetujuan Pelanggaran",
-      href: "/approval",
-      icon: CheckSquare,
-      roles: ["BK"],
-    },
-    {
-      name: "Remisi Poin",
-      href: "/remisi",
-      icon: Sparkles,
-      roles: ["BK"],
-    },
-    {
-      name: "Penanganan Siswa",
-      href: "/penanganan",
-      icon: ClipboardList,
-      roles: ["BK", "WAKA"],
-    },
-    {
-      name: "Rujukan BK",
-      href: "/rujukan",
-      icon: UserPlus,
-      roles: ["BK", "WAKA", "WALAS", "GURU"],
+      roles: ["BK", "WALAS", "GURU", "WAKA"],
+      children: [
+        {
+          name: "Tambah Pelanggaran",
+          href: "/pelanggaran",
+          roles: ["BK", "WALAS", "GURU"],
+        },
+        {
+          name: "Persetujuan Pelanggaran",
+          href: "/approval",
+          roles: ["BK"],
+        },
+        {
+          name: "Penanganan Siswa",
+          href: "/penanganan",
+          roles: ["BK", "WAKA"],
+        },
+        {
+          name: "Remisi Poin",
+          href: "/remisi",
+          roles: ["BK"],
+        },
+      ],
     },
     {
       name: "Bimbingan Konseling",
-      href: "/bimbingan",
       icon: HeartHandshake,
-      roles: ["BK", "WAKA", "WALAS"],
+      roles: ["BK", "WAKA", "WALAS", "GURU"],
+      children: [
+        {
+          name: "Catatan BK",
+          href: "/bimbingan",
+          roles: ["BK", "WAKA", "WALAS"],
+        },
+        {
+          name: "Rujukan BK",
+          href: "/rujukan",
+          roles: ["BK", "WAKA", "WALAS", "GURU"],
+        },
+      ],
     },
     {
       name: "Jadwal & Jurnal",
@@ -134,7 +154,20 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
     },
   ];
 
-  const filteredNavigation = navigation.filter((item) => item.roles.includes(user.role));
+  const filteredNavigation = navigation
+    .map((item) => {
+      if (item.children) {
+        const children = item.children.filter((child) => child.roles.includes(user.role));
+        return { ...item, children };
+      }
+      return item;
+    })
+    .filter((item) => {
+      if (item.children) {
+        return item.children.length > 0;
+      }
+      return item.roles.includes(user.role);
+    });
 
   const roleColors: Record<string, string> = {
     WAKA: "bg-orange-500/10 text-orange-400 border-orange-500/20",
@@ -174,12 +207,41 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
           {/* Navigation Links */}
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
             {filteredNavigation.map((item) => {
+              if (item.children) {
+                const Icon = item.icon;
+                return (
+                  <div key={item.name} className="space-y-1 py-1.5 animate-fade-in">
+                    <div className="flex items-center px-4 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider gap-3">
+                      <Icon className="h-4 w-4 shrink-0 text-slate-500" />
+                      <span>{item.name}</span>
+                    </div>
+                    <div className="pl-4 space-y-1 border-l border-slate-800 ml-6">
+                      {item.children.map((child) => {
+                        const isChildActive = pathname === child.href;
+                        return (
+                          <Link
+                            key={child.name}
+                            href={child.href}
+                            className={`group flex items-center px-3 py-2 text-xs font-medium rounded-xl transition-all duration-200 ${
+                              isChildActive
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/10"
+                                : "text-slate-400 hover:bg-slate-900/40 hover:text-white border border-transparent"
+                            }`}
+                          >
+                            {child.name}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
               const isActive = pathname === item.href;
               const Icon = item.icon;
               return (
                 <Link
                   key={item.name}
-                  href={item.href}
+                  href={item.href!}
                   className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                     isActive
                       ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/10"
@@ -253,12 +315,42 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
             {/* Nav */}
             <nav className="flex-1 py-6 space-y-1 overflow-y-auto">
               {filteredNavigation.map((item) => {
+                if (item.children) {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.name} className="space-y-1 py-1.5 animate-fade-in">
+                      <div className="flex items-center px-4 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider gap-3">
+                        <Icon className="h-4 w-4 shrink-0 text-slate-500" />
+                        <span>{item.name}</span>
+                      </div>
+                      <div className="pl-4 space-y-1 border-l border-slate-800 ml-6">
+                        {item.children.map((child) => {
+                          const isChildActive = pathname === child.href;
+                          return (
+                            <Link
+                              key={child.name}
+                              href={child.href}
+                              onClick={() => setIsMobileOpen(false)}
+                              className={`group flex items-center px-3 py-2 text-xs font-medium rounded-xl transition-all duration-200 ${
+                                isChildActive
+                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/10"
+                                  : "text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent"
+                              }`}
+                            >
+                              {child.name}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.name}
-                    href={item.href}
+                    href={item.href!}
                     onClick={() => setIsMobileOpen(false)}
                     className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all ${
                       isActive ? "bg-emerald-500/10 text-emerald-400" : "text-slate-400 hover:bg-slate-800"
