@@ -377,6 +377,10 @@ export default function DashboardClient({
   const [sortField, setSortField] = useState<string>("nama");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
+  // Show all toggle states for dashboard tables
+  const [showAllSummons, setShowAllSummons] = useState(false);
+  const [showAllHighRisk, setShowAllHighRisk] = useState(false);
+
   const handleSort = (field: string) => {
     if (sortField === field) {
       setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
@@ -1360,7 +1364,7 @@ export default function DashboardClient({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800/60">
-                          {summonsList.map((summons) => (
+                          {(showAllSummons ? summonsList : summonsList.slice(0, 10)).map((summons) => (
                             <tr key={summons.id} className="text-sm">
                               <td className="py-4">
                                 <button
@@ -1438,6 +1442,16 @@ export default function DashboardClient({
                       </table>
                     </div>
                   )}
+                  {summonsList.length > 10 && (
+                    <div className="text-center pt-4 border-t border-slate-800/60 mt-4">
+                      <button
+                        onClick={() => setShowAllSummons(!showAllSummons)}
+                        className="text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                      >
+                        {showAllSummons ? "Tampilkan Lebih Sedikit (Maks 10)" : `Lihat Semua (${summonsList.length} Siswa) »`}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1501,7 +1515,7 @@ export default function DashboardClient({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800/60">
-                        {highRiskStudents.map((student) => (
+                        {(showAllHighRisk ? highRiskStudents : highRiskStudents.slice(0, 10)).map((student) => (
                           <tr key={student.studentId} className="text-sm">
                             <td className="py-4">
                               <div className="font-semibold text-white">{student.nama}</div>
@@ -1551,6 +1565,16 @@ export default function DashboardClient({
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                )}
+                {highRiskStudents.length > 10 && (
+                  <div className="text-center pt-4 border-t border-slate-800/60 mt-4">
+                    <button
+                      onClick={() => setShowAllHighRisk(!showAllHighRisk)}
+                      className="text-xs font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
+                    >
+                      {showAllHighRisk ? "Tampilkan Lebih Sedikit (Maks 10)" : `Lihat Semua (${highRiskStudents.length} Siswa) »`}
+                    </button>
                   </div>
                 )}
               </div>
