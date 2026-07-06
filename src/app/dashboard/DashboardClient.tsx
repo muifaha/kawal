@@ -27,6 +27,9 @@ import {
   User,
   UserPlus,
   Check,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { resolveSummonsAction } from "@/app/actions/kesiswaan";
 import { printSingleSummons, printBulkSummons } from "@/lib/printUtils";
@@ -370,6 +373,23 @@ export default function DashboardClient({
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
+  // Sort states and handler for cumulative attendance recap
+  const [sortField, setSortField] = useState<string>("nama");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      if (field === "nama" || field === "kelasNama") {
+        setSortDirection("asc");
+      } else {
+        setSortDirection("desc");
+      }
+    }
+  };
+
   const isWakaOrBK = user.role === "WAKA" || user.role === "BK";
   const isWakaOrBKOrWalas = user.role === "WAKA" || user.role === "BK" || user.role === "WALAS";
 
@@ -402,6 +422,34 @@ export default function DashboardClient({
       return matchSearch && matchClass;
     });
   }, [attendanceRecap, searchQuery, selectedClassId]);
+
+  // Sorted Attendance Recap (for Cumulative Semester view)
+  const sortedAttendance = useMemo(() => {
+    const sorted = [...filteredAttendance];
+    sorted.sort((a, b) => {
+      let valA: any = a[sortField as keyof AttendanceRecapItem];
+      let valB: any = b[sortField as keyof AttendanceRecapItem];
+
+      if (sortField === "rate") {
+        valA = a.totalHari > 0 ? (a.H / a.totalHari) * 100 : 100;
+        valB = b.totalHari > 0 ? (b.H / b.totalHari) * 100 : 100;
+      }
+
+      if (valA === undefined) valA = "";
+      if (valB === undefined) valB = "";
+
+      if (typeof valA === "string" && typeof valB === "string") {
+        return sortDirection === "asc"
+          ? valA.localeCompare(valB, "id")
+          : valB.localeCompare(valA, "id");
+      } else {
+        return sortDirection === "asc"
+          ? (valA as number) - (valB as number)
+          : (valB as number) - (valA as number);
+      }
+    });
+    return sorted;
+  }, [filteredAttendance, sortField, sortDirection]);
 
   // Map of studentId -> dateString -> status
   const attendanceMatrix = useMemo(() => {
@@ -1716,27 +1764,123 @@ export default function DashboardClient({
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-800">
                 <thead>
-                  <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider select-none">
                     <th className="pb-3 w-12">No</th>
-                    <th className="pb-3">Siswa</th>
-                    <th className="pb-3">Kelas</th>
-                    <th className="pb-3 text-center w-20">Hadir</th>
-                    <th className="pb-3 text-center w-20">Sakit</th>
-                    <th className="pb-3 text-center w-20">Izin</th>
-                    <th className="pb-3 text-center w-20">Alpha</th>
-                    <th className="pb-3 text-center w-20">Disp</th>
-                    <th className="pb-3 text-center w-32">Persentase</th>
+                    <th
+                      onClick={() => handleSort("nama")}
+                      className="pb-3 cursor-pointer hover:text-white transition-all w-[30%]"
+                    >
+                      <div className="flex items-center gap-1">
+                        Siswa
+                        {sortField === "nama" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("kelasNama")}
+                      className="pb-3 cursor-pointer hover:text-white transition-all w-[15%]"
+                    >
+                      <div className="flex items-center gap-1">
+                        Kelas
+                        {sortField === "kelasNama" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("H")}
+                      className="pb-3 cursor-pointer hover:text-white transition-all text-center w-20"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Hadir
+                        {sortField === "H" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("S")}
+                      className="pb-3 cursor-pointer hover:text-white transition-all text-center w-20"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Sakit
+                        {sortField === "S" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("I")}
+                      className="pb-3 cursor-pointer hover:text-white transition-all text-center w-20"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Izin
+                        {sortField === "I" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("A")}
+                      className="pb-3 cursor-pointer hover:text-white transition-all text-center w-20"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Alpha
+                        {sortField === "A" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("D")}
+                      className="pb-3 cursor-pointer hover:text-white transition-all text-center w-20"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Disp
+                        {sortField === "D" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("rate")}
+                      className="pb-3 cursor-pointer hover:text-white transition-all text-center w-32"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Persentase
+                        {sortField === "rate" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
-                  {filteredAttendance.length === 0 ? (
+                  {sortedAttendance.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="text-center py-20 text-slate-500 text-sm">
                         Tidak ada data rekapitulasi absensi siswa.
                       </td>
                     </tr>
                   ) : (
-                    filteredAttendance.map((item, index) => {
+                    sortedAttendance.map((item, index) => {
                       const rate =
                         item.totalHari > 0 ? Math.round((item.H / item.totalHari) * 100) : 100;
                       return (
