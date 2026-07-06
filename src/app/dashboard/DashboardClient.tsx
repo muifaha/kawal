@@ -151,6 +151,8 @@ export interface SummonsItem {
   status: string;
   bkNama?: string | null;
   bkNip?: string | null;
+  type?: "POIN" | "ALFA";
+  alphaCount?: number;
 }
 
 export interface Thresholds {
@@ -1388,7 +1390,7 @@ export default function DashboardClient({
                           <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                             <th className={`pb-3 ${isWakaOrBK ? "w-[34%]" : "w-[50%]"}`}>Siswa</th>
                             <th className="pb-3 w-[15%]">Kelas</th>
-                            <th className="pb-3 w-[15%] text-center">Akumulasi Poin</th>
+                            <th className="pb-3 w-[15%] text-center">Poin / Alfa</th>
                             <th className="pb-3 w-[20%] text-center">Peringatan</th>
                             {isWakaOrBK && <th className="pb-3 text-right">Aksi</th>}
                           </tr>
@@ -1409,12 +1411,14 @@ export default function DashboardClient({
                               <td className="py-4 text-center">
                                 <span
                                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                                    summons.points >= 50
+                                    summons.type === "ALFA"
+                                      ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                                      : summons.points >= 50
                                       ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
                                       : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                                   }`}
                                 >
-                                  {summons.points} Poin
+                                  {summons.type === "ALFA" ? `${summons.alphaCount} Alfa` : `${summons.points} Poin`}
                                 </span>
                               </td>
                               <td className="py-4 text-center">
@@ -1430,10 +1434,22 @@ export default function DashboardClient({
                                   </span>
                                   {/* Policy Action Tooltip */}
                                   <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-3 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-300 shadow-xl z-30 font-medium leading-relaxed">
-                                    <p className="font-bold text-white mb-1">Kebijakan Pemanggilan {summons.level === 3 ? "Ketiga" : summons.level === 2 ? "Kedua" : "Pertama"}</p>
-                                    {summons.level === 1 && <p>Batas awal pembinaan (Teguran I). Bimbingan konseling pertama & penerbitan surat binaan khusus.</p>}
-                                    {summons.level === 2 && <p>Batas pembinaan menengah (Teguran II). Pemanggilan orang tua wajib & penyusunan surat perjanjian tertulis.</p>}
-                                    {summons.level === 3 && <p>Batas pembinaan kritis (Teguran III). Pertemuan berkala komite sekolah, evaluasi status murid & skorsing.</p>}
+                                    <p className="font-bold text-white mb-1">
+                                      Kebijakan Pemanggilan {summons.type === "ALFA" ? "Alfa" : "Poin"} {summons.level === 3 ? "Ketiga" : summons.level === 2 ? "Kedua" : "Pertama"}
+                                    </p>
+                                    {summons.type === "ALFA" ? (
+                                      <>
+                                        {summons.level === 1 && <p>Ketidakhadiran alfa berlebih (Teguran I). Bimbingan konseling pertama & peringatan wali kelas.</p>}
+                                        {summons.level === 2 && <p>Ketidakhadiran alfa kritis (Teguran II). Pemanggilan orang tua ke sekolah & surat perjanjian kehadiran.</p>}
+                                        {summons.level === 3 && <p>Batas ketidakhadiran alfa maksimal (Teguran III). Konferensi kasus dengan kepala sekolah/komite & skorsing.</p>}
+                                      </>
+                                    ) : (
+                                      <>
+                                        {summons.level === 1 && <p>Batas awal pembinaan (Teguran I). Bimbingan konseling pertama & penerbitan surat binaan khusus.</p>}
+                                        {summons.level === 2 && <p>Batas pembinaan menengah (Teguran II). Pemanggilan orang tua wajib & penyusunan surat perjanjian tertulis.</p>}
+                                        {summons.level === 3 && <p>Batas pembinaan kritis (Teguran III). Pertemuan berkala komite sekolah, evaluasi status murid & skorsing.</p>}
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                               </td>

@@ -8,6 +8,8 @@ export interface PrintSummonsData {
   level: number;
   bkNama?: string | null;
   bkNip?: string | null;
+  type?: "POIN" | "ALFA";
+  alphaCount?: number;
 }
 
 export function printSingleSummons(
@@ -186,11 +188,11 @@ export function printSingleSummons(
               <td>:</td>
               <td>${student.kelas}</td>
             </tr>
-            <tr>
-              <td>Akumulasi Poin</td>
-              <td>:</td>
-              <td><strong>${student.points} Poin</strong> (Tingkat Peringatan ${letterLevel})</td>
-            </tr>
+             <tr>
+               <td>${student.type === "ALFA" ? "Jumlah Ketidakhadiran (Alfa)" : "Akumulasi Poin"}</td>
+               <td>:</td>
+               <td><strong>${student.type === "ALFA" ? `${student.alphaCount} Kali Alfa` : `${student.points} Poin`}</strong> (Tingkat Peringatan ${letterLevel})</td>
+             </tr>
           </table>
 
           <p>Untuk hadir berkoordinasi dengan Guru Bimbingan Konseling (BK) sekolah pada:</p>
@@ -440,11 +442,11 @@ export function printBulkSummons(
                       <td>:</td>
                       <td>${student.kelas}</td>
                     </tr>
-                    <tr>
-                      <td>Akumulasi Poin</td>
-                      <td>:</td>
-                      <td><strong>${student.points} Poin</strong> (Tingkat Peringatan ${letterLevel})</td>
-                    </tr>
+                     <tr>
+                       <td>${student.type === "ALFA" ? "Jumlah Ketidakhadiran (Alfa)" : "Akumulasi Poin"}</td>
+                       <td>:</td>
+                       <td><strong>${student.type === "ALFA" ? `${student.alphaCount} Kali Alfa` : `${student.points} Poin`}</strong> (Tingkat Peringatan ${letterLevel})</td>
+                     </tr>
                   </table>
 
                   <p>Untuk hadir berkoordinasi dengan Guru Bimbingan Konseling (BK) sekolah pada:</p>

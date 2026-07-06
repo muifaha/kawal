@@ -987,6 +987,9 @@ export async function saveSettingsAction(formData: FormData) {
     const threshold1 = formData.get("threshold_1") as string;
     const threshold2 = formData.get("threshold_2") as string;
     const threshold3 = formData.get("threshold_3") as string;
+    const thresholdAlfa1 = formData.get("threshold_alfa_1") as string;
+    const thresholdAlfa2 = formData.get("threshold_alfa_2") as string;
+    const thresholdAlfa3 = formData.get("threshold_alfa_3") as string;
     const schoolName = formData.get("school_name") as string;
     const schoolLogoFile = formData.get("school_logo_file") as File | null;
     const schoolHeaderFile = formData.get("school_header_file") as File | null;
@@ -1017,6 +1020,30 @@ export async function saveSettingsAction(formData: FormData) {
         })
       );
     }
+
+    if (thresholdAlfa1 || thresholdAlfa2 || thresholdAlfa3) {
+      if (!thresholdAlfa1 || !thresholdAlfa2 || !thresholdAlfa3) {
+        return { error: "Semua batas alfa wajib diisi." };
+      }
+      updates.push(
+        prisma.appSetting.upsert({
+          where: { key: "threshold_alfa_1" },
+          update: { value: thresholdAlfa1 },
+          create: { key: "threshold_alfa_1", value: thresholdAlfa1 },
+        }),
+        prisma.appSetting.upsert({
+          where: { key: "threshold_alfa_2" },
+          update: { value: thresholdAlfa2 },
+          create: { key: "threshold_alfa_2", value: thresholdAlfa2 },
+        }),
+        prisma.appSetting.upsert({
+          where: { key: "threshold_alfa_3" },
+          update: { value: thresholdAlfa3 },
+          create: { key: "threshold_alfa_3", value: thresholdAlfa3 },
+        })
+      );
+    }
+
 
     if (schoolName !== null) {
       updates.push(

@@ -16,10 +16,17 @@ export default async function DashboardPage() {
   // Pemicu remisi otomatis di background ( rolling 20 hari clean period )
   await checkAndApplyAutomaticRemissions();
 
-  // 1. Dapatkan Tahun Ajaran Aktif
   const activeTA = await prisma.tahunAjaran.findFirst({
     where: { isActive: true },
   });
+
+  const rangeMulai = activeTA
+    ? (activeTA.semesterAktif === "GANJIL" ? activeTA.ganjilMulai : activeTA.genapMulai)
+    : null;
+  const rangeSelesai = activeTA
+    ? (activeTA.semesterAktif === "GANJIL" ? activeTA.ganjilSelesai : activeTA.genapSelesai)
+    : null;
+
 
   // Ambil settings di awal
   const settingsList = await prisma.appSetting.findMany();
@@ -214,8 +221,20 @@ export default async function DashboardPage() {
       },
       remisi: true,
       pemanggilan: true,
+      absensi: {
+        where: {
+          status: "A",
+          ...(rangeMulai && rangeSelesai ? {
+            tanggal: {
+              gte: rangeMulai,
+              lte: rangeSelesai,
+            },
+          } : {}),
+        },
+      },
     },
   });
+
 
   const studentRankings = allActiveStudents
     .map((student) => {
@@ -525,9 +544,14 @@ export default async function DashboardPage() {
   const threshold2 = parseInt(settings.threshold_2 || "50", 10);
   const threshold3 = parseInt(settings.threshold_3 || "75", 10);
 
+  const thresholdAlfa1 = parseInt(settings.threshold_alfa_1 || "3", 10);
+  const thresholdAlfa2 = parseInt(settings.threshold_alfa_2 || "5", 10);
+  const thresholdAlfa3 = parseInt(settings.threshold_alfa_3 || "7", 10);
+
   // Hitung daftar pemanggilan
   const summonsList: any[] = [];
   allActiveStudents.forEach((student) => {
+    // 1. Pemanggilan Berdasarkan Poin Pelanggaran Net
     const totalViolations = student.pelanggaran.reduce(
       (sum, v) => sum + v.detailPelanggaran.poin,
       0
@@ -535,31 +559,31 @@ export default async function DashboardPage() {
     const totalRemissions = student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0);
     const netPoints = Math.max(0, totalViolations - totalRemissions);
 
-    const qualifiedTiers = [];
-    if (netPoints >= threshold3) qualifiedTiers.push({ level: 3, points: threshold3 });
-    if (netPoints >= threshold2) qualifiedTiers.push({ level: 2, points: threshold2 });
-    if (netPoints >= threshold1) qualifiedTiers.push({ level: 1, points: threshold1 });
+    let qualifiedPointsLevel = 0;
+    let qualifiedPointsThreshold = 0;
+    if (netPoints >= threshold3) { qualifiedPointsLevel = 3; qualifiedPointsThreshold = threshold3; }
+    else if (netPoints >= threshold2) { qualifiedPointsLevel = 2; qualifiedPointsThreshold = threshold2; }
+    else if (netPoints >= threshold1) { qualifiedPointsLevel = 1; qualifiedPointsThreshold = threshold1; }
 
-    // Tentukan level peringatan tertinggi yang pernah dipicu (baik dari DB maupun poin saat ini)
-    let maxTriggeredLevel = 0;
+    let maxTriggeredPointsLevel = 0;
     let maxThresholdPoints = 0;
 
     student.pemanggilan.forEach((p) => {
-      const lvl = p.thresholdPoints === threshold3 ? 3 : p.thresholdPoints === threshold2 ? 2 : 1;
-      if (lvl > maxTriggeredLevel) {
-        maxTriggeredLevel = lvl;
-        maxThresholdPoints = p.thresholdPoints;
+      if (p.thresholdPoints <= 100) {
+        const lvl = p.thresholdPoints === threshold3 ? 3 : p.thresholdPoints === threshold2 ? 2 : 1;
+        if (lvl > maxTriggeredPointsLevel) {
+          maxTriggeredPointsLevel = lvl;
+          maxThresholdPoints = p.thresholdPoints;
+        }
       }
     });
 
-    qualifiedTiers.forEach((q) => {
-      if (q.level > maxTriggeredLevel) {
-        maxTriggeredLevel = q.level;
-        maxThresholdPoints = q.points;
-      }
-    });
+    if (qualifiedPointsLevel > maxTriggeredPointsLevel) {
+      maxTriggeredPointsLevel = qualifiedPointsLevel;
+      maxThresholdPoints = qualifiedPointsThreshold;
+    }
 
-    if (maxTriggeredLevel > 0) {
+    if (maxTriggeredPointsLevel > 0) {
       const dbSummons = student.pemanggilan.find(
         (p) => p.thresholdPoints === maxThresholdPoints
       );
@@ -567,20 +591,74 @@ export default async function DashboardPage() {
       const activeClass = student.riwayatKelas[0]?.kelas;
 
       summonsList.push({
-        id: `${student.id}-${maxThresholdPoints}`, // virtual unique ID
+        id: `${student.id}-${maxThresholdPoints}`,
         studentId: student.id,
         nama: student.nama,
         nis: student.nis,
         kelas: activeClass?.nama || "-",
         points: netPoints,
         thresholdPoints: maxThresholdPoints,
-        level: maxTriggeredLevel,
-        status: status, // "PENDING" or "SELESAI"
+        level: maxTriggeredPointsLevel,
+        status: status,
+        type: "POIN",
+        bkNama: activeClass?.bk?.nama || null,
+        bkNip: activeClass?.bk?.nip || null,
+      });
+    }
+
+    // 2. Pemanggilan Berdasarkan Absensi Alfa
+    const alphaCount = student.absensi?.length || 0;
+
+    let qualifiedAlfaLevel = 0;
+    let qualifiedAlfaThreshold = 0;
+    if (alphaCount >= thresholdAlfa3) { qualifiedAlfaLevel = 3; qualifiedAlfaThreshold = 100 + thresholdAlfa3; }
+    else if (alphaCount >= thresholdAlfa2) { qualifiedAlfaLevel = 2; qualifiedAlfaThreshold = 100 + thresholdAlfa2; }
+    else if (alphaCount >= thresholdAlfa1) { qualifiedAlfaLevel = 1; qualifiedAlfaThreshold = 100 + thresholdAlfa1; }
+
+    let maxTriggeredAlfaLevel = 0;
+    let maxThresholdAlfaPoints = 0;
+
+    student.pemanggilan.forEach((p) => {
+      if (p.thresholdPoints > 100) {
+        const thresholdAlfaVal = p.thresholdPoints - 100;
+        const lvl = thresholdAlfaVal === thresholdAlfa3 ? 3 : thresholdAlfaVal === thresholdAlfa2 ? 2 : 1;
+        if (lvl > maxTriggeredAlfaLevel) {
+          maxTriggeredAlfaLevel = lvl;
+          maxThresholdAlfaPoints = p.thresholdPoints;
+        }
+      }
+    });
+
+    if (qualifiedAlfaLevel > maxTriggeredAlfaLevel) {
+      maxTriggeredAlfaLevel = qualifiedAlfaLevel;
+      maxThresholdAlfaPoints = qualifiedAlfaThreshold;
+    }
+
+    if (maxTriggeredAlfaLevel > 0) {
+      const dbSummons = student.pemanggilan.find(
+        (p) => p.thresholdPoints === maxThresholdAlfaPoints
+      );
+      const status = dbSummons ? dbSummons.status : "PENDING";
+      const activeClass = student.riwayatKelas[0]?.kelas;
+
+      summonsList.push({
+        id: `${student.id}-${maxThresholdAlfaPoints}`,
+        studentId: student.id,
+        nama: student.nama,
+        nis: student.nis,
+        kelas: activeClass?.nama || "-",
+        points: netPoints,
+        thresholdPoints: maxThresholdAlfaPoints,
+        level: maxTriggeredAlfaLevel,
+        status: status,
+        type: "ALFA",
+        alphaCount: alphaCount,
         bkNama: activeClass?.bk?.nama || null,
         bkNip: activeClass?.bk?.nip || null,
       });
     }
   });
+
 
   // Urutkan: PENDING di atas, level tertinggi di atas, lalu alfabetis nama
   summonsList.sort((a, b) => {

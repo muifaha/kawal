@@ -1592,6 +1592,49 @@ export default function KesiswaanClient({
               </div>
             </div>
             
+            <div className="border-t border-slate-800/80 pt-6">
+              <h4 className="text-sm font-bold text-white mb-4">Pengaturan Batas Alfa Pemanggilan Orang Tua</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Pemanggilan I (Alfa)
+                  </label>
+                  <input
+                    required
+                    name="threshold_alfa_1"
+                    type="number"
+                    defaultValue={settings.threshold_alfa_1 || "3"}
+                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Pemanggilan II (Alfa)
+                  </label>
+                  <input
+                    required
+                    name="threshold_alfa_2"
+                    type="number"
+                    defaultValue={settings.threshold_alfa_2 || "5"}
+                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Pemanggilan III (Alfa)
+                  </label>
+                  <input
+                    required
+                    name="threshold_alfa_3"
+                    type="number"
+                    defaultValue={settings.threshold_alfa_3 || "7"}
+                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            
             <button
               type="submit"
               disabled={isPending}
