@@ -83,6 +83,7 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
 
   const isBK = user.role === "BK";
   const isBKOrWaka = user.role === "BK" || user.role === "WAKA";
+  const [activeTab, setActiveTab] = useState<"form" | "log">(isBK ? "form" : "log");
 
   // Prefill student details if loaded from query parameters
   useEffect(() => {
@@ -177,11 +178,43 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
           <span>{actionSuccess}</span>
         </div>
       )}
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-        {/* Left Side: Create Counseling Record (Only accessible to BK) */}
+      {/* Tab Bar */}
+      <div className="flex border-b border-slate-900 mb-6">
         {isBK && (
-          <div className="xl:col-span-1 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl space-y-6">
+          <button
+            onClick={() => setActiveTab("form")}
+            className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all -mb-px ${
+              activeTab === "form"
+                ? "border-emerald-400 text-emerald-400"
+                : "border-transparent text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            <HeartHandshake className="w-4 h-4" />
+            Catat Konseling
+          </button>
+        )}
+        <button
+          onClick={() => setActiveTab("log")}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all -mb-px ${
+            activeTab === "log"
+              ? "border-emerald-400 text-emerald-400"
+              : "border-transparent text-slate-500 hover:text-slate-300"
+          }`}
+        >
+          <ClipboardList className="w-4 h-4" />
+          Log Riwayat
+          {history.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400">
+              {history.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Tab: Form Catat Konseling */}
+      {activeTab === "form" && isBK && (
+        <div className="max-w-2xl">
+          <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <HeartHandshake className="w-5 h-5 text-indigo-400" />
@@ -250,7 +283,7 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
                   onChange={(e) => setMasalah(e.target.value)}
                   rows={3}
                   placeholder="Deskripsikan isu/masalah yang dikonsultasikan siswa..."
-                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="block w-full px-3 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
@@ -261,7 +294,7 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
                   onChange={(e) => setSolusi(e.target.value)}
                   rows={3}
                   placeholder="Solusi atau langkah pembinaan yang disepakati..."
-                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="block w-full px-3 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
@@ -275,24 +308,26 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
                   onChange={(e) => setCatatanRahasia(e.target.value)}
                   rows={3}
                   placeholder="Isi catatan yang HANYA boleh dibaca oleh Guru BK & Waka Kesiswaan (Wali Kelas tidak diizinkan membaca)..."
-                  className="block w-full px-3 py-2 border border-rose-500/20 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="block w-full px-3 py-2.5 border border-rose-500/20 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-400 hover:bg-emerald-300 disabled:bg-emerald-800 text-xs font-bold text-emerald-950 rounded-xl transition-all cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-400 hover:bg-emerald-300 disabled:bg-emerald-800 text-xs font-bold text-emerald-950 rounded-xl transition-all cursor-pointer"
               >
                 <Send className="w-4 h-4" />
                 Simpan Konseling
               </button>
             </form>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Right Side: Counseling History Logs */}
-        <div className={`${isBK ? "xl:col-span-2" : "xl:col-span-3"} bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl space-y-6`}>
+      {/* Tab: Log Riwayat */}
+      {activeTab === "log" && (
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -335,23 +370,23 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
             />
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
             <table className="min-w-full divide-y divide-slate-800">
-              <thead>
+              <thead className="bg-slate-900/60">
                 <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="pb-3 px-3 w-10">No</th>
-                  <th className="pb-3 px-3 w-32">Siswa</th>
-                  <th className="pb-3 px-3 w-20">Kelas</th>
-                  <th className="pb-3 px-3 w-36">Bidang</th>
-                  <th className="pb-3 px-3">Deskripsi Bimbingan</th>
-                  <th className="pb-3 px-3 w-28">Konselor</th>
-                  <th className="pb-3 px-3 w-28 text-right">Catatan Rahasia</th>
+                  <th className="py-3 px-4 w-12">No</th>
+                  <th className="py-3 px-4 w-40">Siswa</th>
+                  <th className="py-3 px-4 w-24">Kelas</th>
+                  <th className="py-3 px-4 w-44">Bidang</th>
+                  <th className="py-3 px-4">Deskripsi Bimbingan</th>
+                  <th className="py-3 px-4 w-32">Konselor</th>
+                  <th className="py-3 px-4 w-32 text-center">Catatan Rahasia</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {filteredHistory.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-10 text-slate-500 text-sm">
+                    <td colSpan={7} className="text-center py-20 text-slate-500 text-sm">
                       Belum ada log bimbingan konseling.
                     </td>
                   </tr>
@@ -360,40 +395,40 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
                     const bids = BIDANG_MAP[item.bidang] || { label: item.bidang, style: "" };
                     const isVisible = activeConfidentialId === item.id;
                     return (
-                      <tr key={item.id} className="text-sm">
-                        <td className="py-4 text-slate-500">{index + 1}</td>
-                        <td className="py-4 font-semibold text-white">
-                          {item.studentName}
-                          <div className="text-xs text-slate-400 font-normal">NIS: {item.studentNis}</div>
+                      <tr key={item.id} className="text-xs hover:bg-slate-900/10 transition-colors">
+                        <td className="py-3 px-4 text-slate-500 font-medium">{index + 1}</td>
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-white">{item.studentName}</div>
+                          <div className="text-[10px] text-slate-400">NIS: {item.studentNis}</div>
                         </td>
-                        <td className="py-4 text-slate-300">{item.kelasNama}</td>
-                        <td className="py-4">
+                        <td className="py-3 px-4 text-slate-300 font-medium">{item.kelasNama}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${bids.style}`}>
                             {bids.label}
                           </span>
                         </td>
-                        <td className="py-4 pr-4">
-                          <div className="space-y-1">
-                            <p className="text-slate-300">
-                              <strong className="text-white block text-xs">Isu/Masalah:</strong>
+                        <td className="py-3 px-4 max-w-xs break-words">
+                          <div className="space-y-1.5">
+                            <p className="text-slate-300 leading-relaxed">
+                              <strong className="text-white block text-[10px] uppercase tracking-wider text-slate-400">Isu/Masalah:</strong>
                               {item.masalah}
                             </p>
-                            <p className="text-slate-300">
-                              <strong className="text-white block text-xs">Solusi:</strong>
+                            <p className="text-slate-300 leading-relaxed">
+                              <strong className="text-white block text-[10px] uppercase tracking-wider text-slate-400">Solusi:</strong>
                               {item.solusi}
                             </p>
                           </div>
                         </td>
-                        <td className="py-4 text-slate-300 font-medium">
+                        <td className="py-3 px-4 text-slate-300 font-semibold whitespace-nowrap">
                           {item.pembimbingNama}
                         </td>
-                        <td className="py-4 text-right">
+                        <td className="py-3 px-4 text-center">
                           {isBKOrWaka ? (
                             item.catatanRahasia ? (
                               <div className="relative inline-block text-left">
                                 <button
                                   onClick={() => setActiveConfidentialId(isVisible ? null : item.id)}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xxs font-bold hover:bg-rose-500/20 cursor-pointer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[10px] font-bold hover:bg-rose-500/20 cursor-pointer"
                                 >
                                   <Lock className="w-3 h-3 text-rose-400" />
                                   <span>{isVisible ? "Tutup" : "Lihat"}</span>
@@ -409,7 +444,7 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
                                 )}
                               </div>
                             ) : (
-                              <span className="text-xs text-slate-600">Tidak ada</span>
+                              <span className="text-xs text-slate-600 font-medium">Tidak ada</span>
                             )
                           ) : (
                             <span className="inline-flex items-center gap-1 text-slate-500 text-xs font-semibold cursor-not-allowed" title="Catatan rahasia hanya boleh diakses BK & Waka.">
@@ -426,7 +461,7 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
             </table>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
