@@ -336,65 +336,73 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
             </div>
           </div>
 
-          {/* List */}
-          <div className="space-y-3">
-            {filteredHistory.length === 0 ? (
-              <div className="text-center py-20 text-slate-500 text-sm">
-                Belum ada transaksi remisi yang tercatat.
-              </div>
-            ) : (
-              filteredHistory.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-4 bg-slate-950/40 border border-slate-900 rounded-xl flex items-center justify-between gap-4 hover:border-slate-850 transition-all"
-                >
-                  <div className="space-y-1.5 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          item.jenis === "OTOMATIS"
-                            ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
-                            : "bg-sky-500/10 text-sky-400 border-sky-500/20"
-                        }`}
-                      >
-                        {item.jenis === "OTOMATIS" ? "OTOMATIS" : "KONDISIONAL"}
-                      </span>
-                      <span className="text-[10px] text-slate-500">
+          {/* Table */}
+          <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
+            <table className="min-w-full divide-y divide-slate-800">
+              <thead className="bg-slate-900/60">
+                <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <th className="py-3 px-4 w-12">No</th>
+                  <th className="py-3 px-4">Tanggal</th>
+                  <th className="py-3 px-4">Siswa</th>
+                  <th className="py-3 px-4">Jenis Remisi</th>
+                  <th className="py-3 px-4">Alasan / Keterangan</th>
+                  <th className="py-3 px-4 text-center">Poin Remisi</th>
+                  <th className="py-3 px-4">Disahkan Oleh</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {filteredHistory.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-20 text-slate-500 text-sm">
+                      Belum ada transaksi remisi yang tercatat.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredHistory.map((item, idx) => (
+                    <tr key={item.id} className="text-xs hover:bg-slate-900/10 transition-colors">
+                      <td className="py-3 px-4 text-slate-500 font-medium">{idx + 1}</td>
+                      <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
                         {new Date(item.tanggal).toLocaleDateString("id-ID", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",
                         })}
-                      </span>
-                    </div>
-
-                    <h4 className="font-semibold text-white text-sm truncate">{item.siswa.nama}</h4>
-                    <p className="text-xs text-slate-400">
-                      NIS: {item.siswa.nis} | Kelas: {item.siswa.kelas.nama}
-                    </p>
-                    
-                    <p className="text-xs text-slate-300">
-                      Alasan:{" "}
-                      <span className="font-medium text-slate-200">
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-white">{item.siswa.nama}</div>
+                        <div className="text-[10px] text-slate-400">
+                          {item.siswa.kelas.nama} • NIS: {item.siswa.nis}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            item.jenis === "OTOMATIS"
+                              ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                              : "bg-sky-500/10 text-sky-400 border-sky-500/20"
+                          }`}
+                        >
+                          {item.jenis === "OTOMATIS" ? "OTOMATIS" : "KONDISIONAL"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-slate-300">
                         {item.jenis === "OTOMATIS"
                           ? "Pembersihan Poin Harian (Bersih Pelanggaran 1 Bulan)"
                           : item.masterRemisi?.nama}
-                      </span>
-                    </p>
-                    
-                    <p className="text-[10px] text-slate-500">
-                      Disahkan oleh: {item.approver?.nama || "Sistem"}
-                    </p>
-                  </div>
-
-                  <div className="text-right shrink-0">
-                    <span className="text-xl font-black text-emerald-400 font-mono">
-                      -{item.poinDikurangi} Pts
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
+                      </td>
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        <span className="font-bold text-emerald-400 font-mono">
+                          -{item.poinDikurangi} Pts
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
+                        {item.approver?.nama || "Sistem"}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

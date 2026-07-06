@@ -515,101 +515,116 @@ export default function ViolationClient({ user, classes, categories, initialHist
               </div>
             </div>
 
-            {/* List scroll container */}
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-              {filteredHistory.length === 0 ? (
-                <div className="text-center py-20 text-slate-500 text-sm">
-                  Tidak ada riwayat laporan yang cocok atau ditemukan.
-                </div>
-              ) : (
-                filteredHistory.map((item) => {
-                  const isBKoWaka = user.role === "BK" || user.role === "WAKA";
-                  const isRevealed = revealedReports[item.id] || false;
-                  const shouldBlur = item.isCensored && (!isBKoWaka || !isRevealed);
+            {/* Table */}
+            <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
+              <table className="min-w-full divide-y divide-slate-800">
+                <thead className="bg-slate-900/60">
+                  <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="py-3 px-4 w-10">No</th>
+                    <th className="py-3 px-4">Tanggal</th>
+                    <th className="py-3 px-4">Siswa</th>
+                    <th className="py-3 px-4">Jenis Pelanggaran</th>
+                    <th className="py-3 px-4 text-center">Poin</th>
+                    <th className="py-3 px-4">Pelapor</th>
+                    <th className="py-3 px-4 text-center">Status</th>
+                    <th className="py-3 px-4 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {filteredHistory.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-20 text-slate-500 text-sm">
+                        Tidak ada riwayat laporan yang cocok atau ditemukan.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredHistory.map((item, idx) => {
+                      const isBKoWaka = user.role === "BK" || user.role === "WAKA";
+                      const isRevealed = revealedReports[item.id] || false;
+                      const shouldBlur = item.isCensored && (!isBKoWaka || !isRevealed);
 
-                  return (
-                    <div
-                      key={item.id}
-                      className="p-4 bg-slate-950/40 border border-slate-900 rounded-xl space-y-2 hover:border-slate-850 transition-all"
-                    >
-                      <div className="flex justify-between items-start gap-3">
-                        <div>
-                          <h4 className="font-semibold text-white text-sm">{item.siswa.nama}</h4>
-                          <p className="text-xs text-slate-400">
-                            NIS: {item.siswa.nis} | Kelas: {item.siswa.kelas.nama}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          {item.isCensored && (
-                            <span className="inline-flex items-center gap-1 text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-semibold uppercase tracking-wider">
-                              Disensor
+                      return (
+                        <tr key={item.id} className="text-xs hover:bg-slate-900/10 transition-colors">
+                          <td className="py-3 px-4 text-slate-500 font-medium">{idx + 1}</td>
+                          <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
+                            {new Date(item.tanggal).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                            <div className="text-[10px] text-slate-600">
+                              {new Date(item.tanggal).toLocaleTimeString("id-ID", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-semibold text-white">{item.siswa.nama}</div>
+                            <div className="text-[10px] text-slate-400">
+                              {item.siswa.kelas.nama} • NIS: {item.siswa.nis}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 max-w-xs">
+                            <div className={shouldBlur ? "filter blur-sm select-none pointer-events-none opacity-40 transition-all" : "transition-all"}>
+                              <div className="text-[10px] text-slate-500">{item.detailPelanggaran.kategori.nama}</div>
+                              <div className="text-slate-200 font-semibold leading-snug">{item.detailPelanggaran.nama}</div>
+                              {item.notes && (
+                                <div className={`text-[10px] text-slate-400 italic mt-1 ${shouldBlur ? "" : ""}`}>
+                                  &ldquo;{item.notes}&rdquo;
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="font-bold text-rose-400">+{item.detailPelanggaran.poin}</span>
+                          </td>
+                          <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
+                            {item.pelapor.nama}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusColors[item.status]}`}>
+                              {statusLabels[item.status]}
                             </span>
-                          )}
-                          {item.isCensored && isBKoWaka && (
-                            <button
-                              onClick={() => setRevealedReports((prev) => ({ ...prev, [item.id]: !isRevealed }))}
-                              className="p-1 rounded bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white transition-colors"
-                              title={isRevealed ? "Terapkan Sensor" : "Buka Sensor (Intip)"}
-                            >
-                              {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            </button>
-                          )}
-                          {isBKoWaka && (
-                            <button
-                              onClick={() => toggleCensor(item.id, item.isCensored)}
-                              className={`p-1 rounded transition-colors ${
-                                item.isCensored
-                                  ? "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
-                                  : "bg-slate-800 text-slate-500 hover:text-slate-300 hover:bg-slate-750"
-                              }`}
-                              title={item.isCensored ? "Batalkan Sensor Laporan" : "Sensor Laporan Ini (Tabu)"}
-                            >
-                              <ShieldAlert className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          <span
-                            className={`inline-flex px-2 py-0.5 rounded-full text-sm font-semibold border ${
-                              statusColors[item.status]
-                            }`}
-                          >
-                            {statusLabels[item.status]}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="p-2 bg-slate-900/60 rounded-lg flex justify-between items-center text-xs">
-                        <div className={shouldBlur ? "filter blur-sm select-none pointer-events-none opacity-40 transition-all" : "transition-all"}>
-                          <span className="text-slate-400">{item.detailPelanggaran.kategori.nama}: </span>
-                          <span className="text-slate-200 font-semibold">{item.detailPelanggaran.nama}</span>
-                        </div>
-                        <span className="font-bold text-rose-400">+{item.detailPelanggaran.poin} Poin</span>
-                      </div>
-
-                      {item.notes && (
-                        <p className={`text-xs text-slate-400 italic bg-slate-900/20 p-2 rounded-lg border border-slate-900/40 ${
-                          shouldBlur ? "filter blur-sm select-none pointer-events-none opacity-40 transition-all" : "transition-all"
-                        }`}>
-                          &ldquo;{item.notes}&rdquo;
-                        </p>
-                      )}
-
-                      <div className="flex justify-between items-center text-[10px] text-slate-500 pt-1">
-                        <span>Dilaporkan oleh: {item.pelapor.nama}</span>
-                        <span>
-                          {new Date(item.tanggal).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-          </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {item.isCensored && (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-semibold uppercase tracking-wider">
+                                  Sensor
+                                </span>
+                              )}
+                              {item.isCensored && isBKoWaka && (
+                                <button
+                                  onClick={() => setRevealedReports((prev) => ({ ...prev, [item.id]: !isRevealed }))}
+                                  className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                                  title={isRevealed ? "Terapkan Sensor" : "Buka Sensor (Intip)"}
+                                >
+                                  {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                              )}
+                              {isBKoWaka && (
+                                <button
+                                  onClick={() => toggleCensor(item.id, item.isCensored)}
+                                  className={`p-1 rounded transition-colors ${
+                                    item.isCensored
+                                      ? "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                                      : "bg-slate-800 text-slate-500 hover:text-slate-300 hover:bg-slate-700"
+                                  }`}
+                                  title={item.isCensored ? "Batalkan Sensor Laporan" : "Sensor Laporan Ini (Tabu)"}
+                                >
+                                  <ShieldAlert className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
         </div>
       )}
     </div>
