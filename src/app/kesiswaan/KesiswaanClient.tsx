@@ -164,6 +164,10 @@ export default function KesiswaanClient({
   const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
   // Inline edit state untuk penugasan kelas
   const [editingKelasId, setEditingKelasId] = useState<string>("");
   const [editWalasId, setEditWalasId] = useState<string>("");
@@ -195,6 +199,7 @@ export default function KesiswaanClient({
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
+    setCurrentPage(1);
     setAlert(null);
     setEditingUser(null);
     setEditingKelas(null);
@@ -567,6 +572,69 @@ export default function KesiswaanClient({
     </button>
   );
 
+  // Render Pagination Controls
+  const renderPagination = (totalItems: number) => {
+    if (totalItems <= 50 && pageSize === 50) return null;
+
+    const totalPages = pageSize === 99999 ? 1 : Math.ceil(totalItems / pageSize);
+    const startItem = (currentPage - 1) * pageSize + 1;
+    const endItem = Math.min(currentPage * pageSize, totalItems);
+
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-900/60 text-xs text-slate-400">
+        <div className="flex items-center gap-2">
+          <span>Tampilkan:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="py-1 px-2 border border-slate-800 rounded-lg bg-slate-950 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer text-xs"
+          >
+            <option value={50}>50 Baris</option>
+            <option value={100}>100 Baris</option>
+            <option value={200}>200 Baris</option>
+            <option value={500}>500 Baris</option>
+            <option value={99999}>Semua</option>
+          </select>
+          {pageSize !== 99999 && (
+            <span>
+              Menampilkan {startItem}-{endItem} dari {totalItems} data
+            </span>
+          )}
+          {pageSize === 99999 && (
+            <span>
+              Menampilkan semua {totalItems} data
+            </span>
+          )}
+        </div>
+
+        {pageSize !== 99999 && totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer font-semibold"
+            >
+              Sebelumnya
+            </button>
+            <span className="px-3 py-1.5 font-semibold text-slate-300">
+              Halaman {currentPage} dari {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer font-semibold"
+            >
+              Selanjutnya
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Alert Component */}
@@ -669,45 +737,52 @@ export default function KesiswaanClient({
                     <td colSpan={7} className="py-8 text-center text-slate-500">Belum ada data guru/staff.</td>
                   </tr>
                 ) : (
-                  initialUsers.map((u, index) => (
-                    <tr key={u.id} className="hover:bg-slate-900/25 transition-all">
-                      <td className="py-3 px-4 text-center text-slate-500 font-medium">{index + 1}</td>
-                      <td className="py-3 px-4 font-semibold text-white">{u.nama}</td>
-                      <td className="py-3 px-4 font-mono text-slate-400">{u.nip || "-"}</td>
-                      <td className="py-3 px-4 text-emerald-400 font-mono">{u.username}</td>
-                      <td className="py-3 px-4">
-                        <span className="inline-flex text-[9px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md font-bold">
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">{u.whatsappNumber || "-"}</td>
-                      <td className="py-3 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => {
-                              setEditingUser(u);
-                              setShowUserModal(true);
-                            }}
-                            className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
-                            title="Edit Akun"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(u.id, u.nama)}
-                            className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-                            title="Hapus Akun"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  (() => {
+                    const paginatedUsers = pageSize === 99999 ? initialUsers : initialUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+                    return paginatedUsers.map((u, index) => {
+                      const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
+                      return (
+                        <tr key={u.id} className="hover:bg-slate-900/25 transition-all">
+                          <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
+                          <td className="py-3 px-4 font-semibold text-white">{u.nama}</td>
+                          <td className="py-3 px-4 font-mono text-slate-400">{u.nip || "-"}</td>
+                          <td className="py-3 px-4 text-emerald-400 font-mono">{u.username}</td>
+                          <td className="py-3 px-4">
+                            <span className="inline-flex text-[9px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md font-bold">
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">{u.whatsappNumber || "-"}</td>
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setEditingUser(u);
+                                  setShowUserModal(true);
+                                }}
+                                className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                                title="Edit Akun"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteUser(u.id, u.nama)}
+                                className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                                title="Hapus Akun"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()
                 )}
               </tbody>
             </table>
           </div>
+          {renderPagination(initialUsers.length)}
         </div>
       )}
 
@@ -764,57 +839,64 @@ export default function KesiswaanClient({
                     <td colSpan={6} className="py-8 text-center text-slate-500">Belum ada data kelas.</td>
                   </tr>
                 ) : (
-                  initialClasses.map((c, index) => (
-                    <tr key={c.id} className="hover:bg-slate-900/25 transition-all">
-                      <td className="py-3 px-4 text-center text-slate-500 font-medium">{index + 1}</td>
-                      <td className="py-3 px-4 font-semibold text-white">{c.nama}</td>
-                      <td className="py-3 px-4 text-slate-300">
-                        {c.walas?.nama || <span className="text-slate-500 italic">Belum ditugaskan</span>}
-                      </td>
-                      <td className="py-3 px-4 text-slate-300">
-                        {c.bk?.nama || <span className="text-slate-500 italic">Belum ditugaskan</span>}
-                      </td>
-                      <td className="py-3 px-4 text-emerald-400 font-semibold">{c.tahunAjaran.nama}</td>
-                      <td className="py-3 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => {
-                              handleGraduateClassStudents(c.id, c.nama);
-                            }}
-                            disabled={isPending}
-                            className="p-1.5 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-all"
-                            title="Luluskan Semua Siswa"
-                          >
-                            <GraduationCap className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingKelas(c);
-                              setEditKelasNama(c.nama);
-                              setEditWalasId(c.walasId || "");
-                              setEditBkId(c.bkId || "");
-                              setShowKelasModal(true);
-                            }}
-                            className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
-                            title="Edit Kelas & Penugasan"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteKelas(c.id, c.nama)}
-                            className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-                            title="Hapus Kelas"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  (() => {
+                    const paginatedClasses = pageSize === 99999 ? initialClasses : initialClasses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+                    return paginatedClasses.map((c, index) => {
+                      const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
+                      return (
+                        <tr key={c.id} className="hover:bg-slate-900/25 transition-all">
+                          <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
+                          <td className="py-3 px-4 font-semibold text-white">{c.nama}</td>
+                          <td className="py-3 px-4 text-slate-300">
+                            {c.walas?.nama || <span className="text-slate-500 italic">Belum ditugaskan</span>}
+                          </td>
+                          <td className="py-3 px-4 text-slate-300">
+                            {c.bk?.nama || <span className="text-slate-500 italic">Belum ditugaskan</span>}
+                          </td>
+                          <td className="py-3 px-4 text-emerald-400 font-semibold">{c.tahunAjaran.nama}</td>
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  handleGraduateClassStudents(c.id, c.nama);
+                                }}
+                                disabled={isPending}
+                                className="p-1.5 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-all"
+                                title="Luluskan Semua Siswa"
+                              >
+                                <GraduationCap className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingKelas(c);
+                                  setEditKelasNama(c.nama);
+                                  setEditWalasId(c.walasId || "");
+                                  setEditBkId(c.bkId || "");
+                                  setShowKelasModal(true);
+                                }}
+                                className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                                title="Edit Kelas & Penugasan"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteKelas(c.id, c.nama)}
+                                className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                                title="Hapus Kelas"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()
                 )}
               </tbody>
             </table>
           </div>
+          {renderPagination(initialClasses.length)}
         </div>
       )}
 
@@ -858,39 +940,46 @@ export default function KesiswaanClient({
                     <td colSpan={5} className="py-8 text-center text-slate-500">Belum ada data siswa.</td>
                   </tr>
                 ) : (
-                  initialStudents.map((s, index) => (
-                    <tr key={s.id} className="hover:bg-slate-900/25 transition-all">
-                      <td className="py-3 px-4 text-center text-slate-500 font-medium">{index + 1}</td>
-                      <td className="py-3 px-4 font-semibold text-white">{s.nama}</td>
-                      <td className="py-3 px-4 font-mono text-slate-400">{s.nis}</td>
-                      <td className="py-3 px-4 text-emerald-400 font-semibold">{s.kelas.nama}</td>
-                      <td className="py-3 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => {
-                              setEditingSiswa(s);
-                              setShowSiswaModal(true);
-                            }}
-                            className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
-                            title="Edit Siswa"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSiswa(s.id, s.nama)}
-                            className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-                            title="Hapus Siswa"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  (() => {
+                    const paginatedStudents = pageSize === 99999 ? initialStudents : initialStudents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+                    return paginatedStudents.map((s, index) => {
+                      const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
+                      return (
+                        <tr key={s.id} className="hover:bg-slate-900/25 transition-all">
+                          <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
+                          <td className="py-3 px-4 font-semibold text-white">{s.nama}</td>
+                          <td className="py-3 px-4 font-mono text-slate-400">{s.nis}</td>
+                          <td className="py-3 px-4 text-emerald-400 font-semibold">{s.kelas.nama}</td>
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setEditingSiswa(s);
+                                  setShowSiswaModal(true);
+                                }}
+                                className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                                title="Edit Siswa"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSiswa(s.id, s.nama)}
+                                className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                                title="Hapus Siswa"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()
                 )}
               </tbody>
             </table>
           </div>
+          {renderPagination(initialStudents.length)}
         </div>
       )}
 
@@ -967,40 +1056,52 @@ export default function KesiswaanClient({
                       </tr>
                     );
                   }
-                  return allDetails.map((d, index) => (
-                    <tr key={d.id} className="hover:bg-slate-900/25 transition-all">
-                      <td className="py-3 px-4 text-center text-slate-500 font-medium">{index + 1}</td>
-                      <td className="py-3 px-4 text-slate-400 font-medium">{d.categoryName}</td>
-                      <td className="py-3 px-4 font-semibold text-white">{d.nama}</td>
-                      <td className="py-3 px-4 text-rose-400 font-bold">+{d.poin} Poin</td>
-                      <td className="py-3 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => {
-                              setEditingViolation({ ...d, categoryId: d.categoryId });
-                              setIsNewCategory(false);
-                              setShowViolationModal(true);
-                            }}
-                            className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
-                            title="Edit Pelanggaran"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteViolation(d.id, d.nama)}
-                            className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-                            title="Hapus Pelanggaran"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ));
+                  const paginatedDetails = pageSize === 99999 ? allDetails : allDetails.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+                  return (
+                    <>
+                      {paginatedDetails.map((d, index) => {
+                        const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
+                        return (
+                          <tr key={d.id} className="hover:bg-slate-900/25 transition-all">
+                            <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
+                            <td className="py-3 px-4 text-slate-400 font-medium">{d.categoryName}</td>
+                            <td className="py-3 px-4 font-semibold text-white">{d.nama}</td>
+                            <td className="py-3 px-4 text-rose-400 font-bold">+{d.poin} Poin</td>
+                            <td className="py-3 px-4 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() => {
+                                    setEditingViolation({ ...d, categoryId: d.categoryId });
+                                    setIsNewCategory(false);
+                                    setShowViolationModal(true);
+                                  }}
+                                  className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                                  title="Edit Pelanggaran"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteViolation(d.id, d.nama)}
+                                  className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                                  title="Hapus Pelanggaran"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </>
+                  );
                 })()}
               </tbody>
             </table>
           </div>
+          {(() => {
+            const totalCount = categories.flatMap((cat) => cat.details).length;
+            return renderPagination(totalCount);
+          })()}
         </div>
       )}
 
@@ -1043,38 +1144,45 @@ export default function KesiswaanClient({
                     <td colSpan={4} className="py-8 text-center text-slate-500">Belum ada data jenis remisi.</td>
                   </tr>
                 ) : (
-                  initialRemissions.map((r, index) => (
-                    <tr key={r.id} className="hover:bg-slate-900/25 transition-all">
-                      <td className="py-3 px-4 text-center text-slate-500 font-medium">{index + 1}</td>
-                      <td className="py-3 px-4 font-semibold text-white">{r.nama}</td>
-                      <td className="py-3 px-4 text-emerald-400 font-bold">{r.persentasePengurangan}% Poin</td>
-                      <td className="py-3 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => {
-                              setEditingRemission(r);
-                              setShowRemissionModal(true);
-                            }}
-                            className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
-                            title="Edit Remisi"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRemission(r.id, r.nama)}
-                            className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-                            title="Hapus Remisi"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  (() => {
+                    const paginatedRemissions = pageSize === 99999 ? initialRemissions : initialRemissions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+                    return paginatedRemissions.map((r, index) => {
+                      const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
+                      return (
+                        <tr key={r.id} className="hover:bg-slate-900/25 transition-all">
+                          <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
+                          <td className="py-3 px-4 font-semibold text-white">{r.nama}</td>
+                          <td className="py-3 px-4 text-emerald-400 font-bold">{r.persentasePengurangan}% Poin</td>
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setEditingRemission(r);
+                                  setShowRemissionModal(true);
+                                }}
+                                className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                                title="Edit Remisi"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteRemission(r.id, r.nama)}
+                                className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                                title="Hapus Remisi"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()
                 )}
               </tbody>
             </table>
           </div>
+          {renderPagination(initialRemissions.length)}
         </div>
       )}
 
