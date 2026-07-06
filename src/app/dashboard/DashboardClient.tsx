@@ -1053,6 +1053,36 @@ export default function DashboardClient({
     });
   }, [studentViolationSummaries, searchQuery, selectedClassId]);
 
+  // Sort state for violation summary table
+  const [violationSortField, setViolationSortField] = useState<string>("totalPoin");
+  const [violationSortDirection, setViolationSortDirection] = useState<"asc" | "desc">("desc");
+
+  const handleViolationSort = (field: string) => {
+    if (violationSortField === field) {
+      setViolationSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setViolationSortField(field);
+      setViolationSortDirection(field === "nama" || field === "kelasNama" ? "asc" : "desc");
+    }
+  };
+
+  const sortedViolationSummaries = useMemo(() => {
+    const sorted = [...filteredViolationSummaries];
+    sorted.sort((a, b) => {
+      const valA = a[violationSortField as keyof typeof a] ?? "";
+      const valB = b[violationSortField as keyof typeof b] ?? "";
+      if (typeof valA === "string" && typeof valB === "string") {
+        return violationSortDirection === "asc"
+          ? valA.localeCompare(valB, "id")
+          : valB.localeCompare(valA, "id");
+      }
+      return violationSortDirection === "asc"
+        ? (valA as number) - (valB as number)
+        : (valB as number) - (valA as number);
+    });
+    return sorted;
+  }, [filteredViolationSummaries, violationSortField, violationSortDirection]);
+
   // Filtered detailed violation logs
   const filteredViolationLogs = useMemo(() => {
     return localViolationRecap.filter((item) => {
@@ -2441,24 +2471,84 @@ export default function DashboardClient({
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-800">
                     <thead>
-                      <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider select-none">
                         <th className="pb-3 w-12">No</th>
-                        <th className="pb-3">Siswa</th>
-                        <th className="pb-3">Kelas</th>
-                        <th className="pb-3 text-center">Total Kasus Sah</th>
-                        <th className="pb-3 text-center">Kasus Tertunda</th>
-                        <th className="pb-3 text-right">Akumulasi Poin Aktif</th>
+                        <th
+                          onClick={() => handleViolationSort("nama")}
+                          className="pb-3 cursor-pointer hover:text-white transition-all w-[28%]"
+                        >
+                          <div className="flex items-center gap-1">
+                            Siswa
+                            {violationSortField === "nama" ? (
+                              violationSortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-rose-400" /> : <ArrowDown className="w-3 h-3 text-rose-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleViolationSort("kelasNama")}
+                          className="pb-3 cursor-pointer hover:text-white transition-all w-[15%]"
+                        >
+                          <div className="flex items-center gap-1">
+                            Kelas
+                            {violationSortField === "kelasNama" ? (
+                              violationSortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-rose-400" /> : <ArrowDown className="w-3 h-3 text-rose-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleViolationSort("countApproved")}
+                          className="pb-3 cursor-pointer hover:text-white transition-all text-center"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Total Kasus Sah
+                            {violationSortField === "countApproved" ? (
+                              violationSortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-rose-400" /> : <ArrowDown className="w-3 h-3 text-rose-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleViolationSort("countPending")}
+                          className="pb-3 cursor-pointer hover:text-white transition-all text-center"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Kasus Tertunda
+                            {violationSortField === "countPending" ? (
+                              violationSortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-rose-400" /> : <ArrowDown className="w-3 h-3 text-rose-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleViolationSort("totalPoin")}
+                          className="pb-3 cursor-pointer hover:text-white transition-all text-right"
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            Akumulasi Poin Aktif
+                            {violationSortField === "totalPoin" ? (
+                              violationSortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-rose-400" /> : <ArrowDown className="w-3 h-3 text-rose-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60">
-                      {filteredViolationSummaries.length === 0 ? (
+                      {sortedViolationSummaries.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="text-center py-20 text-slate-500 text-sm">
                             Tidak ada data akumulasi pelanggaran siswa.
                           </td>
                         </tr>
                       ) : (
-                        filteredViolationSummaries.map((item, index) => (
+                        sortedViolationSummaries.map((item, index) => (
                           <tr key={item.nis} className="text-sm">
                             <td className="py-3 text-slate-500 font-medium">{index + 1}</td>
                             <td className="py-3">
