@@ -35,7 +35,7 @@ interface SidebarLayoutProps {
 export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [schoolName, setSchoolName] = useState("KAWAL");
   const [schoolLogo, setSchoolLogo] = useState("");
 
@@ -51,13 +51,12 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      if (savedTheme === "light") {
-        document.documentElement.classList.add("light");
-      } else {
-        document.documentElement.classList.remove("light");
-      }
+    const activeTheme = savedTheme || "light";
+    setTheme(activeTheme);
+    if (activeTheme === "light") {
+      document.documentElement.classList.add("light");
+    } else {
+      document.documentElement.classList.remove("light");
     }
   }, []);
 

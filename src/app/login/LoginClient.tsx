@@ -11,17 +11,16 @@ interface LoginClientProps {
 
 export default function LoginClient({ schoolName, schoolLogo }: LoginClientProps) {
   const [state, formAction, isPending] = useActionState(loginAction, null);
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      if (savedTheme === "light") {
-        document.documentElement.classList.add("light");
-      } else {
-        document.documentElement.classList.remove("light");
-      }
+    const activeTheme = savedTheme || "light";
+    setTheme(activeTheme);
+    if (activeTheme === "light") {
+      document.documentElement.classList.add("light");
+    } else {
+      document.documentElement.classList.remove("light");
     }
   }, []);
 

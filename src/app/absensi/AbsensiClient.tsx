@@ -236,7 +236,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
   return (
     <div className="space-y-6 pb-24">
       {/* Controls: Dropdown Kelas & Picker Tanggal */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900/40 p-6 rounded-xl border border-slate-900">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900/40 p-6 rounded-xl border border-slate-900">
         <div>
           <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
             Pilih Kelas
@@ -265,15 +265,6 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
             onChange={(e) => setSelectedDate(e.target.value)}
             className="block w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
-        </div>
-
-        {/* Petunjuk Pintasan Keyboard */}
-        <div className="flex items-center gap-3 p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl text-xs text-slate-400">
-          <Keyboard className="w-5 h-5 text-emerald-400 shrink-0" />
-          <div>
-            <p className="font-semibold text-slate-300">Mode Super-User (Keyboard):</p>
-            <p>Gunakan [Arrow Up/Down] untuk baris, [H, S, I, A, D] untuk status, dan [Ctrl+S] atau [Enter] di luar input untuk menyimpan.</p>
-          </div>
         </div>
       </div>
 
