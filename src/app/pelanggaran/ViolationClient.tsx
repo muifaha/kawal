@@ -237,36 +237,68 @@ export default function ViolationClient({ user, classes, categories, initialHist
     REJECTED: "Ditolak",
   };
 
-  const showHistory = true;
+  const [activeTab, setActiveTab] = useState<"form" | "log">("form");
 
   return (
-    <div className={`grid grid-cols-1 gap-8 ${showHistory ? "lg:grid-cols-5" : ""}`}>
-      {/* Form Input Section */}
-      <div className={`${showHistory ? "lg:col-span-2" : "max-w-2xl mx-auto w-full"}`}>
-        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl">
-          <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-400" />
-            Input Laporan Pelanggaran
-          </h2>
-
-          {alert && (
-            <div
-              className={`mb-6 p-4 rounded-xl text-sm border flex items-start gap-3 ${
-                alert.type === "success"
-                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-                  : "bg-rose-500/10 border-rose-500/20 text-rose-300"
-              }`}
-            >
-              {alert.type === "success" ? (
-                <CheckCircle className="w-5 h-5 shrink-0 text-emerald-400" />
-              ) : (
-                <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
-              )}
-              <span>{alert.message}</span>
-            </div>
+    <div className="space-y-0">
+      {/* Tab Bar */}
+      <div className="flex border-b border-slate-900 mb-6">
+        <button
+          onClick={() => setActiveTab("form")}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all -mb-px ${
+            activeTab === "form"
+              ? "border-emerald-400 text-emerald-400"
+              : "border-transparent text-slate-500 hover:text-slate-300"
+          }`}
+        >
+          <AlertTriangle className="w-4 h-4" />
+          Catat Pelanggaran
+        </button>
+        <button
+          onClick={() => setActiveTab("log")}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all -mb-px ${
+            activeTab === "log"
+              ? "border-emerald-400 text-emerald-400"
+              : "border-transparent text-slate-500 hover:text-slate-300"
+          }`}
+        >
+          <Search className="w-4 h-4" />
+          Riwayat Laporan
+          {history.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400">
+              {history.length}
+            </span>
           )}
+        </button>
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Tab: Form Input */}
+      {activeTab === "form" && (
+        <div className="max-w-2xl">
+          <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
+              Input Laporan Pelanggaran
+            </h2>
+
+            {alert && (
+              <div
+                className={`p-4 rounded-xl text-sm border flex items-start gap-3 ${
+                  alert.type === "success"
+                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+                    : "bg-rose-500/10 border-rose-500/20 text-rose-300"
+                }`}
+              >
+                {alert.type === "success" ? (
+                  <CheckCircle className="w-5 h-5 shrink-0 text-emerald-400" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
+                )}
+                <span>{alert.message}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
             {/* Pilih Siswa (Multi-selection Tagging via @) */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
@@ -456,13 +488,13 @@ export default function ViolationClient({ user, classes, categories, initialHist
               </button>
             </div>
           </form>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* History Log Section */}
-      {showHistory && (
-        <div className="lg:col-span-3 space-y-4">
-          <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl flex flex-col h-[650px]">
+      {/* Tab: Log Riwayat */}
+      {activeTab === "log" && (
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 flex flex-col" style={{ minHeight: '600px' }}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <h2 className="text-lg font-bold text-white">
                 {user.role === "BK" ? "Log Semua Pelanggaran" : "Riwayat Laporan Saya"}
@@ -577,7 +609,6 @@ export default function ViolationClient({ user, classes, categories, initialHist
                   );
                 })
               )}
-            </div>
           </div>
         </div>
       )}

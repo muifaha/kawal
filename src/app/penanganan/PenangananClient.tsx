@@ -3,7 +3,7 @@
 import React, { useState, useTransition, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { savePenangananAction } from "@/app/actions/penanganan";
-import { Search, Calendar, FileText, CheckCircle, AlertCircle, Upload, X, Eye, ShieldAlert, BookOpen } from "lucide-react";
+import { Search, Calendar, FileText, CheckCircle, AlertCircle, Upload, X, Eye, ShieldAlert, BookOpen, ClipboardList } from "lucide-react";
 
 interface UserInfo {
   id: string;
@@ -227,6 +227,8 @@ export default function PenangananClient({ user, students, initialLogs, classes 
     return matchSearch && matchClass;
   });
 
+  const [activeTab, setActiveTab] = useState<"form" | "log">(isBK ? "form" : "log");
+
   return (
     <div className="space-y-6 pb-24">
       {alert && (
@@ -246,10 +248,42 @@ export default function PenangananClient({ user, students, initialLogs, classes 
         </div>
       )}
 
-      <div className={`grid grid-cols-1 ${isBK ? "lg:grid-cols-3" : "grid-cols-1"} gap-6 items-start`}>
-        {/* BK Input Form Section */}
+      {/* Tab Bar */}
+      <div className="flex border-b border-slate-900">
         {isBK && (
-          <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl space-y-6">
+          <button
+            onClick={() => setActiveTab("form")}
+            className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all -mb-px ${
+              activeTab === "form"
+                ? "border-emerald-400 text-emerald-400"
+                : "border-transparent text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            Catat Penanganan
+          </button>
+        )}
+        <button
+          onClick={() => setActiveTab("log")}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all -mb-px ${
+            activeTab === "log"
+              ? "border-emerald-400 text-emerald-400"
+              : "border-transparent text-slate-500 hover:text-slate-300"
+          }`}
+        >
+          <ClipboardList className="w-4 h-4" />
+          Log Riwayat
+          {logs.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400">
+              {logs.length}
+            </span>
+          )}
+        </button>
+      </div>
+      {/* Tab: Catat Penanganan */}
+      {activeTab === "form" && isBK && (
+        <div className="max-w-2xl">
+          <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-emerald-400" />
               Catat Penanganan Baru
@@ -455,10 +489,12 @@ export default function PenangananClient({ user, students, initialLogs, classes 
               </button>
             </form>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Counseling Log History Section */}
-        <div className={`bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl ${isBK ? "lg:col-span-2" : "col-span-1"} space-y-6`}>
+      {/* Tab: Log Riwayat */}
+      {activeTab === "log" && (
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <FileText className="w-5 h-5 text-emerald-400" />
@@ -573,7 +609,7 @@ export default function PenangananClient({ user, students, initialLogs, classes 
             </table>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
