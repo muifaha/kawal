@@ -1724,7 +1724,7 @@ export default function DashboardClient({
               <table className="min-w-full divide-y divide-slate-800">
                 <thead>
                   <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    <th className="pb-3 w-12">#</th>
+                    <th className="pb-3 w-12">No</th>
                     <th className="pb-3">Siswa</th>
                     <th className="pb-3">Kelas</th>
                     <th className="pb-3 text-center w-20">Hadir</th>
@@ -1798,7 +1798,7 @@ export default function DashboardClient({
                     <thead>
                       <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-900/60">
                         {/* Sticky headers */}
-                        <th className="py-3 px-3 w-12 sticky left-0 z-20 bg-slate-900 border-r border-slate-800/80 text-center">#</th>
+                        <th className="py-3 px-3 w-12 sticky left-0 z-20 bg-slate-900 border-r border-slate-800/80 text-center">No</th>
                         <th className="py-3 px-4 w-52 sticky left-12 z-20 bg-slate-900 border-r border-slate-800/80">Siswa</th>
                         
                         {/* Day columns */}
@@ -2281,7 +2281,7 @@ export default function DashboardClient({
                   <table className="min-w-full divide-y divide-slate-800">
                     <thead>
                       <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        <th className="pb-3 w-12">#</th>
+                        <th className="pb-3 w-12">No</th>
                         <th className="pb-3">Siswa</th>
                         <th className="pb-3">Kelas</th>
                         <th className="pb-3 text-center">Total Kasus Sah</th>
@@ -2345,7 +2345,7 @@ export default function DashboardClient({
                   <table className="min-w-full divide-y divide-slate-800">
                     <thead>
                       <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        <th className="pb-3 w-12">#</th>
+                        <th className="pb-3 w-12">No</th>
                         <th className="pb-3">Tanggal</th>
                         <th className="pb-3">Siswa</th>
                         <th className="pb-3">Kelas</th>

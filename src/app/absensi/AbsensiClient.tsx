@@ -368,7 +368,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
                 <table className="min-w-full divide-y divide-slate-900">
                   <thead className="bg-slate-900/50">
                     <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      <th className="py-3 px-3 w-10">#</th>
+                      <th className="py-3 px-3 w-10">No</th>
                       <th className="py-3 px-3 w-20 hidden sm:table-cell">NIS</th>
                       <th className="py-3 px-3">Nama Lengkap</th>
                       <th className="py-3 pl-2 pr-3 text-center w-64">Aksi Status Kehadiran</th>

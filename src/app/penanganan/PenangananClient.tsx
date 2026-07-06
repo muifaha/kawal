@@ -501,7 +501,7 @@ export default function PenangananClient({ user, students, initialLogs, classes 
             <table className="min-w-full divide-y divide-slate-800">
               <thead className="bg-slate-900/60">
                 <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="py-3 px-4 w-12">#</th>
+                  <th className="py-3 px-4 w-12">No</th>
                   <th className="py-3 px-4">Tanggal</th>
                   <th className="py-3 px-4">Siswa</th>
                   <th className="py-3 px-4">Kasus / Masalah</th>
