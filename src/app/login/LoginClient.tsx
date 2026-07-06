@@ -135,39 +135,6 @@ export default function LoginClient({ schoolName, schoolLogo }: LoginClientProps
               </button>
             </div>
           </form>
-
-          {/* Test Account Helper Section */}
-          <div className="mt-8 border-t border-slate-800 pt-6">
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Akun Uji Coba (Demo):
-            </h3>
-            <div className="mt-3 space-y-2 text-xs">
-              <div className="flex justify-between p-2 rounded bg-slate-950/40 border border-slate-800/60">
-                <span className="font-medium text-slate-300">Waka Kesiswaan (Master Admin)</span>
-                <span className="text-slate-400">
-                  <code className="text-emerald-400">waka_admin</code> / <code>waka123</code>
-                </span>
-              </div>
-              <div className="flex justify-between p-2 rounded bg-slate-950/40 border border-slate-800/60">
-                <span className="font-medium text-slate-300">Guru BK (Super Admin)</span>
-                <span className="text-slate-400">
-                  <code className="text-emerald-400">bk_admin</code> / <code>admin123</code>
-                </span>
-              </div>
-              <div className="flex justify-between p-2 rounded bg-slate-950/40 border border-slate-800/60">
-                <span className="font-medium text-slate-300">Wali Kelas XI RPL 2</span>
-                <span className="text-slate-400">
-                  <code className="text-emerald-400">walas_rpl</code> / <code>walas123</code>
-                </span>
-              </div>
-              <div className="flex justify-between p-2 rounded bg-slate-950/40 border border-slate-800/60">
-                <span className="font-medium text-slate-300">Guru Piket/Umum</span>
-                <span className="text-slate-400">
-                  <code className="text-emerald-400">guru_piket</code> / <code>guru123</code>
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
