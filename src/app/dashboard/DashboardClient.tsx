@@ -1688,32 +1688,25 @@ export default function DashboardClient({
                 ))}
               </select>
 
-              {/* Dropdowns for Month and Year (Only in Monthly Matrix mode) */}
+              {/* Combined Dropdown for Month and Year (Only in Monthly Matrix mode) */}
               {absenViewMode === "monthly" && (
-                <>
-                  <select
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                    className="py-1.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shrink-0 w-28"
-                  >
-                    {INDONESIAN_MONTHS.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
+                <select
+                  value={`${selectedMonth}-${selectedYear}`}
+                  onChange={(e) => {
+                    const [m, y] = e.target.value.split("-").map(Number);
+                    setSelectedMonth(m);
+                    setSelectedYear(y);
+                  }}
+                  className="py-1.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shrink-0 w-44"
+                >
+                  {years.flatMap((y) =>
+                    INDONESIAN_MONTHS.map((m) => (
+                      <option key={`${m.value}-${y}`} value={`${m.value}-${y}`}>
+                        {m.label} {y}
                       </option>
-                    ))}
-                  </select>
-                  <select
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="py-1.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shrink-0 w-20"
-                  >
-                    {years.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
-                </>
+                    ))
+                  )}
+                </select>
               )}
             </div>
           </div>
