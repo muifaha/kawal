@@ -30,6 +30,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  History,
 } from "lucide-react";
 import { resolveSummonsAction } from "@/app/actions/kesiswaan";
 import { printSingleSummons, printBulkSummons } from "@/lib/printUtils";
@@ -2490,10 +2491,10 @@ export default function DashboardClient({
                   <table className="min-w-full divide-y divide-slate-800">
                     <thead>
                       <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider select-none">
-                        <th className="pb-3 w-12">No</th>
+                        <th className="pb-3 px-4 w-12">No</th>
                         <th
                           onClick={() => handleViolationSort("nama")}
-                          className="pb-3 cursor-pointer hover:text-white transition-all w-[28%]"
+                          className="pb-3 px-4 cursor-pointer hover:text-white transition-all w-[28%]"
                         >
                           <div className="flex items-center gap-1">
                             Siswa
@@ -2506,7 +2507,7 @@ export default function DashboardClient({
                         </th>
                         <th
                           onClick={() => handleViolationSort("kelasNama")}
-                          className="pb-3 cursor-pointer hover:text-white transition-all w-[15%]"
+                          className="pb-3 px-4 cursor-pointer hover:text-white transition-all w-[15%]"
                         >
                           <div className="flex items-center gap-1">
                             Kelas
@@ -2519,7 +2520,7 @@ export default function DashboardClient({
                         </th>
                         <th
                           onClick={() => handleViolationSort("countApproved")}
-                          className="pb-3 cursor-pointer hover:text-white transition-all text-center"
+                          className="pb-3 px-4 cursor-pointer hover:text-white transition-all text-center"
                         >
                           <div className="flex items-center justify-center gap-1">
                             Total Kasus Sah
@@ -2532,7 +2533,7 @@ export default function DashboardClient({
                         </th>
                         <th
                           onClick={() => handleViolationSort("countPending")}
-                          className="pb-3 cursor-pointer hover:text-white transition-all text-center"
+                          className="pb-3 px-4 cursor-pointer hover:text-white transition-all text-center"
                         >
                           <div className="flex items-center justify-center gap-1">
                             Kasus Tertunda
@@ -2545,7 +2546,7 @@ export default function DashboardClient({
                         </th>
                         <th
                           onClick={() => handleViolationSort("totalPoin")}
-                          className="pb-3 cursor-pointer hover:text-white transition-all text-right"
+                          className="pb-3 px-4 cursor-pointer hover:text-white transition-all text-right"
                         >
                           <div className="flex items-center justify-end gap-1">
                             Akumulasi Poin Aktif
@@ -2556,20 +2557,21 @@ export default function DashboardClient({
                             )}
                           </div>
                         </th>
+                        <th className="pb-3 px-4 text-center">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60">
                       {sortedViolationSummaries.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="text-center py-20 text-slate-500 text-sm">
+                          <td colSpan={7} className="text-center py-20 text-slate-500 text-sm">
                             Tidak ada data akumulasi pelanggaran siswa.
                           </td>
                         </tr>
                       ) : (
                         sortedViolationSummaries.map((item, index) => (
-                          <tr key={item.nis} className="text-sm">
-                            <td className="py-3 text-slate-500 font-medium">{index + 1}</td>
-                            <td className="py-3">
+                          <tr key={item.nis} className="text-sm hover:bg-slate-900/10 transition-colors">
+                            <td className="py-3 px-4 text-slate-500 font-medium">{index + 1}</td>
+                            <td className="py-3 px-4">
                               <button
                                 onClick={() => {
                                   setSelectedStudentNis(item.nis);
@@ -2580,14 +2582,14 @@ export default function DashboardClient({
                               </button>
                               <div className="text-xs text-slate-400">NIS: {item.nis}</div>
                             </td>
-                            <td className="py-3 text-slate-300">{item.kelasNama}</td>
-                            <td className="py-3 text-center text-rose-400 font-semibold">
+                            <td className="py-3 px-4 text-slate-300">{item.kelasNama}</td>
+                            <td className="py-3 px-4 text-center text-rose-400 font-semibold">
                               {item.countApproved} Kasus
                             </td>
-                            <td className="py-3 text-center text-amber-400 font-semibold">
+                            <td className="py-3 px-4 text-center text-amber-400 font-semibold">
                               {item.countPending} Pending
                             </td>
-                            <td className="py-3 text-right">
+                            <td className="py-3 px-4 text-right">
                               <span
                                 className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
                                   item.totalPoin >= 50
@@ -2599,6 +2601,16 @@ export default function DashboardClient({
                               >
                                 {item.totalPoin} Poin
                               </span>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <button
+                                onClick={() => setSelectedStudentNis(item.nis)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/25 hover:text-rose-300 rounded transition-colors"
+                                title="Lihat Histori Pelanggaran Siswa"
+                              >
+                                <History className="w-3.5 h-3.5" />
+                                Histori
+                              </button>
                             </td>
                           </tr>
                         ))
