@@ -160,8 +160,12 @@ export default function ImportExcelModal({
     const cleanRows = dataRows.filter((r) => r.length > 0 && r.some((val) => val !== null && val !== ""));
 
     if (entityType === "users") {
-      const required = ["username", "nama lengkap", "role (waka/bk/walas/guru)"];
+      const hasRoleHeader = headers.includes("role (waka/bk/walas/guru/osis)") || headers.includes("role (waka/bk/walas/guru)");
+      const required = ["username", "nama lengkap"];
       const missing = required.filter((r) => !headers.includes(r));
+      if (!hasRoleHeader) {
+        missing.push("role (waka/bk/walas/guru/osis)");
+      }
       if (missing.length > 0) {
         return { error: `Header Excel tidak sesuai. Kolom wajib yang kurang: ${missing.join(", ")}` };
       }
@@ -170,7 +174,12 @@ export default function ImportExcelModal({
       const userIdx = headers.indexOf("username");
       const passIdx = headers.indexOf("password");
       const namaIdx = headers.indexOf("nama lengkap");
-      const roleIdx = headers.indexOf("role (waka/bk/walas/guru)");
+      
+      let roleIdx = headers.indexOf("role (waka/bk/walas/guru/osis)");
+      if (roleIdx === -1) {
+        roleIdx = headers.indexOf("role (waka/bk/walas/guru)");
+      }
+      
       const waIdx = headers.indexOf("no whatsapp");
 
       const mappedRows = cleanRows.map((r) => ({
