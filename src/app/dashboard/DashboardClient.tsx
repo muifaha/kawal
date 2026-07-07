@@ -2353,18 +2353,20 @@ export default function DashboardClient({
 
                               {item.kategoriNama !== "REMISI" && item.kategoriNama !== "PENANGANAN" && (
                                 <div className="flex items-center justify-end gap-1.5 pt-1">
-                                  {item.isCensored && (
-                                    <span className="text-[9px] text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider">
-                                      Disensor
+                                  {item.isCensored && !isBKoWaka && (
+                                    <span className="p-1 text-amber-500" title="Laporan disensor untuk publik">
+                                      <EyeOff className="w-3.5 h-3.5" />
                                     </span>
                                   )}
                                   {item.isCensored && isBKoWaka && (
                                     <button
                                       onClick={() => setRevealedReports((prev) => ({ ...prev, [item.id]: !isRevealed }))}
-                                      className="p-1 rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
-                                      title={isRevealed ? "Terapkan Sensor" : "Buka Sensor (Intip)"}
+                                      className={`p-1 rounded transition-colors ${
+                                        isRevealed ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-slate-900 text-amber-400 hover:bg-slate-800"
+                                      }`}
+                                      title={isRevealed ? "Sembunyikan Nama (Sensor)" : "Tampilkan Nama (Buka Sensor)"}
                                     >
-                                      {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                      {isRevealed ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                     </button>
                                   )}
                                   {isBKoWaka && (
@@ -2612,14 +2614,14 @@ export default function DashboardClient({
                   <table className="min-w-full divide-y divide-slate-800">
                     <thead>
                       <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider select-none">
-                        <th className="pb-3 w-12">No</th>
-                        <th className="pb-3">Tanggal</th>
-                        <th className="pb-3">Siswa</th>
-                        <th className="pb-3">Pelanggaran</th>
-                        <th className="pb-3 text-center">Poin</th>
-                        <th className="pb-3">Pelapor</th>
-                        <th className="pb-3 text-center">Status</th>
-                        <th className="pb-3 text-center">Aksi</th>
+                        <th className="pb-3 px-4 w-12">No</th>
+                        <th className="pb-3 px-4">Tanggal</th>
+                        <th className="pb-3 px-4">Siswa</th>
+                        <th className="pb-3 px-4">Pelanggaran</th>
+                        <th className="pb-3 px-4 text-center">Poin</th>
+                        <th className="pb-3 px-4">Pelapor</th>
+                        <th className="pb-3 px-4 text-center">Status</th>
+                        <th className="pb-3 px-4 text-center">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60">
@@ -2637,8 +2639,8 @@ export default function DashboardClient({
 
                           return (
                             <tr key={item.id} className="text-xs hover:bg-slate-900/10 transition-colors">
-                              <td className="py-3 text-slate-500 font-medium">{index + 1}</td>
-                              <td className="py-3 text-slate-400 whitespace-nowrap">
+                              <td className="py-3 px-4 text-slate-500 font-medium">{index + 1}</td>
+                              <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
                                 {new Date(item.tanggal).toLocaleDateString("id-ID", {
                                   day: "numeric",
                                   month: "short",
@@ -2651,7 +2653,7 @@ export default function DashboardClient({
                                   })}
                                 </div>
                               </td>
-                              <td className="py-3">
+                              <td className="py-3 px-4">
                                 <button
                                   onClick={() => setSelectedStudentNis(item.studentNis)}
                                   className="font-semibold text-white hover:text-rose-400 transition-colors text-left focus:outline-none block"
@@ -2662,7 +2664,7 @@ export default function DashboardClient({
                                   {item.kelasNama} • NIS: {item.studentNis}
                                 </div>
                               </td>
-                              <td className="py-3 max-w-xs">
+                              <td className="py-3 px-4 max-w-xs">
                                 <div className="text-[10px] text-slate-500 uppercase font-semibold">
                                   {item.kategoriNama}
                                 </div>
@@ -2679,7 +2681,7 @@ export default function DashboardClient({
                                   </div>
                                 )}
                               </td>
-                              <td className={`py-3 text-center font-bold ${
+                              <td className={`py-3 px-4 text-center font-bold ${
                                 item.poin > 0 
                                   ? "text-rose-400" 
                                   : item.poin < 0 
@@ -2688,10 +2690,10 @@ export default function DashboardClient({
                               }`}>
                                 {item.poin > 0 ? `+${item.poin}` : item.poin}
                               </td>
-                              <td className="py-3 text-slate-400 whitespace-nowrap">
+                              <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
                                 {item.pelaporName}
                               </td>
-                              <td className="py-3 text-center">
+                              <td className="py-3 px-4 text-center">
                                 {item.kategoriNama === "PENANGANAN" ? (
                                   <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
                                     Tertangani
@@ -2706,20 +2708,22 @@ export default function DashboardClient({
                                   </span>
                                 )}
                               </td>
-                              <td className="py-3">
+                              <td className="py-3 px-4">
                                 <div className="flex items-center justify-center gap-1.5">
-                                  {item.isCensored && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider">
-                                      Disensor
+                                  {item.isCensored && !isBKoWaka && (
+                                    <span className="p-1 text-amber-500" title="Laporan disensor untuk publik">
+                                      <EyeOff className="w-3.5 h-3.5" />
                                     </span>
                                   )}
                                   {item.isCensored && isBKoWaka && (
                                     <button
                                       onClick={() => setRevealedReports((prev) => ({ ...prev, [item.id]: !isRevealed }))}
-                                      className="p-1 rounded bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white transition-colors"
-                                      title={isRevealed ? "Terapkan Sensor" : "Buka Sensor (Intip)"}
+                                      className={`p-1 rounded transition-colors ${
+                                        isRevealed ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-slate-800 text-amber-400 hover:bg-slate-750"
+                                      }`}
+                                      title={isRevealed ? "Sembunyikan Nama (Sensor)" : "Tampilkan Nama (Buka Sensor)"}
                                     >
-                                      {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                      {isRevealed ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                     </button>
                                   )}
                                   {isBKoWaka && item.kategoriNama !== "REMISI" && item.kategoriNama !== "PENANGANAN" && (

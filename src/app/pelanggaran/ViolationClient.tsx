@@ -593,18 +593,20 @@ export default function ViolationClient({ user, classes, categories, initialHist
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center justify-center gap-1.5">
-                              {item.isCensored && (
-                                <span className="inline-flex items-center gap-1 text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-semibold uppercase tracking-wider">
-                                  Sensor
+                              {item.isCensored && !isBKoWaka && (
+                                <span className="p-1 text-amber-500" title="Laporan disensor untuk publik">
+                                  <EyeOff className="w-3.5 h-3.5" />
                                 </span>
                               )}
                               {item.isCensored && isBKoWaka && (
                                 <button
                                   onClick={() => setRevealedReports((prev) => ({ ...prev, [item.id]: !isRevealed }))}
-                                  className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-                                  title={isRevealed ? "Terapkan Sensor" : "Buka Sensor (Intip)"}
+                                  className={`p-1 rounded transition-colors ${
+                                    isRevealed ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-slate-800 text-amber-400 hover:bg-slate-700"
+                                  }`}
+                                  title={isRevealed ? "Sembunyikan Nama (Sensor)" : "Tampilkan Nama (Buka Sensor)"}
                                 >
-                                  {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                  {isRevealed ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                 </button>
                               )}
                               {isBKoWaka && (
