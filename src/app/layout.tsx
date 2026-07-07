@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kawal - Sistem Absensi & Poin Pelanggaran Siswa",
-  description: "Sistem absensi harian dan pencatatan poin pelanggaran siswa sekolah, dikelola oleh BK, Wali Kelas, dan Guru Piket.",
+  title: "Kawal - Sistem Monitoring Sekolah",
+  description: "Sistem monitoring sekolah, absensi harian, dan pencatatan poin pelanggaran siswa, dikelola oleh BK, Wali Kelas, dan Guru Piket.",
 };
 
 export default function RootLayout({
