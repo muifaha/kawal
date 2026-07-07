@@ -64,7 +64,7 @@ interface ViolationClientProps {
 }
 
 export default function ViolationClient({ user, classes, categories, initialHistory }: ViolationClientProps) {
-  // Flatten all students for global `@` search
+  // Flatten all students for global search
   const allStudents = React.useMemo(() => {
     return classes.flatMap((c) =>
       c.siswa.map((s) => ({
@@ -144,10 +144,9 @@ export default function ViolationClient({ user, classes, categories, initialHist
     });
   };
 
-  // Student "@" query parsing
-  const atIndex = studentSearch.lastIndexOf("@");
-  const isSearchingStudent = atIndex !== -1;
-  const studentQuery = isSearchingStudent ? studentSearch.substring(atIndex + 1).toLowerCase() : "";
+  // Student query parsing
+  const isSearchingStudent = studentSearch.trim().length > 0;
+  const studentQuery = isSearchingStudent ? studentSearch.trim().toLowerCase() : "";
 
   const filteredStudents = React.useMemo(() => {
     if (!isSearchingStudent) return [];
@@ -304,10 +303,10 @@ export default function ViolationClient({ user, classes, categories, initialHist
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Pilih Siswa (Multi-selection Tagging via @) */}
+            {/* Pilih Siswa (Multi-selection Tagging) */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Pilih Siswa (Ketik @nama)
+                Pilih Siswa (Ketik Nama)
               </label>
               
               {/* Selected tags */}
@@ -342,7 +341,7 @@ export default function ViolationClient({ user, classes, categories, initialHist
                   onKeyDown={handleStudentKeyDown}
                   onFocus={() => setShowStudentDropdown(true)}
                   onBlur={() => setTimeout(() => setShowStudentDropdown(false), 200)}
-                  placeholder="Ketik @ untuk mencari nama siswa..."
+                  placeholder="Ketik nama untuk mencari nama siswa..."
                   className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                 />
                 
