@@ -2284,7 +2284,7 @@ export default function DashboardClient({
                   {selectedStudentLogs.length === 0 ? (
                     <p className="text-slate-500 text-xs py-10 text-center">Tidak ada catatan pelanggaran, remisi, atau penanganan siswa.</p>
                   ) : (
-                    <div className="relative pl-6 space-y-6 before:absolute before:inset-y-1 before:left-2.5 before:w-0.5 before:bg-slate-800/80">
+                    <div className="relative pl-6 space-y-6 before:absolute before:top-[7px] before:bottom-[7px] before:left-[9px] before:w-0.5 before:bg-slate-800/80">
                       {selectedStudentLogs.map((item) => {
                         const isBKoWaka = user.role === "BK" || user.role === "WAKA";
                         const isRevealed = revealedReports[item.id] || false;
@@ -2292,24 +2292,27 @@ export default function DashboardClient({
 
                         let nodeDotColor = "bg-rose-500 ring-rose-500/20";
                         let nodeTitleColor = "text-rose-400";
+                        let nodeTypeLabel = "Pelanggaran";
                         if (item.kategoriNama === "REMISI") {
                           nodeDotColor = "bg-emerald-500 ring-emerald-500/20";
                           nodeTitleColor = "text-emerald-400";
+                          nodeTypeLabel = "Remisi";
                         } else if (item.kategoriNama === "PENANGANAN") {
                           nodeDotColor = "bg-indigo-500 ring-indigo-500/20";
                           nodeTitleColor = "text-indigo-400";
+                          nodeTypeLabel = "Penanganan";
                         }
 
                         return (
                           <div key={item.id} className="relative space-y-1.5">
                             {/* Dot on line */}
-                            <span className={`absolute -left-[22px] top-1.5 w-2.5 h-2.5 rounded-full ring-4 ${nodeDotColor}`} />
+                            <span className={`absolute -left-[15px] top-[5px] w-2.5 h-2.5 rounded-full ring-4 ${nodeDotColor}`} />
 
                             {/* Node Metadata */}
                             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                               <div className="flex items-center gap-1.5">
                                 <span className={`font-black uppercase tracking-wider text-[10px] ${nodeTitleColor}`}>
-                                  {item.kategoriNama}
+                                  {nodeTypeLabel}
                                 </span>
                                 <span className="text-slate-600">&bull;</span>
                                 <span className="text-slate-400">
@@ -2317,6 +2320,13 @@ export default function DashboardClient({
                                     day: "numeric",
                                     month: "short",
                                     year: "numeric",
+                                  })}
+                                </span>
+                                <span className="text-slate-600">&bull;</span>
+                                <span className="text-slate-500">
+                                  {new Date(item.tanggal).toLocaleTimeString("id-ID", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
                                   })}
                                 </span>
                               </div>
@@ -2336,11 +2346,18 @@ export default function DashboardClient({
 
                             {/* Details */}
                             <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-900/60 space-y-2">
-                              <p className={`text-slate-100 font-medium text-xs whitespace-normal break-words leading-relaxed ${
-                                shouldBlur ? "filter blur-sm select-none pointer-events-none opacity-40 transition-all" : "transition-all"
-                              }`}>
-                                {item.violationName}
-                              </p>
+                              {item.kategoriNama !== "REMISI" && item.kategoriNama !== "PENANGANAN" && (
+                                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                                  {item.kategoriNama} : <span className={`normal-case text-slate-300 ${shouldBlur ? "filter blur-sm select-none pointer-events-none opacity-40" : ""}`}>{item.violationName}</span>
+                                </p>
+                              )}
+                              {(item.kategoriNama === "REMISI" || item.kategoriNama === "PENANGANAN") && (
+                                <p className={`text-slate-100 font-medium text-xs whitespace-normal break-words leading-relaxed ${
+                                  shouldBlur ? "filter blur-sm select-none pointer-events-none opacity-40 transition-all" : "transition-all"
+                                }`}>
+                                  {item.violationName}
+                                </p>
+                              )}
                               {item.notes && (
                                 <p className={`text-xs text-slate-400 bg-slate-950/60 p-2 rounded border border-slate-900/30 whitespace-normal break-words leading-relaxed ${
                                   shouldBlur ? "filter blur-sm select-none pointer-events-none opacity-40 transition-all" : "transition-all"
