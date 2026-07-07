@@ -416,7 +416,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
               </div>
             )}
             <span className="text-sm font-semibold text-slate-400 hidden md:inline">
-              Sistem Absensi & Pelanggaran Siswa
+              Sistem Monitoring Sekolah
             </span>
           </div>
 
