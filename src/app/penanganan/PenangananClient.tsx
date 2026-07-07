@@ -141,9 +141,11 @@ export default function PenangananClient({ user, students, initialLogs, classes 
       setKasus("");
     } else if (value.startsWith("summons:")) {
       const [_, id, level, thresholdPointsStr] = value.split(":");
+      const limitVal = parseInt(thresholdPointsStr, 10);
       setSelectedSummonsId(id);
-      setThresholdPoints(parseInt(thresholdPointsStr, 10));
-      setKasus(`Menangani Surat Panggilan Orang Tua / Peringatan Tingkat ${level === "3" ? "III" : level === "2" ? "II" : "I"} (Akumulasi Poin ${thresholdPointsStr})`);
+      setThresholdPoints(limitVal);
+      const limitLabel = limitVal > 100 ? `${limitVal - 100} Alfa` : `${limitVal} Poin`;
+      setKasus(`Menangani Surat Panggilan Orang Tua / Peringatan Tingkat ${level === "3" ? "III" : level === "2" ? "II" : "I"} (${limitLabel})`);
     } else if (value.startsWith("violation:")) {
       const [_, id, kategori, nama, poin] = value.split(":");
       setSelectedSummonsId("");
@@ -373,7 +375,7 @@ export default function PenangananClient({ user, students, initialLogs, classes 
                               <optgroup label="Peringatan & Pemanggilan Aktif (Mengubah status menjadi Selesai)">
                                 {selectedStudent.activeWarnings.map((w) => (
                                   <option key={w.id} value={`summons:${w.id}:${w.level}:${w.thresholdPoints}`}>
-                                    Panggilan {w.level === 3 ? "III" : w.level === 2 ? "II" : "I"} (Batas {w.thresholdPoints} Poin)
+                                    Panggilan {w.level === 3 ? "III" : w.level === 2 ? "II" : "I"} ({w.thresholdPoints > 100 ? `Batas ${w.thresholdPoints - 100} Alfa` : `Batas ${w.thresholdPoints} Poin`})
                                   </option>
                                 ))}
                               </optgroup>

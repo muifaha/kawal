@@ -70,9 +70,24 @@ export default async function PenangananPage({
       settings[s.key] = s.value;
     });
 
+    const activeTA = await prisma.tahunAjaran.findFirst({
+      where: { isActive: true },
+    });
+
+    const rangeMulai = activeTA
+      ? (activeTA.semesterAktif === "GANJIL" ? activeTA.ganjilMulai : activeTA.genapMulai)
+      : null;
+    const rangeSelesai = activeTA
+      ? (activeTA.semesterAktif === "GANJIL" ? activeTA.ganjilSelesai : activeTA.genapSelesai)
+      : null;
+
     const threshold1 = parseInt(settings.threshold_1 || "25", 10);
     const threshold2 = parseInt(settings.threshold_2 || "50", 10);
     const threshold3 = parseInt(settings.threshold_3 || "75", 10);
+
+    const thresholdAlfa1 = parseInt(settings.threshold_alfa_1 || "3", 10);
+    const thresholdAlfa2 = parseInt(settings.threshold_alfa_2 || "5", 10);
+    const thresholdAlfa3 = parseInt(settings.threshold_alfa_3 || "7", 10);
 
     const dbStudents = await prisma.siswa.findMany({
       where: studentFilter,
@@ -91,6 +106,17 @@ export default async function PenangananPage({
         },
         remisi: true,
         pemanggilan: true, // Ambil semua pemanggilan untuk cek status
+        absensi: {
+          where: {
+            status: "A",
+            ...(rangeMulai && rangeSelesai ? {
+              tanggal: {
+                gte: rangeMulai,
+                lte: rangeSelesai,
+              },
+            } : {}),
+          },
+        },
       },
       orderBy: { nama: "asc" },
     });
@@ -101,37 +127,76 @@ export default async function PenangananPage({
       const netPoints = Math.max(0, totalViolations - totalRemissions);
 
       const activeWarnings: any[] = [];
-      const qualifiedTiers = [];
-      if (netPoints >= threshold3) qualifiedTiers.push({ level: 3, points: threshold3 });
-      if (netPoints >= threshold2) qualifiedTiers.push({ level: 2, points: threshold2 });
-      if (netPoints >= threshold1) qualifiedTiers.push({ level: 1, points: threshold1 });
 
-      let maxTriggeredLevel = 0;
+      // Point-based warnings calculation
+      let maxTriggeredPointsLevel = 0;
       let maxThresholdPoints = 0;
-
       s.pemanggilan.forEach((p) => {
-        const lvl = p.thresholdPoints === threshold3 ? 3 : p.thresholdPoints === threshold2 ? 2 : 1;
-        if (lvl > maxTriggeredLevel) {
-          maxTriggeredLevel = lvl;
-          maxThresholdPoints = p.thresholdPoints;
+        if (p.thresholdPoints <= 100) {
+          const lvl = p.thresholdPoints === threshold3 ? 3 : p.thresholdPoints === threshold2 ? 2 : 1;
+          if (lvl > maxTriggeredPointsLevel) {
+            maxTriggeredPointsLevel = lvl;
+            maxThresholdPoints = p.thresholdPoints;
+          }
         }
       });
+      let qualifiedPointsLevel = 0;
+      let qualifiedPointsThreshold = 0;
+      if (netPoints >= threshold3) { qualifiedPointsLevel = 3; qualifiedPointsThreshold = threshold3; }
+      else if (netPoints >= threshold2) { qualifiedPointsLevel = 2; qualifiedPointsThreshold = threshold2; }
+      else if (netPoints >= threshold1) { qualifiedPointsLevel = 1; qualifiedPointsThreshold = threshold1; }
 
-      qualifiedTiers.forEach((q) => {
-        if (q.level > maxTriggeredLevel) {
-          maxTriggeredLevel = q.level;
-          maxThresholdPoints = q.points;
-        }
-      });
+      if (qualifiedPointsLevel > maxTriggeredPointsLevel) {
+        maxTriggeredPointsLevel = qualifiedPointsLevel;
+        maxThresholdPoints = qualifiedPointsThreshold;
+      }
 
-      if (maxTriggeredLevel > 0) {
+      if (maxTriggeredPointsLevel > 0) {
         const dbWarning = s.pemanggilan.find((w) => w.thresholdPoints === maxThresholdPoints);
         const status = dbWarning ? dbWarning.status : "PENDING";
         if (status === "PENDING") {
           activeWarnings.push({
             id: dbWarning ? dbWarning.id : `virtual-${maxThresholdPoints}`,
-            level: maxTriggeredLevel,
+            level: maxTriggeredPointsLevel,
             thresholdPoints: maxThresholdPoints,
+            tanggal: dbWarning ? dbWarning.createdAt.toISOString() : new Date().toISOString(),
+          });
+        }
+      }
+
+      // Alpha-based warnings calculation
+      const alphaCount = s.absensi?.length || 0;
+      let maxTriggeredAlfaLevel = 0;
+      let maxThresholdAlfaPoints = 0;
+      s.pemanggilan.forEach((p) => {
+        if (p.thresholdPoints > 100) {
+          const thresholdAlfaVal = p.thresholdPoints - 100;
+          const lvl = thresholdAlfaVal === thresholdAlfa3 ? 3 : thresholdAlfaVal === thresholdAlfa2 ? 2 : 1;
+          if (lvl > maxTriggeredAlfaLevel) {
+            maxTriggeredAlfaLevel = lvl;
+            maxThresholdAlfaPoints = p.thresholdPoints;
+          }
+        }
+      });
+      let qualifiedAlfaLevel = 0;
+      let qualifiedAlfaThreshold = 0;
+      if (alphaCount >= thresholdAlfa3) { qualifiedAlfaLevel = 3; qualifiedAlfaThreshold = 100 + thresholdAlfa3; }
+      else if (alphaCount >= thresholdAlfa2) { qualifiedAlfaLevel = 2; qualifiedAlfaThreshold = 100 + thresholdAlfa2; }
+      else if (alphaCount >= thresholdAlfa1) { qualifiedAlfaLevel = 1; qualifiedAlfaThreshold = 100 + thresholdAlfa1; }
+
+      if (qualifiedAlfaLevel > maxTriggeredAlfaLevel) {
+        maxTriggeredAlfaLevel = qualifiedAlfaLevel;
+        maxThresholdAlfaPoints = qualifiedAlfaThreshold;
+      }
+
+      if (maxTriggeredAlfaLevel > 0) {
+        const dbWarning = s.pemanggilan.find((w) => w.thresholdPoints === maxThresholdAlfaPoints);
+        const status = dbWarning ? dbWarning.status : "PENDING";
+        if (status === "PENDING") {
+          activeWarnings.push({
+            id: dbWarning ? dbWarning.id : `virtual-${maxThresholdAlfaPoints}`,
+            level: maxTriggeredAlfaLevel,
+            thresholdPoints: maxThresholdAlfaPoints,
             tanggal: dbWarning ? dbWarning.createdAt.toISOString() : new Date().toISOString(),
           });
         }
