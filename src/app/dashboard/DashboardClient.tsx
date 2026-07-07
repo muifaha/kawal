@@ -313,6 +313,7 @@ export default function DashboardClient({
   const [localViolationRecap, setLocalViolationRecap] = useState<ViolationRecapItem[]>(violationRecap);
   const [revealedReports, setRevealedReports] = useState<Record<string, boolean>>({});
   const [selectedStudentNis, setSelectedStudentNis] = useState<string | null>(null);
+  const [timelineCategoryFilter, setTimelineCategoryFilter] = useState<string>("ALL");
   const [, startTransitionCensor] = useTransition();
 
   useEffect(() => {
@@ -2250,67 +2251,73 @@ export default function DashboardClient({
                     </div>
                   </div>
 
-                  {/* Cetak Surat Action if student has warnings in summonsList */}
-                  {summonsList.some(s => s.studentId === selectedStudentInfo.id) && (
-                    <div className="pt-2">
-                      <button
-                        onClick={() => {
-                          const activeSummons = summonsList.find(s => s.studentId === selectedStudentInfo.id && s.status === "PENDING");
-                          if (activeSummons) {
-                            handlePrintSummons(activeSummons);
-                          } else {
-                            const anySummons = summonsList.find(s => s.studentId === selectedStudentInfo.id);
-                            if (anySummons) {
-                              handlePrintSummons(anySummons);
-                            }
-                          }
-                        }}
-                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all-indigo-600/10 cursor-pointer"
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                        Cetak Surat Panggilan
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 {/* Right Column: Timeline Logs */}
                 <div className="bg-slate-950/20 p-6 rounded-2xl border border-slate-900 space-y-4">
-                  <h4 className="text-sm font-bold text-white flex items-center gap-1.5 uppercase tracking-wide">
-                    <Clock className="w-4 h-4 text-rose-400" />
-                    Timeline Aktivitas & Laporan
-                  </h4>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <h4 className="text-sm font-bold text-white flex items-center gap-1.5 uppercase tracking-wide">
+                      <Clock className="w-4 h-4 text-rose-400" />
+                      Timeline Aktivitas & Laporan
+                    </h4>
+                    <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800">
+                      {[
+                        { value: "ALL", label: "Semua" },
+                        { value: "PELANGGARAN", label: "Pelanggaran" },
+                        { value: "REMISI", label: "Remisi" },
+                        { value: "PENANGANAN", label: "Penanganan" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setTimelineCategoryFilter(opt.value)}
+                          className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all ${
+                            timelineCategoryFilter === opt.value
+                              ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-                  {selectedStudentLogs.length === 0 ? (
-                    <p className="text-slate-500 text-xs py-10 text-center">Tidak ada catatan pelanggaran, remisi, atau penanganan siswa.</p>
+                  {(() => {
+                    const filteredLogs = timelineCategoryFilter === "ALL"
+                      ? selectedStudentLogs
+                      : selectedStudentLogs.filter((item) => {
+                          if (timelineCategoryFilter === "PELANGGARAN") return item.kategoriNama !== "REMISI" && item.kategoriNama !== "PENANGANAN";
+                          return item.kategoriNama === timelineCategoryFilter;
+                        });
+                    return filteredLogs.length === 0 ? (
+                    <p className="text-slate-500 text-xs py-10 text-center">Tidak ada catatan {timelineCategoryFilter === "ALL" ? "pelanggaran, remisi, atau penanganan" : timelineCategoryFilter.toLowerCase()} siswa.</p>
                   ) : (
-                    <div className="relative pl-6 space-y-6 before:absolute before:top-[7px] before:bottom-[7px] before:left-[9px] before:w-0.5 before:bg-slate-800/80">
-                      {selectedStudentLogs.map((item) => {
+                    <div className="space-y-4">
+                      {filteredLogs.map((item) => {
                         const isBKoWaka = user.role === "BK" || user.role === "WAKA";
                         const isRevealed = revealedReports[item.id] || false;
                         const shouldBlur = item.isCensored && (!isBKoWaka || !isRevealed);
 
-                        let nodeDotColor = "bg-rose-500 ring-rose-500/20";
+                        let nodeDotColor = "bg-rose-500";
                         let nodeTitleColor = "text-rose-400";
                         let nodeTypeLabel = "Pelanggaran";
                         if (item.kategoriNama === "REMISI") {
-                          nodeDotColor = "bg-emerald-500 ring-emerald-500/20";
+                          nodeDotColor = "bg-emerald-500";
                           nodeTitleColor = "text-emerald-400";
                           nodeTypeLabel = "Remisi";
                         } else if (item.kategoriNama === "PENANGANAN") {
-                          nodeDotColor = "bg-indigo-500 ring-indigo-500/20";
+                          nodeDotColor = "bg-indigo-500";
                           nodeTitleColor = "text-indigo-400";
                           nodeTypeLabel = "Penanganan";
                         }
 
                         return (
-                          <div key={item.id} className="relative space-y-1.5">
-                            {/* Dot on line */}
-                            <span className={`absolute -left-[15px] top-[5px] w-2.5 h-2.5 rounded-full ring-4 ${nodeDotColor}`} />
+                          <div key={item.id} className="space-y-1.5">
 
                             {/* Node Metadata */}
                             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                               <div className="flex items-center gap-1.5">
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${nodeDotColor}`} />
                                 <span className={`font-black uppercase tracking-wider text-[10px] ${nodeTitleColor}`}>
                                   {nodeTypeLabel}
                                 </span>
@@ -2407,7 +2414,8 @@ export default function DashboardClient({
                         );
                       })}
                     </div>
-                  )}
+                  );
+                  })()}
                 </div>
               </div>
             </div>
