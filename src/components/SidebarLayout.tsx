@@ -298,7 +298,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
             onClick={() => setIsMobileOpen(false)}
           />
 
-          <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-slate-900 p-6 flex flex-col border-r border-slate-800 shadow-2xl">
+          <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-slate-900 p-6 flex flex-col border-r border-slate-800">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 {schoolLogo ? (
@@ -397,7 +397,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col md:pl-64 min-w-0">
         {/* Sticky Unified Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-800 bg-slate-950/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 shadow-sm">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-800 bg-slate-950/80 backdrop-blur-md px-4 sm:px-6 lg:px-8">
           {/* Left side: Hamburger button for Mobile, App Title for Desktop */}
           <div className="flex items-center gap-3">
             <button

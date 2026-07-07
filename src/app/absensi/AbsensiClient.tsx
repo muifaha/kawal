@@ -362,8 +362,8 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
                           className={`text-sm transition-all cursor-pointer relative ${
                             isFocused 
                               ? status === "H"
-                                ? "bg-emerald-500/10 text-emerald-300 outline outline-emerald-500/40 outline-offset-[-1px] z-10 shadow-lg shadow-emerald-500/5"
-                                : "outline outline-emerald-500/40 outline-offset-[-1px] z-10 shadow-lg shadow-emerald-500/5 bg-slate-900/60" 
+                                ? "bg-emerald-500/10 text-emerald-300 outline outline-emerald-500/40 outline-offset-[-1px] z-10-emerald-500/5"
+                                : "outline outline-emerald-500/40 outline-offset-[-1px] z-10-emerald-500/5 bg-slate-900/60" 
                               : ""
                           } ${isFocused && status === "H" ? "" : rowColors[status]}`}
                         >
@@ -374,11 +374,11 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
                             <div className="flex justify-center gap-1.5">
                               {(["H", "S", "I", "A", "D"] as const).map((s) => {
                                 const activeColors = {
-                                  H: "bg-emerald-500 text-emerald-950 font-bold shadow-md shadow-emerald-500/10",
-                                  S: "bg-amber-500 text-amber-950 font-bold shadow-md shadow-amber-500/10",
-                                  I: "bg-sky-500 text-sky-950 font-bold shadow-md shadow-sky-500/10",
-                                  A: "bg-rose-500 text-white font-bold shadow-md shadow-rose-500/10",
-                                  D: "bg-purple-500 text-white font-bold shadow-md shadow-purple-500/10",
+                                  H: "bg-emerald-500 text-emerald-950 font-bold-emerald-500/10",
+                                  S: "bg-amber-500 text-amber-950 font-bold-amber-500/10",
+                                  I: "bg-sky-500 text-sky-950 font-bold-sky-500/10",
+                                  A: "bg-rose-500 text-white font-bold-rose-500/10",
+                                  D: "bg-purple-500 text-white font-bold-purple-500/10",
                                 };
 
                                 const inactiveColors = {
@@ -512,7 +512,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
 
       {/* Floating Bottom Summary Bar */}
       {selectedClassId && students.length > 0 && (
-        <div className="fixed bottom-0 left-0 md:left-64 right-0 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800/80 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 z-30 shadow-2xl">
+        <div className="fixed bottom-0 left-0 md:left-64 right-0 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800/80 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 z-30">
           {/* Summary Counter */}
           <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
             <span className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-semibold">
@@ -541,7 +541,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/10 transition-all active:scale-98 cursor-pointer"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 px-6 py-2.5 rounded-xl text-sm font-bold-emerald-500/10 transition-all active:scale-98 cursor-pointer"
             >
               {isSaving ? (
                 <span className="flex items-center gap-2">

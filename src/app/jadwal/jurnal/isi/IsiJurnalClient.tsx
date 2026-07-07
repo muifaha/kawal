@@ -218,7 +218,7 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         {/* Left Side: General Info Form */}
-        <div className="xl:col-span-1 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl space-y-6">
+        <div className="xl:col-span-1 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl space-y-6">
           <div>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <ClipboardList className="w-5 h-5 text-indigo-400" />
@@ -337,7 +337,7 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
         </div>
 
         {/* Right Side: Student Attendance & Assessment */}
-        <div className="xl:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl space-y-6">
+        <div className="xl:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -427,12 +427,12 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
                               const nextIdx = (statuses.indexOf(currentStatus) + 1) % statuses.length;
                               setAttendance((prev) => ({ ...prev, [student.id]: statuses[nextIdx] }));
                             }}
-                            className={`sm:hidden mx-auto w-8 h-8 rounded-full flex items-center justify-center font-bold text-white transition-all shadow-md active:scale-95 cursor-pointer ${
+                            className={`sm:hidden mx-auto w-8 h-8 rounded-full flex items-center justify-center font-bold text-white transition-all active:scale-95 cursor-pointer ${
                               currentStatus === "H"
-                                ? "bg-emerald-500 shadow-emerald-500/20"
+                                ? "bg-emerald-500-emerald-500/20"
                                 : currentStatus === "A"
-                                ? "bg-rose-500 shadow-rose-500/20"
-                                : "bg-amber-500 shadow-amber-500/20"
+                                ? "bg-rose-500-rose-500/20"
+                                : "bg-amber-500-amber-500/20"
                             }`}
                           >
                             {currentStatus}
@@ -475,7 +475,7 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
             {students.map((student, index) => {
               const currentStatus = attendance[student.id] || "H";
               return (
-                <div key={student.id} className="p-4 bg-slate-950/40 border border-slate-800 rounded-2xl space-y-3 shadow-lg">
+                <div key={student.id} className="p-4 bg-slate-950/40 border border-slate-800 rounded-2xl space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="text-[10px] text-slate-500 font-bold mb-0.5">#{index + 1}</div>
@@ -491,12 +491,12 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
                         const nextIdx = (statuses.indexOf(currentStatus) + 1) % statuses.length;
                         setAttendance((prev) => ({ ...prev, [student.id]: statuses[nextIdx] }));
                       }}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-white transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-white transition-all active:scale-95 cursor-pointer shrink-0 ${
                         currentStatus === "H"
-                          ? "bg-emerald-500 shadow-emerald-500/20"
+                          ? "bg-emerald-500-emerald-500/20"
                           : currentStatus === "A"
-                          ? "bg-rose-500 shadow-rose-500/20"
-                          : "bg-amber-500 shadow-amber-500/20"
+                          ? "bg-rose-500-rose-500/20"
+                          : "bg-amber-500-amber-500/20"
                       }`}
                     >
                       {currentStatus}
@@ -545,7 +545,7 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
             <button
               type="submit"
               disabled={isPending}
-              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-xs font-bold text-white rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-indigo-600/10"
+              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-xs font-bold text-white rounded-xl transition-all cursor-pointer flex items-center gap-2-indigo-600/10"
             >
               <Send className="w-4 h-4" />
               Simpan & Laporkan Jurnal

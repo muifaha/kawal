@@ -313,7 +313,7 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
             <h2 className="text-lg font-bold text-white">Log Transaksi Remisi</h2>
             
             {/* Search Box */}
-            <div className="relative rounded-xl shadow-sm max-w-xs w-full">
+            <div className="relative rounded-xl max-w-xs w-full">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-slate-500" />
               </div>

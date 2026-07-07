@@ -313,7 +313,7 @@ export default function ImportExcelModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-      <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header Modal */}
         <div className="flex items-center justify-between p-5 border-b border-slate-800">
           <div className="flex items-center gap-2.5 text-emerald-400">
@@ -405,7 +405,7 @@ export default function ImportExcelModal({
           <button
             onClick={handleImportSubmit}
             disabled={previewData.length === 0 || isPending || !!errorMsg}
-            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-40 text-emerald-950 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/5 transition-all active:scale-98"
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-40 text-emerald-950 rounded-xl text-sm font-bold-emerald-500/5 transition-all active:scale-98"
           >
             {isPending ? (
               <>

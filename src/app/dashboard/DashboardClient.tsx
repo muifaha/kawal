@@ -1172,7 +1172,7 @@ export default function DashboardClient({
                     <Link
                       key={c.id}
                       href={`/absensi?classId=${c.id}`}
-                      className="px-2.5 py-1 bg-slate-950/80 border border-amber-500/30 hover:border-amber-500/50 hover:bg-slate-950 rounded-lg text-[10px] font-bold text-amber-300 flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                      className="px-2.5 py-1 bg-slate-950/80 border border-amber-500/30 hover:border-amber-500/50 hover:bg-slate-950 rounded-lg text-[10px] font-bold text-amber-300 flex items-center gap-1.5 transition-all cursor-pointer"
                       title={`Klik untuk mengisi absensi kelas ${c.nama}`}
                     >
                       <span className="bg-amber-500 text-slate-950 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-extrabold font-mono shrink-0">!</span>
@@ -1433,7 +1433,7 @@ export default function DashboardClient({
                                     {summons.level === 3 ? "Ketiga" : summons.level === 2 ? "Kedua" : "Pertama"}
                                   </span>
                                   {/* Policy Action Tooltip */}
-                                  <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-3 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-300 shadow-xl z-30 font-medium leading-relaxed">
+                                  <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-3 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-300 z-30 font-medium leading-relaxed">
                                     <p className="font-bold text-white mb-1">
                                       Kebijakan Pemanggilan {summons.type === "ALFA" ? "Alfa" : "Poin"} {summons.level === 3 ? "Ketiga" : summons.level === 2 ? "Kedua" : "Pertama"}
                                     </p>
@@ -1503,7 +1503,7 @@ export default function DashboardClient({
 
               {/* Rujukan BK Menunggu Tindak Lanjut (BK/Waka Only) */}
               {isWakaOrBK && pendingReferrals && pendingReferrals.length > 0 && (
-                <div className="bg-slate-900/40 border border-indigo-500/20 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                <div className="bg-slate-900/40 border border-indigo-500/20 rounded-2xl p-6 relative overflow-hidden">
                   <div className="absolute top-0 right-0 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold px-3 py-1 rounded-bl-xl border-l border-b border-indigo-500/20">
                     Rujukan Baru
                   </div>
@@ -1722,7 +1722,7 @@ export default function DashboardClient({
 
       {/* 2. Tab Rekap Absensi Siswa */}
       {activeTab === "absen_rekap" && isWakaOrBKOrWalas && (
-        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl animate-fade-in space-y-6">
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl animate-fade-in space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1779,7 +1779,7 @@ export default function DashboardClient({
               <div className="h-5 w-px bg-slate-800 hidden sm:block"></div>
 
               {/* Input Cari */}
-              <div className="relative rounded-xl shadow-sm w-44 sm:w-60 shrink-0">
+              <div className="relative rounded-xl w-44 sm:w-60 shrink-0">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-slate-500" />
                 </div>
@@ -2027,7 +2027,7 @@ export default function DashboardClient({
                               
                               {/* Holiday Tooltip */}
                               {isHoliday && (
-                                <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/th:block w-40 p-2 text-[10px] bg-slate-900 border border-slate-800 rounded-lg text-rose-300 normal-case shadow-xl z-30 font-medium">
+                                <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/th:block w-40 p-2 text-[10px] bg-slate-900 border border-slate-800 rounded-lg text-rose-300 normal-case z-30 font-medium">
                                   {holidayName}
                                 </span>
                               )}
@@ -2175,7 +2175,7 @@ export default function DashboardClient({
 
       {/* 3. Tab Rekap Pelanggaran Siswa */}
       {activeTab === "pelanggaran_rekap" && isWakaOrBKOrWalas && (
-        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl animate-fade-in space-y-6">
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl animate-fade-in space-y-6">
           {selectedStudentNis && selectedStudentInfo ? (
             /* Dedicated Student Profile Detail View */
             <div className="space-y-6 animate-fade-in">
@@ -2264,7 +2264,7 @@ export default function DashboardClient({
                             }
                           }
                         }}
-                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-600/10 cursor-pointer"
+                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all-indigo-600/10 cursor-pointer"
                       >
                         <Printer className="w-3.5 h-3.5" />
                         Cetak Surat Panggilan
@@ -2435,7 +2435,7 @@ export default function DashboardClient({
                 {/* Filters */}
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
                   {/* Input Cari */}
-                  <div className="relative rounded-xl shadow-sm w-44 sm:w-64 shrink-0">
+                  <div className="relative rounded-xl w-44 sm:w-64 shrink-0">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Search className="h-4 w-4 text-slate-500" />
                     </div>
@@ -2744,7 +2744,7 @@ export default function DashboardClient({
       {/* Modal Cetak Surat Undangan */}
       {isPrintModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Printer className="w-5 h-5 text-indigo-400" />
@@ -2801,7 +2801,7 @@ export default function DashboardClient({
                       onClick={() => setPrintPaperSize(sz)}
                       className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                         printPaperSize === sz
-                          ? "bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20"
+                          ? "bg-indigo-600 border-indigo-500 text-white-indigo-600/20"
                           : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-white"
                       }`}
                     >
@@ -2868,7 +2868,7 @@ export default function DashboardClient({
                   }
                   setIsPrintModalOpen(false);
                 }}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all shadow-lg shadow-indigo-600/10 cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all-indigo-600/10 cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 Cetak Surat
@@ -2881,7 +2881,7 @@ export default function DashboardClient({
       {/* Export Selection Modal */}
       {showExportModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-6 animate-in fade-in zoom-in-95 duration-150">
             <div>
               <h4 className="text-base font-bold text-white mb-2">Pilih Tipe Ekspor Excel</h4>
               <p className="text-xs text-slate-400">

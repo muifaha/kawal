@@ -188,7 +188,7 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         {/* Left Side: Create Referral Form (Only visible to non-BK/Waka, or BK if they want to refer) */}
         {!isBKOrWaka && (
-          <div className="xl:col-span-1 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl space-y-6">
+          <div className="xl:col-span-1 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl space-y-6">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-indigo-400" />
@@ -275,7 +275,7 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
         )}
 
         {/* Right Side: Referrals List / Inbox */}
-        <div className={`${isBKOrWaka ? "xl:col-span-3" : "xl:col-span-2"} bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl space-y-6`}>
+        <div className={`${isBKOrWaka ? "xl:col-span-3" : "xl:col-span-2"} bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl space-y-6`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -305,7 +305,7 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
           </div>
 
           {/* Search box */}
-          <div className="relative rounded-xl shadow-sm w-full">
+          <div className="relative rounded-xl w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-slate-500" />
             </div>
@@ -409,7 +409,7 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
       {/* Process Referral Modal */}
       {activeReferral && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-6 animate-in fade-in zoom-in-95 duration-150">
             <div>
               <h4 className="text-base font-bold text-white mb-1">Tindak Lanjuti Rujukan</h4>
               <p className="text-xs text-slate-400">

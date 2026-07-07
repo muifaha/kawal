@@ -573,7 +573,7 @@ export default function KesiswaanClient({
   const importButton = (type: TabType) => (
     <button
       onClick={() => openImportModal(type)}
-      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-300 transition-all shadow"
+      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-300 transition-all"
     >
       <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
       Impor Excel
@@ -688,7 +688,7 @@ export default function KesiswaanClient({
 
       {/* -------------------- TAB 1: USERS -------------------- */}
       {activeTab === "users" && (
-        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-4">
           <div className="flex flex-wrap justify-between items-center gap-4">
             <div>
               <h3 className="text-lg font-bold text-white tracking-tight">Daftar Pengguna Guru & Staff</h3>
@@ -700,7 +700,7 @@ export default function KesiswaanClient({
                   setEditingUser(null);
                   setShowUserModal(true);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all shadow cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4" />
                 Tambah Guru/Staff Baru
@@ -779,7 +779,7 @@ export default function KesiswaanClient({
 
       {/* -------------------- TAB 2: CLASSES -------------------- */}
       {activeTab === "classes" && (
-        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-4">
           <div className="flex flex-wrap justify-between items-center gap-4">
             <div>
               <h3 className="text-lg font-bold text-white tracking-tight">Daftar Kelas Aktif</h3>
@@ -794,7 +794,7 @@ export default function KesiswaanClient({
                   setEditBkId("");
                   setShowKelasModal(true);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all shadow cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4" />
                 Buat Kelas Baru
@@ -893,7 +893,7 @@ export default function KesiswaanClient({
 
       {/* -------------------- TAB 3: STUDENTS -------------------- */}
       {activeTab === "students" && (
-        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-4">
           <div className="flex flex-wrap justify-between items-center gap-4">
             <div>
               <h3 className="text-lg font-bold text-white tracking-tight">Daftar Siswa Aktif</h3>
@@ -905,7 +905,7 @@ export default function KesiswaanClient({
                   setEditingSiswa(null);
                   setShowSiswaModal(true);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all shadow cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4" />
                 Daftarkan Siswa Baru
@@ -976,7 +976,7 @@ export default function KesiswaanClient({
 
       {/* -------------------- TAB 4: VIOLATIONS -------------------- */}
       {activeTab === "violations" && (
-        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-4">
           <div className="flex flex-wrap justify-between items-center gap-4">
             <div>
               <h3 className="text-lg font-bold text-white tracking-tight">Daftar Jenis Pelanggaran & Poin</h3>
@@ -989,7 +989,7 @@ export default function KesiswaanClient({
                   setIsNewCategory(false);
                   setShowViolationModal(true);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all shadow cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4" />
                 Tambah Jenis Pelanggaran
@@ -1098,7 +1098,7 @@ export default function KesiswaanClient({
 
       {/* -------------------- TAB 5: REMISSIONS -------------------- */}
       {activeTab === "remissions" && (
-        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-4">
           <div className="flex flex-wrap justify-between items-center gap-4">
             <div>
               <h3 className="text-lg font-bold text-white tracking-tight">Daftar Jenis Remisi & Potongan</h3>
@@ -1110,7 +1110,7 @@ export default function KesiswaanClient({
                   setEditingRemission(null);
                   setShowRemissionModal(true);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all shadow cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4" />
                 Tambah Jenis Remisi Baru
@@ -1182,7 +1182,7 @@ export default function KesiswaanClient({
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 animate-fade-in">
           {/* Form */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl">
+            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
               <h3 className="text-lg font-bold text-white tracking-tight mb-5 flex items-center gap-2">
                 {editingHoliday ? (
                   <Pencil className="w-5 h-5 text-emerald-400" />
@@ -1238,7 +1238,7 @@ export default function KesiswaanClient({
               </form>
             </div>
 
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl">
+            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
               <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-emerald-400" />
                 Libur Rutin Mingguan
@@ -1341,7 +1341,7 @@ export default function KesiswaanClient({
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 animate-fade-in">
           {/* Form */}
           <div className="lg:col-span-2">
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl">
+            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
               <h3 className="text-lg font-bold text-white tracking-tight mb-5 flex items-center gap-2">
                 {editingTahunAjaran ? (
                   <Pencil className="w-5 h-5 text-emerald-400" />
@@ -1535,7 +1535,7 @@ export default function KesiswaanClient({
 
       {/* -------------------- TAB 8: SETTINGS -------------------- */}
       {activeTab === "settings" && (
-        <div className="max-w-2xl bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl animate-fade-in">
+        <div className="max-w-2xl bg-slate-900/40 border border-slate-900 rounded-2xl p-6 animate-fade-in">
           <h3 className="text-lg font-bold text-white tracking-tight mb-5 flex items-center gap-2">
             <Sliders className="w-5 h-5 text-emerald-400" />
             Pengaturan Batas Poin Pemanggilan Orang Tua
@@ -1639,7 +1639,7 @@ export default function KesiswaanClient({
 
       {/* -------------------- TAB 9: IDENTITY -------------------- */}
       {activeTab === "identity" && (
-        <div className="max-w-2xl bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl animate-fade-in">
+        <div className="max-w-2xl bg-slate-900/40 border border-slate-900 rounded-2xl p-6 animate-fade-in">
           <h3 className="text-lg font-bold text-white mb-4 tracking-tight flex items-center gap-2">
             <Building className="w-5 h-5 text-emerald-400" />
             Identitas & Kop Surat Instansi
@@ -1773,7 +1773,7 @@ export default function KesiswaanClient({
       {/* -------------------- MODAL: USER -------------------- */}
       {showUserModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden animate-scale-in">
             <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 {editingUser ? <Pencil className="w-4 h-4 text-emerald-400" /> : <PlusCircle className="w-4 h-4 text-emerald-400" />}
@@ -1826,7 +1826,7 @@ export default function KesiswaanClient({
       {/* -------------------- MODAL: KELAS -------------------- */}
       {showKelasModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden animate-scale-in">
             <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 {editingKelas ? <Pencil className="w-4 h-4 text-emerald-400" /> : <PlusCircle className="w-4 h-4 text-emerald-400" />}
@@ -1871,7 +1871,7 @@ export default function KesiswaanClient({
       {/* -------------------- MODAL: SISWA -------------------- */}
       {showSiswaModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden animate-scale-in">
             <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 {editingSiswa ? <Pencil className="w-4 h-4 text-emerald-400" /> : <PlusCircle className="w-4 h-4 text-emerald-400" />}
@@ -1911,7 +1911,7 @@ export default function KesiswaanClient({
       {/* -------------------- MODAL: PELANGGARAN -------------------- */}
       {showViolationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden animate-scale-in">
             <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 {editingViolation ? <Pencil className="w-4 h-4 text-emerald-400" /> : <PlusCircle className="w-4 h-4 text-emerald-400" />}
@@ -1966,7 +1966,7 @@ export default function KesiswaanClient({
       {/* -------------------- MODAL: REMISI -------------------- */}
       {showRemissionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden animate-scale-in">
             <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 {editingRemission ? <Pencil className="w-4 h-4 text-emerald-400" /> : <PlusCircle className="w-4 h-4 text-emerald-400" />}

@@ -58,11 +58,11 @@ export default function LoginClient({ schoolName, schoolLogo }: LoginClientProps
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md z-10 flex items-center justify-center gap-4 px-4">
         {schoolLogo ? (
-          <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-xl">
+          <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
             <img src={schoolLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
           </div>
         ) : (
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-extrabold text-2xl shrink-0 shadow-xl">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-extrabold text-2xl shrink-0">
             K
           </div>
         )}
@@ -77,7 +77,7 @@ export default function LoginClient({ schoolName, schoolLogo }: LoginClientProps
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md z-10 px-4">
-        <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 py-8 px-4 shadow-2xl rounded-2xl sm:px-10">
+        <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 py-8 px-4 rounded-2xl sm:px-10">
           <form action={formAction} className="space-y-6">
             {state?.error && (
               <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-4 rounded-xl text-sm flex items-start gap-3">
@@ -90,7 +90,7 @@ export default function LoginClient({ schoolName, schoolLogo }: LoginClientProps
               <label htmlFor="username" className="block text-sm font-medium text-slate-300">
                 Username
               </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="mt-1 relative rounded-md">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <UserIcon className="h-5 w-5 text-slate-500" aria-hidden="true" />
                 </div>
@@ -109,7 +109,7 @@ export default function LoginClient({ schoolName, schoolLogo }: LoginClientProps
               <label htmlFor="password" className="block text-sm font-medium text-slate-300">
                 Password
               </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="mt-1 relative rounded-md">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <KeyRound className="h-5 w-5 text-slate-500" aria-hidden="true" />
                 </div>
@@ -128,7 +128,7 @@ export default function LoginClient({ schoolName, schoolLogo }: LoginClientProps
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98"
               >
                 {isPending ? "Masuk..." : "Masuk ke Sistem"}
               </button>

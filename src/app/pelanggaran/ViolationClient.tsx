@@ -349,7 +349,7 @@ export default function ViolationClient({ user, classes, categories, initialHist
                 {showStudentDropdown && isSearchingStudent && filteredStudents.length > 0 && (
                   <div 
                     onMouseDown={(e) => e.preventDefault()}
-                    className="absolute z-40 left-0 right-0 mt-1 max-h-60 overflow-y-auto rounded-xl bg-slate-950 border border-slate-800 shadow-2xl py-1"
+                    className="absolute z-40 left-0 right-0 mt-1 max-h-60 overflow-y-auto rounded-xl bg-slate-950 border border-slate-800 py-1"
                   >
                     {filteredStudents.map((s) => (
                       <button
@@ -365,7 +365,7 @@ export default function ViolationClient({ user, classes, categories, initialHist
                   </div>
                 )}
                 {showStudentDropdown && isSearchingStudent && filteredStudents.length === 0 && (
-                  <div className="absolute z-40 left-0 right-0 mt-1 rounded-xl bg-slate-950 border border-slate-800 shadow-2xl p-4 text-center text-xs text-slate-500">
+                  <div className="absolute z-40 left-0 right-0 mt-1 rounded-xl bg-slate-950 border border-slate-800 p-4 text-center text-xs text-slate-500">
                     Siswa tidak ditemukan atau sudah dipilih.
                   </div>
                 )}
@@ -396,7 +396,7 @@ export default function ViolationClient({ user, classes, categories, initialHist
                 {showViolationDropdown && Object.keys(groupedFilteredViolations).length > 0 && (
                   <div 
                     onMouseDown={(e) => e.preventDefault()}
-                    className="absolute z-40 left-0 right-0 mt-1 max-h-72 overflow-y-auto rounded-xl bg-slate-950 border border-slate-800 shadow-2xl py-1 divide-y divide-slate-900"
+                    className="absolute z-40 left-0 right-0 mt-1 max-h-72 overflow-y-auto rounded-xl bg-slate-950 border border-slate-800 py-1 divide-y divide-slate-900"
                   >
                     {Object.entries(groupedFilteredViolations).map(([category, items]) => (
                       <div key={category} className="space-y-0.5">
@@ -421,7 +421,7 @@ export default function ViolationClient({ user, classes, categories, initialHist
                   </div>
                 )}
                 {showViolationDropdown && Object.keys(groupedFilteredViolations).length === 0 && (
-                  <div className="absolute z-40 left-0 right-0 mt-1 rounded-xl bg-slate-950 border border-slate-800 shadow-2xl p-4 text-center text-xs text-slate-500">
+                  <div className="absolute z-40 left-0 right-0 mt-1 rounded-xl bg-slate-950 border border-slate-800 p-4 text-center text-xs text-slate-500">
                     Tidak ada pelanggaran yang cocok.
                   </div>
                 )}
@@ -506,7 +506,7 @@ export default function ViolationClient({ user, classes, categories, initialHist
               </h2>
 
               {/* Search input */}
-              <div className="relative rounded-xl shadow-sm max-w-xs w-full">
+              <div className="relative rounded-xl max-w-xs w-full">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-slate-500" />
                 </div>

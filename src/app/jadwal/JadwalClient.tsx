@@ -520,7 +520,7 @@ export default function JadwalClient({
 
       {/* -------------------- TAB: GURU TODAY AGENDA -------------------- */}
       {activeTab === "today" && (
-        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-6">
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
           <div>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-indigo-400" />
@@ -599,7 +599,7 @@ export default function JadwalClient({
 
       {/* -------------------- TAB: GURU JURNAL SAYA -------------------- */}
       {activeTab === "jurnal_saya" && (
-        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-6">
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -610,7 +610,7 @@ export default function JadwalClient({
                 Kumpulan log jurnal kegiatan pembelajaran yang telah berhasil Anda buat.
               </p>
             </div>
-            <div className="w-full sm:w-64 relative rounded-xl shadow-sm">
+            <div className="w-full sm:w-64 relative rounded-xl">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-slate-500" />
               </div>
@@ -688,7 +688,7 @@ export default function JadwalClient({
       {activeTab === "jadwal" && user.role === "WAKA" && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
           {/* Left Form: Add/Edit Schedule */}
-          <div className="xl:col-span-1 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl space-y-6">
+          <div className="xl:col-span-1 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl space-y-6">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-indigo-400" />
@@ -808,7 +808,7 @@ export default function JadwalClient({
                 <button
                   type="submit"
                   disabled={isPending}
-                  className={`py-2.5 text-xs font-bold text-white rounded-xl transition-all cursor-pointer shadow-lg ${
+                  className={`py-2.5 text-xs font-bold text-white rounded-xl transition-all cursor-pointer ${
                     editSchedId
                       ? "w-1/2 bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800"
                       : "w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800"
@@ -821,7 +821,7 @@ export default function JadwalClient({
           </div>
 
           {/* Right List: Schedule Database View */}
-          <div className="xl:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl backdrop-blur-xl space-y-6">
+          <div className="xl:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -849,7 +849,7 @@ export default function JadwalClient({
               </div>
             </div>
 
-            <div className="relative rounded-xl shadow-sm w-full">
+            <div className="relative rounded-xl w-full">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-slate-500" />
               </div>
@@ -936,7 +936,7 @@ export default function JadwalClient({
       {activeTab === "mapel" && user.role === "WAKA" && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
           {/* Form Subject CRUD */}
-          <div className="xl:col-span-1 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-6">
+          <div className="xl:col-span-1 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-indigo-400" />
@@ -987,7 +987,7 @@ export default function JadwalClient({
                 <button
                   type="submit"
                   disabled={isPending}
-                  className={`py-2.5 text-xs font-bold text-white rounded-xl transition-all cursor-pointer shadow-lg ${
+                  className={`py-2.5 text-xs font-bold text-white rounded-xl transition-all cursor-pointer ${
                     editMapelId
                       ? "w-1/2 bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800"
                       : "w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800"
@@ -1000,7 +1000,7 @@ export default function JadwalClient({
           </div>
 
           {/* List Subject View */}
-          <div className="xl:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-6">
+          <div className="xl:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <ClipboardList className="w-5 h-5 text-indigo-400" />
               Database Mata Pelajaran
@@ -1065,7 +1065,7 @@ export default function JadwalClient({
       {activeTab === "jam" && user.role === "WAKA" && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
           {/* Form Period CRUD */}
-          <div className="xl:col-span-1 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-6">
+          <div className="xl:col-span-1 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Clock className="w-5 h-5 text-indigo-400" />
@@ -1173,7 +1173,7 @@ export default function JadwalClient({
                 <button
                   type="submit"
                   disabled={isPending}
-                  className={`py-2.5 text-xs font-bold text-white rounded-xl transition-all cursor-pointer shadow-lg ${
+                  className={`py-2.5 text-xs font-bold text-white rounded-xl transition-all cursor-pointer ${
                     editPeriodId
                       ? "w-1/2 bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800"
                       : "w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800"
@@ -1186,7 +1186,7 @@ export default function JadwalClient({
           </div>
 
           {/* List Period View */}
-          <div className="xl:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-6">
+          <div className="xl:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <ClipboardList className="w-5 h-5 text-indigo-400" />
               Timeline Jam Pelajaran Aktif
@@ -1269,7 +1269,7 @@ export default function JadwalClient({
 
       {/* -------------------- TAB: WAKA VIEW ALL JOURNALS -------------------- */}
       {activeTab === "jurnal" && user.role === "WAKA" && (
-        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-6">
+        <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1280,7 +1280,7 @@ export default function JadwalClient({
                 Laporan jurnal kegiatan KBM dari seluruh guru di setiap kelas.
               </p>
             </div>
-            <div className="w-full sm:w-64 relative rounded-xl shadow-sm">
+            <div className="w-full sm:w-64 relative rounded-xl">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-slate-500" />
               </div>
@@ -1359,7 +1359,7 @@ export default function JadwalClient({
       {/* -------------------- DETAIL JOURNAL DIALOG MODAL -------------------- */}
       {selectedJournal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-6 overflow-y-auto max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-6 overflow-y-auto max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
                 <h4 className="text-base font-bold text-white">{selectedJournal.namaJurnal}</h4>

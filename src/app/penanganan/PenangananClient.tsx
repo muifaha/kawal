@@ -319,7 +319,7 @@ export default function PenangananClient({ user, students, initialLogs, classes 
 
                 {/* Dropdown Options */}
                 {showStudentDropdown && (
-                  <div className="absolute z-40 mt-1 w-full max-h-56 overflow-y-auto rounded-xl bg-slate-950 border border-slate-850 shadow-2xl py-1 divide-y divide-slate-900">
+                  <div className="absolute z-40 mt-1 w-full max-h-56 overflow-y-auto rounded-xl bg-slate-950 border border-slate-850 py-1 divide-y divide-slate-900">
                     {filteredStudents.length === 0 ? (
                       <p className="p-3 text-xs text-slate-500 text-center">Siswa tidak ditemukan.</p>
                     ) : (
@@ -475,7 +475,7 @@ export default function PenangananClient({ user, students, initialLogs, classes 
               <button
                 type="submit"
                 disabled={isPending || !selectedStudent}
-                className="w-full py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full py-3 px-4 border border-transparent rounded-xl text-sm font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {isPending ? "Menyimpan..." : "Simpan Penanganan"}
               </button>
@@ -495,7 +495,7 @@ export default function PenangananClient({ user, students, initialLogs, classes 
 
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
               {/* Search filter */}
-              <div className="relative rounded-xl shadow-sm w-44 sm:w-60">
+              <div className="relative rounded-xl w-44 sm:w-60">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-slate-500" />
                 </div>

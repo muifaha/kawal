@@ -288,7 +288,7 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
                   onClick={() => setSelectedId(report.id)}
                   className={`p-4 rounded-xl border flex gap-3 cursor-pointer transition-all duration-200 ${
                     isSelected
-                      ? "bg-slate-900/80 border-emerald-500/30 shadow-lg"
+                      ? "bg-slate-900/80 border-emerald-500/30"
                       : "bg-slate-950/40 border-slate-900/80 hover:border-slate-800"
                   }`}
                 >
@@ -395,7 +395,7 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
                           {showEditViolationDropdown && Object.keys(groupedEditViolations).length > 0 && (
                             <div 
                               onMouseDown={(e) => e.preventDefault()}
-                              className="absolute z-50 left-0 right-0 mt-1 max-h-72 overflow-y-auto rounded-xl bg-slate-950 border border-slate-800 shadow-2xl py-1 divide-y divide-slate-900"
+                              className="absolute z-50 left-0 right-0 mt-1 max-h-72 overflow-y-auto rounded-xl bg-slate-950 border border-slate-800 py-1 divide-y divide-slate-900"
                             >
                               {Object.entries(groupedEditViolations).map(([category, items]) => (
                                 <div key={category} className="space-y-0.5">
@@ -424,7 +424,7 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
                             </div>
                           )}
                           {showEditViolationDropdown && Object.keys(groupedEditViolations).length === 0 && (
-                            <div className="absolute z-50 left-0 right-0 mt-1 rounded-xl bg-slate-950 border border-slate-800 shadow-2xl p-4 text-center text-xs text-slate-500 font-sans">
+                            <div className="absolute z-50 left-0 right-0 mt-1 rounded-xl bg-slate-950 border border-slate-800 p-4 text-center text-xs text-slate-500 font-sans">
                               Tidak ada pelanggaran yang cocok.
                             </div>
                           )}
@@ -560,7 +560,7 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
                 <button
                   onClick={() => handleApprove(activeReport.id)}
                   disabled={isPending || isEditing}
-                  className="flex-[2] py-3 px-4 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/10 transition-all active:scale-98"
+                  className="flex-[2] py-3 px-4 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 rounded-xl text-sm font-bold-emerald-500/10 transition-all active:scale-98"
                 >
                   Sahkan & Tambah Poin (ACC)
                 </button>

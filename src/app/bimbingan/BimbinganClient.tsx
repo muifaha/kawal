@@ -356,7 +356,7 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
           </div>
 
           {/* Search box */}
-          <div className="relative rounded-xl shadow-sm w-full">
+          <div className="relative rounded-xl w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-slate-500" />
             </div>
@@ -433,7 +433,7 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
                                   <span>{isVisible ? "Tutup" : "Lihat"}</span>
                                 </button>
                                 {isVisible && (
-                                  <div className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-slate-900 border border-slate-800 text-slate-300 rounded-xl shadow-2xl z-30 font-normal text-left text-xs leading-relaxed animate-in fade-in slide-in-from-bottom-2">
+                                  <div className="absolute right-0 bottom-full mb-2 w-64 p-3 bg-slate-900 border border-slate-800 text-slate-300 rounded-xl z-30 font-normal text-left text-xs leading-relaxed animate-in fade-in slide-in-from-bottom-2">
                                     <span className="font-bold text-rose-400 flex items-center gap-1 mb-1">
                                       <Lock className="w-3.5 h-3.5" />
                                       Catatan Rahasia BK
