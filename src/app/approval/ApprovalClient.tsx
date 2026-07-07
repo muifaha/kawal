@@ -3,6 +3,7 @@
 import React, { useState, useTransition, useEffect, useMemo } from "react";
 import { approveViolationAction, rejectViolationAction, bulkApproveViolationsAction, updateViolationReportAction } from "@/app/actions/approval";
 import { AlertCircle, CheckCircle, CheckSquare, Trash, Inbox, User, Clock, AlertTriangle, ShieldCheck, Edit2 } from "lucide-react";
+import { useToast } from "@/components/Toast";
 
 interface TransformedReport {
   id: string;
@@ -46,7 +47,7 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
   const [bulkSelection, setBulkSelection] = useState<string[]>([]);
   
   const [isPending, startTransition] = useTransition();
-  const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const { showToast } = useToast();
 
   // Edit states
   const [isEditing, setIsEditing] = useState(false);
@@ -125,17 +126,16 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
   const handleSaveEdit = async () => {
     if (!activeReport) return;
     if (!editViolationId) {
-      setAlert({ type: "error", message: "Silakan pilih jenis pelanggaran dari daftar hasil pencarian." });
+      showToast("Silakan pilih jenis pelanggaran dari daftar hasil pencarian.", "error");
       return;
     }
-    setAlert(null);
 
     startTransition(async () => {
       const res = await updateViolationReportAction(activeReport.id, editViolationId, editNotes || null);
       if (res.error) {
-        setAlert({ type: "error", message: res.error });
+        showToast(res.error, "error");
       } else if (res.success && res.data) {
-        setAlert({ type: "success", message: res.message || "Laporan berhasil diperbarui." });
+        showToast(res.message || "Laporan berhasil diperbarui.", "success");
         setReports((prev) =>
           prev.map((r) =>
             r.id === activeReport.id
@@ -151,7 +151,6 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
           )
         );
         setIsEditing(false);
-        setTimeout(() => setAlert(null), 3000);
       }
     });
   };
@@ -174,30 +173,26 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
 
   // 1. Approve Single
   const handleApprove = async (id: string) => {
-    setAlert(null);
     startTransition(async () => {
       const res = await approveViolationAction(id);
       if (res.error) {
-        setAlert({ type: "error", message: res.error });
+        showToast(res.error, "error");
       } else if (res.success) {
-        setAlert({ type: "success", message: res.message || "Laporan disetujui." });
+        showToast(res.message || "Laporan disetujui.", "success");
         transitionToNext(id);
-        setTimeout(() => setAlert(null), 3000);
       }
     });
   };
 
   // 2. Reject Single
   const handleReject = async (id: string) => {
-    setAlert(null);
     startTransition(async () => {
       const res = await rejectViolationAction(id);
       if (res.error) {
-        setAlert({ type: "error", message: res.error });
+        showToast(res.error, "error");
       } else if (res.success) {
-        setAlert({ type: "success", message: res.message || "Laporan berhasil ditolak." });
+        showToast(res.message || "Laporan berhasil ditolak.", "success");
         transitionToNext(id);
-        setTimeout(() => setAlert(null), 3000);
       }
     });
   };
@@ -205,21 +200,19 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
   // 3. Bulk Approve
   const handleBulkApprove = async () => {
     if (bulkSelection.length === 0) return;
-    setAlert(null);
 
     startTransition(async () => {
       const res = await bulkApproveViolationsAction(bulkSelection);
       if (res.error) {
-        setAlert({ type: "error", message: res.error });
+        showToast(res.error, "error");
       } else if (res.success) {
-        setAlert({ type: "success", message: res.message || "Semua laporan terpilih berhasil disetujui." });
+        showToast(res.message || "Semua laporan terpilih berhasil disetujui.", "success");
         
         // Hapus massal dari state
         const remaining = reports.filter((r) => !bulkSelection.includes(r.id));
         setReports(remaining);
         setSelectedId(remaining.length > 0 ? remaining[0].id : "");
         setBulkSelection([]);
-        setTimeout(() => setAlert(null), 3500);
       }
     });
   };
@@ -252,23 +245,6 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
 
   return (
     <div className="space-y-4">
-      {/* Alert bar */}
-      {alert && (
-        <div
-          className={`p-4 rounded-xl text-sm border flex items-start gap-3 ${
-            alert.type === "success"
-              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-              : "bg-rose-500/10 border-rose-500/20 text-rose-300"
-          }`}
-        >
-          {alert.type === "success" ? (
-            <CheckCircle className="w-5 h-5 shrink-0 text-emerald-400" />
-          ) : (
-            <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
-          )}
-          <span>{alert.message}</span>
-        </div>
-      )}
 
       {/* Split Layout Container */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 h-[650px] items-stretch">

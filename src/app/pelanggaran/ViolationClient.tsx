@@ -3,6 +3,7 @@
 import React, { useState, useTransition } from "react";
 import { reportViolationAction, toggleCensorViolationAction } from "@/app/actions/violation";
 import { AlertCircle, CheckCircle, Search, AlertTriangle, Send, X, Paperclip, Eye, EyeOff, ShieldAlert } from "lucide-react";
+import { useToast } from "@/components/Toast";
 
 interface Siswa {
   id: string;
@@ -116,7 +117,14 @@ export default function ViolationClient({ user, classes, categories, initialHist
   const [history, setHistory] = useState<ViolationHistoryItem[]>(initialHistory);
 
   const [isPending, startTransition] = useTransition();
-  const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const { showToast } = useToast();
+  const [alert, _setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const setAlert = React.useCallback((val: { type: "success" | "error"; message: string } | null) => {
+    _setAlert(val);
+    if (val) {
+      showToast(val.message, val.type);
+    }
+  }, [showToast]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [revealedReports, setRevealedReports] = useState<Record<string, boolean>>({});
 
@@ -294,23 +302,6 @@ export default function ViolationClient({ user, classes, categories, initialHist
               <AlertTriangle className="w-5 h-5 text-amber-400" />
               Input Laporan Pelanggaran
             </h2>
-
-            {alert && (
-              <div
-                className={`p-4 rounded-xl text-sm border flex items-start gap-3 ${
-                  alert.type === "success"
-                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-                    : "bg-rose-500/10 border-rose-500/20 text-rose-300"
-                }`}
-              >
-                {alert.type === "success" ? (
-                  <CheckCircle className="w-5 h-5 shrink-0 text-emerald-400" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
-                )}
-                <span>{alert.message}</span>
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
             {/* Pilih Siswa (Multi-selection Tagging via @) */}

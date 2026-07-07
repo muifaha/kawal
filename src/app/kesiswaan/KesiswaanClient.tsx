@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useTransition, useMemo } from "react";
+import { useToast } from "@/components/Toast";
 import {
   createUserAction,
   deleteUserAction,
@@ -161,7 +162,14 @@ export default function KesiswaanClient({
   wakaUser,
 }: KesiswaanClientProps) {
   const [activeTab, setActiveTab] = useState<TabType>("users");
-  const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const { showToast } = useToast();
+  const [alert, _setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const setAlert = React.useCallback((val: { type: "success" | "error"; message: string } | null) => {
+    _setAlert(val);
+    if (val) {
+      showToast(val.message, val.type);
+    }
+  }, [showToast]);
   const [isPending, startTransition] = useTransition();
 
   // Pagination states
@@ -637,23 +645,6 @@ export default function KesiswaanClient({
 
   return (
     <div className="space-y-6">
-      {/* Alert Component */}
-      {alert && (
-        <div
-          className={`p-4 rounded-xl text-sm border flex items-start gap-3 ${
-            alert.type === "success"
-              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-              : "bg-rose-500/10 border-rose-500/20 text-rose-300"
-          }`}
-        >
-          {alert.type === "success" ? (
-            <CheckCircle className="w-5 h-5 shrink-0 text-emerald-400" />
-          ) : (
-            <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
-          )}
-          <span>{alert.message}</span>
-        </div>
-      )}
 
       {/* Tabs Switcher */}
       <div className="flex flex-wrap gap-2 border-b border-slate-900 pb-3">

@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition, useMemo } from "react";
 import { createReferralAction, updateReferralStatusAction } from "@/app/actions/counseling";
+import { useToast } from "@/components/Toast";
 import {
   UserPlus,
   Inbox,
@@ -77,8 +78,19 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
   const [modalTindakLanjut, setModalTindakLanjut] = useState("");
 
   const [isPending, startTransition] = useTransition();
-  const [actionError, setActionError] = useState("");
-  const [actionSuccess, setActionSuccess] = useState("");
+  const { showToast } = useToast();
+  const [actionError, _setActionError] = useState("");
+  const [actionSuccess, _setActionSuccess] = useState("");
+
+  const setActionError = React.useCallback((val: string) => {
+    _setActionError(val);
+    if (val) showToast(val, "error");
+  }, [showToast]);
+
+  const setActionSuccess = React.useCallback((val: string) => {
+    _setActionSuccess(val);
+    if (val) showToast(val, "success");
+  }, [showToast]);
 
   const isBKOrWaka = user.role === "BK" || user.role === "WAKA";
 
@@ -173,20 +185,6 @@ export default function RujukanClient({ user, classes, initialReferrals }: Rujuk
 
   return (
     <div className="space-y-6">
-      {actionError && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-xl flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <span>{actionError}</span>
-        </div>
-      )}
-
-      {actionSuccess && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm rounded-xl flex items-start gap-3">
-          <Check className="w-5 h-5 shrink-0 mt-0.5" />
-          <span>{actionSuccess}</span>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         {/* Left Side: Create Referral Form (Only visible to non-BK/Waka, or BK if they want to refer) */}
         {!isBKOrWaka && (

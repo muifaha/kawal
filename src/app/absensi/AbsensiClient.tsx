@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { saveAttendanceAction, getAttendanceAction } from "@/app/actions/attendance";
 import { AlertCircle, CalendarCheck, CheckCircle, Keyboard, Save, Search } from "lucide-react";
+import { useToast } from "@/components/Toast";
 
 interface Siswa {
   id: string;
@@ -48,7 +49,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
   const [attendanceMap, setAttendanceMap] = useState<Record<string, StatusType>>({});
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const { showToast } = useToast();
   const [hasExistingRecords, setHasExistingRecords] = useState(false);
 
   const checkIfHoliday = useCallback((dateStr: string) => {
@@ -171,12 +172,11 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
   const handleSave = useCallback(async () => {
     if (!selectedClassId || students.length === 0) return;
     if (holidayInfo.isHoliday) {
-      setAlert({ type: "error", message: "Tidak dapat menyimpan absensi pada hari libur." });
+      showToast("Tidak dapat menyimpan absensi pada hari libur.", "error");
       return;
     }
 
     setIsSaving(true);
-    setAlert(null);
 
     const payload = students.map((s) => ({
       studentId: s.id,
@@ -187,14 +187,12 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
     setIsSaving(false);
 
     if (res.error) {
-      setAlert({ type: "error", message: res.error });
+      showToast(res.error, "error");
     } else if (res.success) {
-      setAlert({ type: "success", message: res.message || "Absensi berhasil disimpan!" });
+      showToast(res.message || "Absensi berhasil disimpan!", "success");
       setHasExistingRecords(true);
-      // Clear alert after 5 seconds
-      setTimeout(() => setAlert(null), 5000);
     }
-  }, [selectedClassId, students, attendanceMap, selectedDate, holidayInfo.isHoliday]);
+  }, [selectedClassId, students, attendanceMap, selectedDate, holidayInfo.isHoliday, showToast]);
 
   // Global Save Keyboard Shortcut (Ctrl+S, Cmd+S, or Enter outside inputs)
   useEffect(() => {
@@ -296,23 +294,6 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
           <span>
             Absensi pada tanggal <strong>{new Date(selectedDate).toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</strong> sudah pernah dicatat dan dikunci. Perubahan hanya diperbolehkan pada hari yang sama.
           </span>
-        </div>
-      )}
-
-      {alert && (
-        <div
-          className={`p-4 rounded-xl text-sm border flex items-start gap-3 ${
-            alert.type === "success"
-              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-              : "bg-rose-500/10 border-rose-500/20 text-rose-300"
-          }`}
-        >
-          {alert.type === "success" ? (
-            <CheckCircle className="w-5 h-5 shrink-0 text-emerald-400" />
-          ) : (
-            <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
-          )}
-          <span>{alert.message}</span>
         </div>
       )}
 

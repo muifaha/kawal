@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
+import { ToastProvider } from "./Toast";
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -190,7 +191,8 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex">
+    <ToastProvider>
+      <div className="min-h-screen bg-slate-950 text-white flex">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r border-slate-800 bg-slate-900/30 backdrop-blur-xl animate-fade-in">
         <div className="flex-1 flex flex-col min-h-0">
@@ -451,5 +453,6 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
         </main>
       </div>
     </div>
+  </ToastProvider>
   );
 }

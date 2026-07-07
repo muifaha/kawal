@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useTransition, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { createBimbinganAction } from "@/app/actions/counseling";
+import { useToast } from "@/components/Toast";
 import {
   HeartHandshake,
   Search,
@@ -78,8 +79,19 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
   const [activeConfidentialId, setActiveConfidentialId] = useState<string | null>(null);
 
   const [isPending, startTransition] = useTransition();
-  const [actionError, setActionError] = useState("");
-  const [actionSuccess, setActionSuccess] = useState("");
+  const { showToast } = useToast();
+  const [actionError, _setActionError] = useState("");
+  const [actionSuccess, _setActionSuccess] = useState("");
+
+  const setActionError = React.useCallback((val: string) => {
+    _setActionError(val);
+    if (val) showToast(val, "error");
+  }, [showToast]);
+
+  const setActionSuccess = React.useCallback((val: string) => {
+    _setActionSuccess(val);
+    if (val) showToast(val, "success");
+  }, [showToast]);
 
   const isBK = user.role === "BK";
   const isBKOrWaka = user.role === "BK" || user.role === "WAKA";
@@ -165,19 +177,6 @@ export default function BimbinganClient({ user, classes, initialHistory }: Bimbi
 
   return (
     <div className="space-y-6">
-      {actionError && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-xl flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <span>{actionError}</span>
-        </div>
-      )}
-
-      {actionSuccess && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm rounded-xl flex items-start gap-3">
-          <Check className="w-5 h-5 shrink-0 mt-0.5" />
-          <span>{actionSuccess}</span>
-        </div>
-      )}
       {/* Tab Bar */}
       <div className="flex border-b border-slate-900 mb-6">
         {isBK && (
