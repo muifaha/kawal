@@ -1,8 +1,26 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { reportViolationAction, toggleCensorViolationAction } from "@/app/actions/violation";
-import { AlertCircle, CheckCircle, Search, AlertTriangle, Send, X, Paperclip, Eye, EyeOff, ShieldAlert } from "lucide-react";
+import {
+  reportViolationAction,
+  toggleCensorViolationAction,
+  deleteViolationReportAction,
+  updateViolationReportAction,
+} from "@/app/actions/violation";
+import {
+  AlertCircle,
+  CheckCircle,
+  Search,
+  AlertTriangle,
+  Send,
+  X,
+  Paperclip,
+  Eye,
+  EyeOff,
+  ShieldAlert,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { useToast } from "@/components/Toast";
 
 interface Siswa {
@@ -37,6 +55,7 @@ interface ViolationHistoryItem {
     kelas: { nama: string };
   };
   detailPelanggaran: {
+    id: string;
     nama: string;
     poin: number;
     kategori: { nama: string };
@@ -127,6 +146,73 @@ export default function ViolationClient({ user, classes, categories, initialHist
   }, [showToast]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [revealedReports, setRevealedReports] = useState<Record<string, boolean>>({});
+
+  // BK Edit & Delete States and Handlers
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingReport, setEditingReport] = useState<ViolationHistoryItem | null>(null);
+  const [editViolation, setEditViolation] = useState<typeof allViolations[0] | null>(null);
+  const [editViolationSearch, setEditViolationSearch] = useState("");
+  const [showEditViolationDropdown, setShowEditViolationDropdown] = useState(false);
+  const [editNotes, setEditNotes] = useState("");
+
+  const handleDeleteReport = async (reportId: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus laporan pelanggaran ini? Tindakan ini tidak dapat dibatalkan.")) {
+      return;
+    }
+    startTransition(async () => {
+      const res = await deleteViolationReportAction(reportId);
+      if (res.success) {
+        setHistory((prev) => prev.filter((item) => item.id !== reportId));
+        showToast(res.message, "success");
+      } else if (res.error) {
+        showToast(res.error, "error");
+      }
+    });
+  };
+
+  const openEditModal = (item: ViolationHistoryItem) => {
+    setEditingReport(item);
+    const matchedViolation = allViolations.find((v) => v.id === item.detailPelanggaran.id);
+    if (matchedViolation) {
+      setEditViolation(matchedViolation);
+      setEditViolationSearch(`${matchedViolation.kategoriNama} - ${matchedViolation.nama} (+${matchedViolation.poin} Poin)`);
+    } else {
+      setEditViolation(null);
+      setEditViolationSearch("");
+    }
+    setEditNotes(item.notes || "");
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingReport || !editViolation) {
+      showToast("Data edit tidak lengkap.", "error");
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await updateViolationReportAction(editingReport.id, editViolation.id, editNotes);
+      if (res.success) {
+        setHistory((prev) =>
+          prev.map((item) =>
+            item.id === editingReport.id
+              ? {
+                  ...item,
+                  detailPelanggaran: res.detailPelanggaran as any,
+                  notes: res.notes,
+                }
+              : item
+          )
+        );
+        showToast(res.message, "success");
+        setShowEditModal(false);
+        setEditingReport(null);
+      } else if (res.error) {
+        showToast(res.error, "error");
+      }
+    });
+  };
 
   const toggleCensor = async (reportId: string, currentCensored: boolean) => {
     startTransition(async () => {
@@ -227,6 +313,11 @@ export default function ViolationClient({ user, classes, categories, initialHist
       } else if (res.success) {
         setAlert({ type: "success", message: res.message || "Laporan berhasil diajukan." });
         
+        // Prepend new reports to history state to automatically update logs tab
+        if (res.newReports) {
+          setHistory((prev) => [...res.newReports, ...prev]);
+        }
+
         // Reset Form
         setSelectedStudents([]);
         setSelectedViolation(null);
@@ -622,6 +713,24 @@ export default function ViolationClient({ user, classes, categories, initialHist
                                   <ShieldAlert className="w-3.5 h-3.5" />
                                 </button>
                               )}
+                              {user.role === "BK" && (
+                                <>
+                                  <button
+                                    onClick={() => openEditModal(item)}
+                                    className="p-1 rounded transition-colors bg-slate-800 text-sky-400 hover:text-sky-300 hover:bg-slate-700 cursor-pointer"
+                                    title="Edit Laporan Pelanggaran"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteReport(item.id)}
+                                    className="p-1 rounded transition-colors bg-slate-800 text-rose-400 hover:text-rose-300 hover:bg-slate-700 cursor-pointer"
+                                    title="Hapus Laporan Pelanggaran"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -631,6 +740,139 @@ export default function ViolationClient({ user, classes, categories, initialHist
                 </tbody>
               </table>
             </div>
+        </div>
+      )}
+
+      {/* BK Edit Modal */}
+      {showEditModal && editingReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Header Modal */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-800">
+              <div className="flex items-center gap-2.5 text-emerald-400">
+                <Pencil className="w-5 h-5" />
+                <h3 className="text-base font-bold text-white">Edit Laporan Pelanggaran</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingReport(null);
+                }}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleEditSubmit} className="flex-1 p-6 overflow-y-auto space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nama Siswa</label>
+                <input
+                  disabled
+                  type="text"
+                  value={`${editingReport.siswa.nama} (Kelas: ${editingReport.siswa.kelas.nama})`}
+                  className="block w-full py-2.5 px-3 border border-slate-850 rounded-xl bg-slate-950/50 text-slate-500 text-xs"
+                />
+              </div>
+
+              {/* Jenis Pelanggaran Dropdown */}
+              <div className="relative">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Jenis Pelanggaran</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <Search className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Cari kategori atau detail pelanggaran..."
+                    value={editViolationSearch}
+                    onChange={(e) => {
+                      setEditViolationSearch(e.target.value);
+                      setShowEditViolationDropdown(true);
+                    }}
+                    onFocus={() => setShowEditViolationDropdown(true)}
+                    className="block w-full pl-9 pr-8 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+                  />
+                  {editViolationSearch && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditViolation(null);
+                        setEditViolationSearch("");
+                        setShowEditViolationDropdown(true);
+                      }}
+                      className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-500 hover:text-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {showEditViolationDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowEditViolationDropdown(false)} />
+                    <div className="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto rounded-xl border border-slate-850 bg-slate-955 p-2 shadow-xl">
+                      {allViolations
+                        .filter((v) =>
+                          v.searchString.includes(editViolationSearch.toLowerCase())
+                        )
+                        .slice(0, 100)
+                        .map((v) => (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => {
+                              setEditViolation(v);
+                              setEditViolationSearch(`${v.kategoriNama} - ${v.nama} (+${v.poin} Poin)`);
+                              setShowEditViolationDropdown(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all hover:bg-slate-900/80 ${
+                              editViolation?.id === v.id ? "bg-emerald-500/10 text-emerald-400 font-bold" : "text-slate-300"
+                            }`}
+                          >
+                            <span className="text-[10px] text-slate-500 block uppercase tracking-wider">{v.kategoriNama}</span>
+                            <span className="font-medium">{v.nama}</span>
+                            <span className="float-right text-[10px] font-bold text-rose-400">+{v.poin} Poin</span>
+                          </button>
+                        ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Catatan / Keterangan</label>
+                <textarea
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="Tambahkan keterangan tambahan mengenai pelanggaran..."
+                  rows={3}
+                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs placeholder-slate-600"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t border-slate-800 mt-4">
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="flex-1 flex justify-center py-2.5 px-4 border border-transparent rounded-xl text-xs font-semibold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 focus:outline-none disabled:opacity-50 transition-all transform active:scale-98 cursor-pointer"
+                >
+                  {isPending ? "Menyimpan..." : "Simpan Perubahan"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingReport(null);
+                  }}
+                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all text-xs cursor-pointer"
+                >
+                  Batal
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

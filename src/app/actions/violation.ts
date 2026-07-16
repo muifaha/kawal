@@ -72,9 +72,10 @@ export async function reportViolationAction(
     const status = isBK ? ViolationStatus.APPROVED : ViolationStatus.PENDING;
 
     // 3. Buat record laporan pelanggaran untuk setiap siswa dalam transaksi
-    await prisma.$transaction(
-      studentIds.map((studentId) =>
-        prisma.laporanPelanggaran.create({
+    const newReports = await prisma.$transaction(async (tx) => {
+      const records = [];
+      for (const studentId of studentIds) {
+        const record = await tx.laporanPelanggaran.create({
           data: {
             siswaId: studentId,
             detailPelanggaranId: violationDetailId,
@@ -85,9 +86,31 @@ export async function reportViolationAction(
             approvedAt: isBK ? new Date() : null,
             bukti: uploadedBukti,
           },
-        })
-      )
-    );
+          include: {
+            siswa: {
+              include: {
+                riwayatKelas: {
+                  where: { tahunAjaran: { isActive: true } },
+                  include: { kelas: true },
+                },
+              },
+            },
+            detailPelanggaran: {
+              include: { kategori: true },
+            },
+            pelapor: true,
+          },
+        });
+        records.push({
+          ...record,
+          siswa: {
+            ...record.siswa,
+            kelas: record.siswa.riwayatKelas[0]?.kelas || null,
+          },
+        });
+      }
+      return records;
+    });
 
     revalidatePath("/dashboard");
     revalidatePath("/pelanggaran");
@@ -97,7 +120,7 @@ export async function reportViolationAction(
       ? `Laporan pelanggaran untuk ${studentIds.length} siswa berhasil disimpan dan disahkan.`
       : `Laporan pelanggaran untuk ${studentIds.length} siswa berhasil diajukan. Menunggu verifikasi Guru BK.`;
 
-    return { success: true, message };
+    return { success: true, message, newReports };
   } catch (error) {
     console.error("Report violation error:", error);
     return { error: "Terjadi kesalahan saat membuat laporan pelanggaran." };
@@ -157,5 +180,75 @@ export async function toggleCensorViolationAction(reportId: string, isCensored: 
   } catch (error) {
     console.error("Toggle censor violation error:", error);
     return { error: "Terjadi kesalahan saat mengubah status sensor." };
+  }
+}
+
+/**
+ * Menghapus laporan pelanggaran.
+ * Hanya dapat dilakukan oleh Guru BK.
+ */
+export async function deleteViolationReportAction(reportId: string) {
+  const user = await getSessionUser();
+  if (!user || user.role !== "BK") {
+    return { error: "Akses ditolak. Hanya Guru BK yang diperbolehkan menghapus laporan pelanggaran." };
+  }
+
+  try {
+    await prisma.laporanPelanggaran.delete({
+      where: { id: reportId },
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath("/pelanggaran");
+    revalidatePath("/approval");
+
+    return { success: true, message: "Laporan pelanggaran berhasil dihapus." };
+  } catch (error: any) {
+    console.error("Delete violation report error:", error);
+    return { error: error.message || "Gagal menghapus laporan pelanggaran." };
+  }
+}
+
+/**
+ * Memperbarui laporan pelanggaran (jenis pelanggaran dan catatan).
+ * Hanya dapat dilakukan oleh Guru BK.
+ */
+export async function updateViolationReportAction(
+  reportId: string,
+  violationDetailId: string,
+  notes?: string
+) {
+  const user = await getSessionUser();
+  if (!user || user.role !== "BK") {
+    return { error: "Akses ditolak. Hanya Guru BK yang diperbolehkan mengubah laporan pelanggaran." };
+  }
+
+  try {
+    const updated = await prisma.laporanPelanggaran.update({
+      where: { id: reportId },
+      data: {
+        detailPelanggaranId: violationDetailId,
+        notes: notes || null,
+      },
+      include: {
+        detailPelanggaran: {
+          include: { kategori: true },
+        },
+      },
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath("/pelanggaran");
+    revalidatePath("/approval");
+
+    return {
+      success: true,
+      message: "Laporan pelanggaran berhasil diperbarui.",
+      detailPelanggaran: updated.detailPelanggaran,
+      notes: updated.notes,
+    };
+  } catch (error: any) {
+    console.error("Update violation report error:", error);
+    return { error: error.message || "Gagal memperbarui laporan pelanggaran." };
   }
 }
