@@ -426,3 +426,147 @@ export async function importRemissionsAction(rows: RemissionImportRow[]) {
     return { error: error.message || "Gagal mengimpor jenis remisi." };
   }
 }
+
+// 6. MIGRATION POINTS IMPORT
+export interface PointsMigrationImportRow {
+  nama: string;
+  kelasNama: string;
+  poin: number;
+  tanggal: string | number | Date;
+}
+
+function parseExcelDate(val: any): Date {
+  if (!val) return new Date();
+  if (val instanceof Date) return val;
+  if (typeof val === "number") {
+    // SheetJS sometimes reads dates as numbers. Excel serial date start: 30 Dec 1899
+    return new Date(Math.round((val - 25569) * 86400 * 1000));
+  }
+  const strVal = String(val).trim();
+  const parsedMs = Date.parse(strVal);
+  if (!isNaN(parsedMs)) return new Date(parsedMs);
+
+  // Handle DD-MM-YYYY or DD/MM/YYYY
+  const dmy = strVal.split(/[-/]/);
+  if (dmy.length === 3) {
+    const d = parseInt(dmy[0], 10);
+    const m = parseInt(dmy[1], 10) - 1;
+    const y = parseInt(dmy[2], 10);
+    if (y > 1000 && m >= 0 && m < 12 && d > 0 && d <= 31) {
+      return new Date(y, m, d);
+    }
+  }
+  return new Date();
+}
+
+export async function importPointsMigrationAction(rows: PointsMigrationImportRow[]) {
+  try {
+    const wakaUser = await assertWaka();
+    if (!rows || rows.length === 0) return { error: "Data impor kosong." };
+
+    const activeTA = await prisma.tahunAjaran.findFirst({
+      where: { isActive: true },
+    });
+    if (!activeTA) {
+      return { error: "Tidak ada Tahun Ajaran aktif saat ini." };
+    }
+
+    // Temukan atau buat KategoriPelanggaran MIGRASI
+    let category = await prisma.kategoriPelanggaran.findUnique({
+      where: { nama: "MIGRASI" },
+    });
+    if (!category) {
+      category = await prisma.kategoriPelanggaran.create({
+        data: { nama: "MIGRASI" },
+      });
+    }
+
+    // Simpan semua proses ke dalam transaksi
+    await prisma.$transaction(async (tx) => {
+      for (const row of rows) {
+        const { nama, kelasNama, poin, tanggal } = row;
+
+        if (!nama || !kelasNama || !poin) {
+          throw new Error("Format baris data tidak lengkap. Nama, Kelas, dan Poin wajib diisi.");
+        }
+
+        const parsedPoin = Math.max(1, Math.round(Number(poin)));
+        if (isNaN(parsedPoin)) {
+          throw new Error(`Nilai poin "${poin}" untuk siswa "${nama}" tidak valid.`);
+        }
+
+        const tanggalObj = parseExcelDate(tanggal);
+
+        // Cari siswa yang aktif di kelas & tahun ajaran aktif saat ini
+        const student = await tx.siswa.findFirst({
+          where: {
+            nama: {
+              equals: nama.trim(),
+              mode: "insensitive",
+            },
+            status: "AKTIF",
+            riwayatKelas: {
+              some: {
+                kelas: {
+                  nama: {
+                    equals: kelasNama.trim(),
+                    mode: "insensitive",
+                  },
+                },
+                tahunAjaranId: activeTA.id,
+              },
+            },
+          },
+        });
+
+        if (!student) {
+          throw new Error(
+            `Siswa bernama "${nama}" di kelas "${kelasNama}" tidak ditemukan di sistem untuk Tahun Ajaran aktif.`
+          );
+        }
+
+        // Cari atau buat DetailPelanggaran di bawah kategori MIGRASI
+        let detail = await tx.detailPelanggaran.findFirst({
+          where: {
+            kategoriId: category.id,
+            nama: "Migrasi Poin Buku",
+            poin: parsedPoin,
+          },
+        });
+        if (!detail) {
+          detail = await tx.detailPelanggaran.create({
+            data: {
+              kategoriId: category.id,
+              nama: "Migrasi Poin Buku",
+              poin: parsedPoin,
+            },
+          });
+        }
+
+        // Buat LaporanPelanggaran yang langsung APPROVED
+        await tx.laporanPelanggaran.create({
+          data: {
+            siswaId: student.id,
+            detailPelanggaranId: detail.id,
+            pelaporId: wakaUser.id,
+            status: "APPROVED",
+            approverId: wakaUser.id,
+            approvedAt: tanggalObj,
+            tanggal: tanggalObj,
+            notes: "Migrasi data poin lama dari buku.",
+            isCensored: false,
+          },
+        });
+      }
+    });
+
+    revalidatePath("/kesiswaan");
+    revalidatePath("/dashboard");
+    revalidatePath("/pelanggaran");
+    return { success: true, message: `Berhasil mengimpor ${rows.length} data migrasi poin buku.` };
+  } catch (error: any) {
+    console.error("Import points migration error:", error);
+    return { error: error.message || "Gagal mengimpor data migrasi poin." };
+  }
+}
+

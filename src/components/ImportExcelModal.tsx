@@ -8,13 +8,14 @@ import {
   importStudentsAction,
   importViolationsAction,
   importRemissionsAction,
+  importPointsMigrationAction,
 } from "@/app/actions/import";
 import { X, FileSpreadsheet, Download, Upload, AlertCircle, RefreshCw } from "lucide-react";
 
 interface ImportExcelModalProps {
   isOpen: boolean;
   onClose: () => void;
-  entityType: "users" | "classes" | "students" | "violations" | "remissions";
+  entityType: "users" | "classes" | "students" | "violations" | "remissions" | "migrasi_poin";
   onSuccess: (msg: string) => void;
   onError: (msg: string) => void;
 }
@@ -40,6 +41,7 @@ export default function ImportExcelModal({
     students: "Siswa",
     violations: "Jenis Pelanggaran",
     remissions: "Remisi Poin",
+    migrasi_poin: "Migrasi Poin Buku",
   };
 
   // Header dan Contoh Data untuk Template Excel
@@ -88,6 +90,15 @@ export default function ImportExcelModal({
             ["Nama Remisi", "Persentase Pengurangan"],
             ["Bawa Pohon untuk Penghijauan", "15"],
             ["Kerja Bakti Sosial", "10"],
+          ],
+        };
+      case "migrasi_poin":
+        return {
+          filename: "template_migrasi_poin.xlsx",
+          headers: [
+            ["Nama Lengkap", "Nama Kelas", "Poin Terakhir", "Tanggal Poin Terakhir Didapatkan"],
+            ["Eka Saputra", "XI RPL 2", "15", "16-07-2026"],
+            ["Farhan Maulana", "XI RPL 2", "25", "12/07/2026"],
           ],
         };
     }
@@ -272,6 +283,38 @@ export default function ImportExcelModal({
       return { mappedRows };
     }
 
+    if (entityType === "migrasi_poin") {
+      const hasNama = headers.includes("nama lengkap") || headers.includes("nama");
+      const hasKelas = headers.includes("nama kelas") || headers.includes("kelas");
+      const hasPoin = headers.includes("poin terakhir") || headers.includes("poin");
+      const hasTanggal = headers.includes("tanggal poin terakhir didapatkan") || headers.includes("tanggal poin terakhir") || headers.includes("tanggal");
+
+      if (!hasNama || !hasKelas || !hasPoin || !hasTanggal) {
+        const missing = [];
+        if (!hasNama) missing.push("Nama Lengkap");
+        if (!hasKelas) missing.push("Nama Kelas");
+        if (!hasPoin) missing.push("Poin Terakhir");
+        if (!hasTanggal) missing.push("Tanggal Poin Terakhir Didapatkan");
+        return { error: `Header Excel tidak sesuai. Kolom wajib yang kurang: ${missing.join(", ")}` };
+      }
+
+      const namaIdx = headers.indexOf("nama lengkap") !== -1 ? headers.indexOf("nama lengkap") : headers.indexOf("nama");
+      const kelasIdx = headers.indexOf("nama kelas") !== -1 ? headers.indexOf("nama kelas") : headers.indexOf("kelas");
+      const poinIdx = headers.indexOf("poin terakhir") !== -1 ? headers.indexOf("poin terakhir") : headers.indexOf("poin");
+      
+      let tanggalIdx = headers.indexOf("tanggal poin terakhir didapatkan");
+      if (tanggalIdx === -1) tanggalIdx = headers.indexOf("tanggal poin terakhir");
+      if (tanggalIdx === -1) tanggalIdx = headers.indexOf("tanggal");
+
+      const mappedRows = cleanRows.map((r) => ({
+        nama: String(r[namaIdx] || "").trim(),
+        kelasNama: String(r[kelasIdx] || "").trim(),
+        poin: Number(r[poinIdx]),
+        tanggal: r[tanggalIdx],
+      }));
+      return { mappedRows };
+    }
+
     return { error: "Entitas tidak dikenali." };
   };
 
@@ -292,6 +335,8 @@ export default function ImportExcelModal({
         res = await importViolationsAction(previewData);
       } else if (entityType === "remissions") {
         res = await importRemissionsAction(previewData);
+      } else if (entityType === "migrasi_poin") {
+        res = await importPointsMigrationAction(previewData);
       }
 
       if (res?.error) {

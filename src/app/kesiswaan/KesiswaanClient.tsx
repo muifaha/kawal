@@ -911,6 +911,14 @@ export default function KesiswaanClient({
                 Daftarkan Siswa Baru
               </button>
               {importButton("students")}
+              <button
+                onClick={() => openImportModal("migrasi_poin" as any)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-300 transition-all cursor-pointer"
+                title="Impor akumulasi poin dari data buku lama"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-rose-400" />
+                Impor Poin Buku (Migrasi)
+              </button>
             </div>
           </div>
 
