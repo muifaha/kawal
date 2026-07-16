@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { setSession, clearSession } from "@/lib/auth";
+import { setSession, clearSession, getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export async function loginAction(prevState: any, formData: FormData) {
@@ -45,4 +45,59 @@ export async function loginAction(prevState: any, formData: FormData) {
 export async function logoutAction() {
   await clearSession();
   redirect("/login");
+}
+
+export async function updateProfileAction(nama: string, username: string, password?: string) {
+  try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser) {
+      return { error: "Sesi Anda telah berakhir. Silakan login kembali." };
+    }
+
+    const cleanNama = nama.trim();
+    const cleanUsername = username.trim();
+
+    if (!cleanNama || !cleanUsername) {
+      return { error: "Nama dan Username wajib diisi." };
+    }
+
+    // Cek jika username diubah dan apakah sudah ada yang memakai
+    if (cleanUsername !== sessionUser.username) {
+      const existingUser = await prisma.user.findUnique({
+        where: { username: cleanUsername },
+      });
+      if (existingUser) {
+        return { error: "Username sudah terdaftar di sistem." };
+      }
+    }
+
+    // Siapkan data update
+    const updateData: any = {
+      nama: cleanNama,
+      username: cleanUsername,
+    };
+
+    if (password && password.trim().length > 0) {
+      updateData.passwordHash = await bcrypt.hash(password.trim(), 10);
+    }
+
+    // Update user di database
+    const updatedUser = await prisma.user.update({
+      where: { id: sessionUser.id },
+      data: updateData,
+    });
+
+    // Update sesi cookie agar perubahan nama/username langsung terlihat di header
+    await setSession({
+      id: updatedUser.id,
+      username: updatedUser.username,
+      role: updatedUser.role,
+      nama: updatedUser.nama,
+    });
+
+    return { success: true, message: "Profil berhasil diperbarui." };
+  } catch (error: any) {
+    console.error("Update profile error:", error);
+    return { error: error.message || "Gagal memperbarui profil." };
+  }
 }

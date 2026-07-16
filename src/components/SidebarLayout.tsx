@@ -274,12 +274,23 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
             })}
           </nav>
 
-          {/* Logout Button */}
-          <div className="p-4 border-t border-slate-800">
+          {/* Profile & Logout Button */}
+          <div className="p-4 border-t border-slate-800 space-y-1">
+            <Link
+              href="/profile"
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 border ${
+                pathname === "/profile"
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/10"
+                  : "text-slate-400 hover:bg-slate-900/40 hover:text-white border-transparent"
+              }`}
+            >
+              <User className="mr-3 h-5 w-5" />
+              Profil Saya
+            </Link>
             <form action={logoutAction}>
               <button
                 type="submit"
-                className="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-rose-400 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-800"
+                className="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-rose-400 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-800 cursor-pointer"
               >
                 <LogOut className="mr-3 h-5 w-5" />
                 Keluar
@@ -378,12 +389,24 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
               })}
             </nav>
 
-            {/* Logout */}
-            <div className="pt-4 border-t border-slate-800">
+            {/* Profile & Logout */}
+            <div className="pt-4 border-t border-slate-800 space-y-1">
+              <Link
+                href="/profile"
+                onClick={() => setIsMobileOpen(false)}
+                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all border ${
+                  pathname === "/profile"
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/10"
+                    : "text-slate-400 hover:bg-slate-800 border-transparent"
+                }`}
+              >
+                <User className="mr-3 h-5 w-5" />
+                Profil Saya
+              </Link>
               <form action={logoutAction}>
                 <button
                   type="submit"
-                  className="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-rose-400 rounded-xl transition-all border border-transparent hover:border-slate-800"
+                  className="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-rose-400 rounded-xl transition-all border border-transparent hover:border-slate-800 cursor-pointer"
                 >
                   <LogOut className="mr-3 h-5 w-5" />
                   Keluar
