@@ -377,6 +377,25 @@ export default function DashboardClient({
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
+  // Pagination states for Cumulative Attendance Recap
+  const [absenCurrentPage, setAbsenCurrentPage] = useState(1);
+  const [absenPageSize, setAbsenPageSize] = useState(50);
+
+  // Pagination states for Violation Akumulasi Poin
+  const [violationSummaryCurrentPage, setViolationSummaryCurrentPage] = useState(1);
+  const [violationSummaryPageSize, setViolationSummaryPageSize] = useState(50);
+
+  // Pagination states for Violation Logs
+  const [violationLogCurrentPage, setViolationLogCurrentPage] = useState(1);
+  const [violationLogPageSize, setViolationLogPageSize] = useState(50);
+
+  // Reset pagination pages to 1 when filters change
+  useEffect(() => {
+    setAbsenCurrentPage(1);
+    setViolationSummaryCurrentPage(1);
+    setViolationLogCurrentPage(1);
+  }, [searchQuery, selectedClassId, selectedStatus, selectedMonth, selectedYear, activeTab, absenViewMode, violationViewMode]);
+
   // Sort states and handler for cumulative attendance recap
   const [sortField, setSortField] = useState<string>("nama");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -458,6 +477,13 @@ export default function DashboardClient({
     });
     return sorted;
   }, [filteredAttendance, sortField, sortDirection]);
+
+  const paginatedAttendance = useMemo(() => {
+    return sortedAttendance.slice(
+      (absenCurrentPage - 1) * absenPageSize,
+      absenCurrentPage * absenPageSize
+    );
+  }, [sortedAttendance, absenCurrentPage, absenPageSize]);
 
   // Map of studentId -> dateString -> status
   const attendanceMatrix = useMemo(() => {
@@ -1107,6 +1133,20 @@ export default function DashboardClient({
     });
   }, [localViolationRecap, searchQuery, selectedClassId, selectedStatus]);
 
+  const paginatedViolationSummaries = useMemo(() => {
+    return sortedViolationSummaries.slice(
+      (violationSummaryCurrentPage - 1) * violationSummaryPageSize,
+      violationSummaryCurrentPage * violationSummaryPageSize
+    );
+  }, [sortedViolationSummaries, violationSummaryCurrentPage, violationSummaryPageSize]);
+
+  const paginatedViolationLogs = useMemo(() => {
+    return filteredViolationLogs.slice(
+      (violationLogCurrentPage - 1) * violationLogPageSize,
+      violationLogCurrentPage * violationLogPageSize
+    );
+  }, [filteredViolationLogs, violationLogCurrentPage, violationLogPageSize]);
+
   const statusColors = {
     APPROVED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
     PENDING: "bg-amber-500/10 text-amber-400 border-amber-500/20",
@@ -1117,6 +1157,65 @@ export default function DashboardClient({
     APPROVED: "Disetujui",
     PENDING: "Menunggu",
     REJECTED: "Ditolak",
+  };
+
+  const renderDashboardPagination = (
+    currentPage: number,
+    pageSize: number,
+    totalItems: number,
+    setCurrentPage: (p: number) => void,
+    setPageSize: (s: number) => void
+  ) => {
+    if (totalItems <= 50 && pageSize === 50) return null;
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const startItem = (currentPage - 1) * pageSize + 1;
+    const endItem = Math.min(currentPage * pageSize, totalItems);
+
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-900/60 text-xs text-slate-400">
+        <div className="flex items-center gap-2">
+          <span>Tampilkan:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="py-1 px-2 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer text-xs"
+          >
+            <option value={50}>50 Baris</option>
+            <option value={100}>100 Baris</option>
+            <option value={500}>500 Baris</option>
+          </select>
+          <span>
+            Menampilkan {startItem}-{endItem} dari {totalItems} data
+          </span>
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer font-semibold"
+            >
+              Sebelumnya
+            </button>
+            <span className="px-3 py-1.5 font-semibold text-slate-300">
+              Halaman {currentPage} dari {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer font-semibold"
+            >
+              Selanjutnya
+            </button>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -1959,12 +2058,13 @@ export default function DashboardClient({
                       </td>
                     </tr>
                   ) : (
-                    sortedAttendance.map((item, index) => {
+                    paginatedAttendance.map((item, index) => {
+                      const absoluteIndex = (absenCurrentPage - 1) * absenPageSize + index + 1;
                       const rate =
                         item.totalHari > 0 ? Math.round((item.H / item.totalHari) * 100) : 100;
                       return (
                         <tr key={item.studentId} className="text-sm">
-                          <td className="py-3 text-slate-500 font-medium">{index + 1}</td>
+                          <td className="py-3 text-slate-500 font-medium">{absoluteIndex}</td>
                           <td className="py-3">
                             <div className="font-semibold text-white">{item.nama}</div>
                             <div className="text-xs text-slate-400">NIS: {item.nis}</div>
@@ -1994,6 +2094,13 @@ export default function DashboardClient({
                   )}
                 </tbody>
               </table>
+              {renderDashboardPagination(
+                absenCurrentPage,
+                absenPageSize,
+                sortedAttendance.length,
+                setAbsenCurrentPage,
+                setAbsenPageSize
+              )}
             </div>
           )}
 
@@ -2600,55 +2707,65 @@ export default function DashboardClient({
                           </td>
                         </tr>
                       ) : (
-                        sortedViolationSummaries.map((item, index) => (
-                          <tr key={item.nis} className="text-sm hover:bg-slate-900/10 transition-colors">
-                            <td className="py-3 px-4 text-slate-500 font-medium">{index + 1}</td>
-                            <td className="py-3 px-4">
-                              <button
-                                onClick={() => {
-                                  setSelectedStudentNis(item.nis);
-                                }}
-                                className="font-semibold text-white hover:text-rose-400 transition-colors text-left focus:outline-none"
-                              >
-                                {item.nama}
-                              </button>
-                              <div className="text-xs text-slate-400">NIS: {item.nis}</div>
-                            </td>
-                            <td className="py-3 px-4 text-slate-300">{item.kelasNama}</td>
-                            <td className="py-3 px-4 text-center text-rose-400 font-semibold">
-                              {item.countApproved} Kasus
-                            </td>
-                            <td className="py-3 px-4 text-center text-amber-400 font-semibold">
-                              {item.countPending} Pending
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              <span
-                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                                  item.totalPoin >= 50
-                                    ? "bg-rose-500/10 text-rose-400 border border-rose-500/20 animate-pulse"
-                                    : item.totalPoin >= 20
-                                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                                    : "bg-slate-800 text-slate-300"
-                                }`}
-                              >
-                                {item.totalPoin} Poin
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <button
-                                onClick={() => setSelectedStudentNis(item.nis)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/25 hover:text-rose-300 rounded transition-colors"
-                                title="Lihat Histori Pelanggaran Siswa"
-                              >
-                                <History className="w-3.5 h-3.5" />
-                                Histori
-                              </button>
-                            </td>
-                          </tr>
-                        ))
+                        paginatedViolationSummaries.map((item, index) => {
+                          const absoluteIndex = (violationSummaryCurrentPage - 1) * violationSummaryPageSize + index + 1;
+                          return (
+                            <tr key={item.nis} className="text-sm hover:bg-slate-900/10 transition-colors">
+                              <td className="py-3 px-4 text-slate-500 font-medium">{absoluteIndex}</td>
+                              <td className="py-3 px-4">
+                                <button
+                                  onClick={() => {
+                                    setSelectedStudentNis(item.nis);
+                                  }}
+                                  className="font-semibold text-white hover:text-rose-400 transition-colors text-left focus:outline-none"
+                                >
+                                  {item.nama}
+                                </button>
+                                <div className="text-xs text-slate-400">NIS: {item.nis}</div>
+                              </td>
+                              <td className="py-3 px-4 text-slate-300">{item.kelasNama}</td>
+                              <td className="py-3 px-4 text-center text-rose-400 font-semibold">
+                                {item.countApproved} Kasus
+                              </td>
+                              <td className="py-3 px-4 text-center text-amber-400 font-semibold">
+                                {item.countPending} Pending
+                              </td>
+                              <td className="py-3 px-4 text-right">
+                                <span
+                                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                                    item.totalPoin >= 50
+                                      ? "bg-rose-500/10 text-rose-400 border border-rose-500/20 animate-pulse"
+                                      : item.totalPoin >= 20
+                                      ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                      : "bg-slate-800 text-slate-300"
+                                  }`}
+                                >
+                                  {item.totalPoin} Poin
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                <button
+                                  onClick={() => setSelectedStudentNis(item.nis)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/25 hover:text-rose-300 rounded transition-colors"
+                                  title="Lihat Histori Pelanggaran Siswa"
+                                >
+                                  <History className="w-3.5 h-3.5" />
+                                  Histori
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
+                  {renderDashboardPagination(
+                    violationSummaryCurrentPage,
+                    violationSummaryPageSize,
+                    sortedViolationSummaries.length,
+                    setViolationSummaryCurrentPage,
+                    setViolationSummaryPageSize
+                  )}
                 </div>
               )}
 
@@ -2676,14 +2793,15 @@ export default function DashboardClient({
                           </td>
                         </tr>
                       ) : (
-                        filteredViolationLogs.map((item, index) => {
+                        paginatedViolationLogs.map((item, index) => {
+                          const absoluteIndex = (violationLogCurrentPage - 1) * violationLogPageSize + index + 1;
                           const isBKoWaka = user.role === "BK" || user.role === "WAKA";
                           const isRevealed = revealedReports[item.id] || false;
                           const shouldBlur = item.isCensored && (!isBKoWaka || !isRevealed);
 
                           return (
                             <tr key={item.id} className="text-xs hover:bg-slate-900/10 transition-colors">
-                              <td className="py-3 px-4 text-slate-500 font-medium">{index + 1}</td>
+                              <td className="py-3 px-4 text-slate-500 font-medium">{absoluteIndex}</td>
                               <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
                                 {new Date(item.tanggal).toLocaleDateString("id-ID", {
                                   day: "numeric",
@@ -2791,6 +2909,13 @@ export default function DashboardClient({
                       )}
                     </tbody>
                   </table>
+                  {renderDashboardPagination(
+                    violationLogCurrentPage,
+                    violationLogPageSize,
+                    filteredViolationLogs.length,
+                    setViolationLogCurrentPage,
+                    setViolationLogPageSize
+                  )}
                 </div>
               )}
             </>
