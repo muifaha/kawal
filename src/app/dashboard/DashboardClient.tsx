@@ -1637,6 +1637,47 @@ export default function DashboardClient({
 
             {/* Right Column (lg:col-span-1) */}
             <div className="space-y-6">
+              {/* Quick Actions Panel */}
+              <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
+                <h3 className="text-lg font-bold text-white mb-4">Aksi Cepat</h3>
+                <div className="space-y-3">
+                  {user.role === "WAKA" && (
+                    <Link
+                      href="/kesiswaan"
+                      className="flex items-center gap-3 p-3 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-xl transition-all"
+                    >
+                      <Settings className="w-5 h-5 shrink-0" />
+                      Manajemen Kesiswaan
+                    </Link>
+                  )}
+                  {user.role === "BK" && (
+                    <>
+                      <Link
+                        href="/absensi"
+                        className="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-300 text-sm font-semibold rounded-xl transition-all"
+                      >
+                        <CalendarCheck className="w-5 h-5 shrink-0" />
+                        Catat Absensi Kelas
+                      </Link>
+                      <Link
+                        href="/approval"
+                        className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-300 text-sm font-semibold rounded-xl transition-all"
+                      >
+                        <CheckSquare className="w-5 h-5 shrink-0" />
+                        Persetujuan Pelanggaran
+                      </Link>
+                    </>
+                  )}
+                  <Link
+                    href="/pelanggaran"
+                    className="flex items-center gap-3 p-3 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-xl transition-all"
+                  >
+                    <Plus className="w-5 h-5 shrink-0" />
+                    Laporkan Pelanggaran
+                  </Link>
+                </div>
+              </div>
+
               {/* Analisis Risiko Kelas Section (Consolidated) */}
               {isWakaOrBK && (
                 <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
@@ -1683,47 +1724,6 @@ export default function DashboardClient({
                   )}
                 </div>
               )}
-
-              {/* Quick Actions Panel */}
-              <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
-                <h3 className="text-lg font-bold text-white mb-4">Aksi Cepat</h3>
-                <div className="space-y-3">
-                  {user.role === "WAKA" && (
-                    <Link
-                      href="/kesiswaan"
-                      className="flex items-center gap-3 p-3 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-xl transition-all"
-                    >
-                      <Settings className="w-5 h-5 shrink-0" />
-                      Manajemen Kesiswaan
-                    </Link>
-                  )}
-                  {user.role === "BK" && (
-                    <>
-                      <Link
-                        href="/absensi"
-                        className="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-300 text-sm font-semibold rounded-xl transition-all"
-                      >
-                        <CalendarCheck className="w-5 h-5 shrink-0" />
-                        Catat Absensi Kelas
-                      </Link>
-                      <Link
-                        href="/approval"
-                        className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-300 text-sm font-semibold rounded-xl transition-all"
-                      >
-                        <CheckSquare className="w-5 h-5 shrink-0" />
-                        Persetujuan Pelanggaran
-                      </Link>
-                    </>
-                  )}
-                  <Link
-                    href="/pelanggaran"
-                    className="flex items-center gap-3 p-3 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-xl transition-all"
-                  >
-                    <Plus className="w-5 h-5 shrink-0" />
-                    Laporkan Pelanggaran
-                  </Link>
-                </div>
-              </div>
             </div>
           </div>
         </div>
