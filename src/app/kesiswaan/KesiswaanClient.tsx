@@ -5,10 +5,13 @@ import { useToast } from "@/components/Toast";
 import {
   createUserAction,
   deleteUserAction,
+  deleteUsersBulkAction,
   createKelasAction,
   deleteKelasAction,
+  deleteKelasBulkAction,
   createSiswaAction,
   deleteSiswaAction,
+  deleteSiswaBulkAction,
   createViolationItemAction,
   deleteViolationItemAction,
   createRemissionItemAction,
@@ -205,6 +208,24 @@ export default function KesiswaanClient({
   const [showViolationModal, setShowViolationModal] = useState(false);
   const [showRemissionModal, setShowRemissionModal] = useState(false);
 
+  // Bulk Selection States
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+
+  // Memoized Paginated Data
+  const paginatedUsers = useMemo(() => {
+    return pageSize === 99999 ? initialUsers : initialUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [initialUsers, currentPage, pageSize]);
+
+  const paginatedClasses = useMemo(() => {
+    return pageSize === 99999 ? initialClasses : initialClasses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [initialClasses, currentPage, pageSize]);
+
+  const paginatedStudents = useMemo(() => {
+    return pageSize === 99999 ? initialStudents : initialStudents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [initialStudents, currentPage, pageSize]);
+
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setCurrentPage(1);
@@ -223,6 +244,103 @@ export default function KesiswaanClient({
     setShowSiswaModal(false);
     setShowViolationModal(false);
     setShowRemissionModal(false);
+    
+    // Clear bulk selections
+    setSelectedUserIds([]);
+    setSelectedClassIds([]);
+    setSelectedStudentIds([]);
+  };
+
+  // Reset selections on page changes
+  React.useEffect(() => {
+    setSelectedUserIds([]);
+    setSelectedClassIds([]);
+    setSelectedStudentIds([]);
+  }, [currentPage, pageSize]);
+
+  // Bulk Selection Handlers
+  const isAllUsersSelected = paginatedUsers.length > 0 && paginatedUsers.every((u) => selectedUserIds.includes(u.id));
+  const handleSelectAllUsers = () => {
+    if (isAllUsersSelected) {
+      setSelectedUserIds([]);
+    } else {
+      setSelectedUserIds(paginatedUsers.map((u) => u.id));
+    }
+  };
+  const handleSelectUser = (id: string) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+  const handleDeleteUsersBulk = () => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus ${selectedUserIds.length} akun guru/staff terpilih? Tindakan ini tidak dapat dibatalkan.`)) {
+      return;
+    }
+    startTransition(async () => {
+      const res = await deleteUsersBulkAction(selectedUserIds);
+      if (res.success) {
+        showToast(res.message, "success");
+        setSelectedUserIds([]);
+      } else if (res.error) {
+        showToast(res.error, "error");
+      }
+    });
+  };
+
+  const isAllClassesSelected = paginatedClasses.length > 0 && paginatedClasses.every((c) => selectedClassIds.includes(c.id));
+  const handleSelectAllClasses = () => {
+    if (isAllClassesSelected) {
+      setSelectedClassIds([]);
+    } else {
+      setSelectedClassIds(paginatedClasses.map((c) => c.id));
+    }
+  };
+  const handleSelectClass = (id: string) => {
+    setSelectedClassIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+  const handleDeleteClassesBulk = () => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus ${selectedClassIds.length} kelas terpilih beserta seluruh siswanya? Tindakan ini tidak dapat dibatalkan.`)) {
+      return;
+    }
+    startTransition(async () => {
+      const res = await deleteKelasBulkAction(selectedClassIds);
+      if (res.success) {
+        showToast(res.message, "success");
+        setSelectedClassIds([]);
+      } else if (res.error) {
+        showToast(res.error, "error");
+      }
+    });
+  };
+
+  const isAllStudentsSelected = paginatedStudents.length > 0 && paginatedStudents.every((s) => selectedStudentIds.includes(s.id));
+  const handleSelectAllStudents = () => {
+    if (isAllStudentsSelected) {
+      setSelectedStudentIds([]);
+    } else {
+      setSelectedStudentIds(paginatedStudents.map((s) => s.id));
+    }
+  };
+  const handleSelectStudent = (id: string) => {
+    setSelectedStudentIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+  const handleDeleteStudentsBulk = () => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus ${selectedStudentIds.length} siswa terpilih? Tindakan ini tidak dapat dibatalkan.`)) {
+      return;
+    }
+    startTransition(async () => {
+      const res = await deleteSiswaBulkAction(selectedStudentIds);
+      if (res.success) {
+        showToast(res.message, "success");
+        setSelectedStudentIds([]);
+      } else if (res.error) {
+        showToast(res.error, "error");
+      }
+    });
   };
 
   // Form Reset Helper
@@ -695,6 +813,15 @@ export default function KesiswaanClient({
               <p className="text-xs text-slate-400 mt-1">Kelola data seluruh akun guru, wali kelas, guru BK, dan staff kesiswaan.</p>
             </div>
             <div className="flex items-center gap-2">
+              {selectedUserIds.length > 0 && (
+                <button
+                  onClick={handleDeleteUsersBulk}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-rose-550/10 hover:bg-rose-500/20 text-rose-450 border border-rose-500/20 transition-all cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Hapus Terpilih ({selectedUserIds.length})</span>
+                </button>
+              )}
               <button
                 onClick={() => {
                   setEditingUser(null);
@@ -713,6 +840,14 @@ export default function KesiswaanClient({
             <table className="min-w-full divide-y divide-slate-900">
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
                 <tr>
+                  <th className="py-3.5 px-4 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={isAllUsersSelected}
+                      onChange={handleSelectAllUsers}
+                      className="rounded border-slate-800 bg-slate-950 text-emerald-450 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
+                    />
+                  </th>
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Lengkap</th>
                   <th className="py-3.5 px-4">NIP</th>
@@ -725,15 +860,23 @@ export default function KesiswaanClient({
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
                 {initialUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500">Belum ada data guru/staff.</td>
+                    <td colSpan={8} className="py-8 text-center text-slate-500">Belum ada data guru/staff.</td>
                   </tr>
                 ) : (
                   (() => {
-                    const paginatedUsers = pageSize === 99999 ? initialUsers : initialUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
                     return paginatedUsers.map((u, index) => {
                       const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
+                      const isSelected = selectedUserIds.includes(u.id);
                       return (
-                        <tr key={u.id} className="hover:bg-slate-900/25 transition-all">
+                        <tr key={u.id} className={`hover:bg-slate-900/25 transition-all ${isSelected ? "bg-slate-900/40" : ""}`}>
+                          <td className="py-3 px-4 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleSelectUser(u.id)}
+                              className="rounded border-slate-800 bg-slate-950 text-emerald-450 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
+                            />
+                          </td>
                           <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
                           <td className="py-3 px-4 font-semibold text-white">{u.nama}</td>
                           <td className="py-3 px-4 font-mono text-slate-400">{u.nip || "-"}</td>
@@ -786,6 +929,15 @@ export default function KesiswaanClient({
               <p className="text-xs text-slate-400 mt-1">Kelola data kelas, penugasan Wali Kelas, dan Guru BK penanggung jawab.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              {selectedClassIds.length > 0 && (
+                <button
+                  onClick={handleDeleteClassesBulk}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-rose-550/10 hover:bg-rose-500/20 text-rose-450 border border-rose-500/20 transition-all cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Hapus Terpilih ({selectedClassIds.length})</span>
+                </button>
+              )}
               <button
                 onClick={() => {
                   setEditingKelas(null);
@@ -816,6 +968,14 @@ export default function KesiswaanClient({
             <table className="min-w-full divide-y divide-slate-900">
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
                 <tr>
+                  <th className="py-3.5 px-4 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={isAllClassesSelected}
+                      onChange={handleSelectAllClasses}
+                      className="rounded border-slate-800 bg-slate-950 text-emerald-450 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
+                    />
+                  </th>
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Kelas</th>
                   <th className="py-3.5 px-4">Wali Kelas (Walas)</th>
@@ -827,15 +987,23 @@ export default function KesiswaanClient({
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
                 {initialClasses.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-500">Belum ada data kelas.</td>
+                    <td colSpan={7} className="py-8 text-center text-slate-500">Belum ada data kelas.</td>
                   </tr>
                 ) : (
                   (() => {
-                    const paginatedClasses = pageSize === 99999 ? initialClasses : initialClasses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
                     return paginatedClasses.map((c, index) => {
                       const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
+                      const isSelected = selectedClassIds.includes(c.id);
                       return (
-                        <tr key={c.id} className="hover:bg-slate-900/25 transition-all">
+                        <tr key={c.id} className={`hover:bg-slate-900/25 transition-all ${isSelected ? "bg-slate-900/40" : ""}`}>
+                          <td className="py-3 px-4 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleSelectClass(c.id)}
+                              className="rounded border-slate-800 bg-slate-950 text-emerald-450 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
+                            />
+                          </td>
                           <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
                           <td className="py-3 px-4 font-semibold text-white">{c.nama}</td>
                           <td className="py-3 px-4 text-slate-300">
@@ -900,6 +1068,15 @@ export default function KesiswaanClient({
               <p className="text-xs text-slate-400 mt-1">Kelola data seluruh siswa aktif yang terdaftar di sekolah.</p>
             </div>
             <div className="flex items-center gap-2">
+              {selectedStudentIds.length > 0 && (
+                <button
+                  onClick={handleDeleteStudentsBulk}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-rose-550/10 hover:bg-rose-500/20 text-rose-450 border border-rose-500/20 transition-all cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Hapus Terpilih ({selectedStudentIds.length})</span>
+                </button>
+              )}
               <button
                 onClick={() => {
                   setEditingSiswa(null);
@@ -926,6 +1103,14 @@ export default function KesiswaanClient({
             <table className="min-w-full divide-y divide-slate-900">
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
                 <tr>
+                  <th className="py-3.5 px-4 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={isAllStudentsSelected}
+                      onChange={handleSelectAllStudents}
+                      className="rounded border-slate-800 bg-slate-950 text-emerald-455 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
+                    />
+                  </th>
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4">Nama Lengkap</th>
                   <th className="py-3.5 px-4">NIS</th>
@@ -936,15 +1121,23 @@ export default function KesiswaanClient({
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
                 {initialStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-500">Belum ada data siswa.</td>
+                    <td colSpan={6} className="py-8 text-center text-slate-500">Belum ada data siswa.</td>
                   </tr>
                 ) : (
                   (() => {
-                    const paginatedStudents = pageSize === 99999 ? initialStudents : initialStudents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
                     return paginatedStudents.map((s, index) => {
                       const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
+                      const isSelected = selectedStudentIds.includes(s.id);
                       return (
-                        <tr key={s.id} className="hover:bg-slate-900/25 transition-all">
+                        <tr key={s.id} className={`hover:bg-slate-900/25 transition-all ${isSelected ? "bg-slate-900/40" : ""}`}>
+                          <td className="py-3 px-4 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleSelectStudent(s.id)}
+                              className="rounded border-slate-800 bg-slate-950 text-emerald-455 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
+                            />
+                          </td>
                           <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
                           <td className="py-3 px-4 font-semibold text-white">{s.nama}</td>
                           <td className="py-3 px-4 font-mono text-slate-400">{s.nis}</td>

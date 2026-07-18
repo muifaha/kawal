@@ -1249,5 +1249,68 @@ export async function saveWeeklyHolidaysAction(formData: FormData) {
   }
 }
 
+export async function deleteUsersBulkAction(userIds: string[]) {
+  try {
+    await assertWaka();
+
+    await prisma.user.deleteMany({
+      where: { id: { in: userIds } },
+    });
+
+    revalidatePath("/kesiswaan");
+    return { success: true, message: `${userIds.length} akun guru/staff berhasil dihapus.` };
+  } catch (error: any) {
+    console.error("Delete users bulk error:", error);
+    return { error: error.message || "Gagal menghapus beberapa akun guru/staff." };
+  }
+}
+
+export async function deleteKelasBulkAction(kelasIds: string[]) {
+  try {
+    await assertWaka();
+
+    const studentRosters = await prisma.siswaKelas.findMany({ where: { kelasId: { in: kelasIds } } });
+    const studentIds = studentRosters.map((s) => s.siswaId);
+
+    await prisma.absensi.deleteMany({ where: { siswaId: { in: studentIds } } });
+    await prisma.laporanPelanggaran.deleteMany({ where: { siswaId: { in: studentIds } } });
+    await prisma.transaksiRemisi.deleteMany({ where: { siswaId: { in: studentIds } } });
+    await prisma.siswaKelas.deleteMany({ where: { kelasId: { in: kelasIds } } });
+    await prisma.siswa.deleteMany({ where: { id: { in: studentIds } } });
+
+    await prisma.kelas.deleteMany({
+      where: { id: { in: kelasIds } },
+    });
+
+    revalidatePath("/kesiswaan");
+    revalidatePath("/absensi");
+    return { success: true, message: `${kelasIds.length} kelas beserta seluruh siswanya berhasil dihapus.` };
+  } catch (error: any) {
+    console.error("Delete kelas bulk error:", error);
+    return { error: error.message || "Gagal menghapus beberapa kelas." };
+  }
+}
+
+export async function deleteSiswaBulkAction(siswaIds: string[]) {
+  try {
+    await assertWaka();
+
+    await prisma.absensi.deleteMany({ where: { siswaId: { in: siswaIds } } });
+    await prisma.laporanPelanggaran.deleteMany({ where: { siswaId: { in: siswaIds } } });
+    await prisma.transaksiRemisi.deleteMany({ where: { siswaId: { in: siswaIds } } });
+    await prisma.siswaKelas.deleteMany({ where: { siswaId: { in: siswaIds } } });
+
+    await prisma.siswa.deleteMany({
+      where: { id: { in: siswaIds } },
+    });
+
+    revalidatePath("/kesiswaan");
+    return { success: true, message: `${siswaIds.length} siswa berhasil dihapus dari sistem.` };
+  } catch (error: any) {
+    console.error("Delete siswa bulk error:", error);
+    return { error: error.message || "Gagal menghapus beberapa data siswa." };
+  }
+}
+
 
 
