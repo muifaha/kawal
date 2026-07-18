@@ -66,7 +66,9 @@ export default async function KesiswaanPage() {
     nama: s.nama,
     status: s.status,
     kelasId: s.riwayatKelas[0]?.kelas.id || "",
-    kelas: s.riwayatKelas[0]?.kelas || null,
+    kelas: s.riwayatKelas[0]?.kelas
+      ? { id: s.riwayatKelas[0].kelas.id, nama: s.riwayatKelas[0].kelas.nama }
+      : { id: "", nama: "Belum Ditentukan" },
   }));
 
   // 4. Ambil data Kategori & Detail Pelanggaran
