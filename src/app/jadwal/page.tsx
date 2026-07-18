@@ -131,6 +131,7 @@ export default async function JadwalPage() {
 
   // Format data untuk client component
   const classes = dbClasses.map((c) => ({ id: c.id, nama: c.nama }));
+  classes.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
   const teachers = dbTeachers.map((t) => ({ id: t.id, nama: t.nama }));
   const subjects = dbSubjects.map((s) => ({ id: s.id, kode: s.kode, nama: s.nama }));
   const periods = dbPeriods.map((p) => ({

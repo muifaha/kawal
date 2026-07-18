@@ -264,6 +264,7 @@ export default async function PenangananPage({
     where: classesFilter,
     orderBy: { nama: "asc" },
   });
+  classes.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
 
   return (
     <SidebarLayout user={user}>

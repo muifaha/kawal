@@ -55,6 +55,7 @@ export default async function PelanggaranPage() {
     bkId: c.bkId,
     siswa: c.siswaKelas.map((sk) => sk.siswa).sort((a, b) => a.nama.localeCompare(b.nama)),
   }));
+  classes.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
 
   // 3. Ambil Riwayat Pelanggaran berdasarkan Hak Akses
   let rawHistory: any[] = [];

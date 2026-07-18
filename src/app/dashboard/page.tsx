@@ -129,6 +129,7 @@ export default async function DashboardPage() {
     where: classesFilter,
     orderBy: { nama: "asc" },
   });
+  classes.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
 
   // 4. Query Statistik Utama
   const totalSiswa = await prisma.siswa.count({
@@ -809,6 +810,7 @@ export default async function DashboardPage() {
         nama: c.nama,
         walasNama: c.walas?.nama || "Belum Ditentukan",
       }));
+    classesNotSubmittedToday.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
   }
 
   const dbPeriods = await prisma.jamPelajaran.findMany();

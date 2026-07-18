@@ -56,6 +56,7 @@ export default async function AbsensiPage({
     bkId: c.bkId,
     siswa: c.siswaKelas.map((sk) => sk.siswa).sort((a, b) => a.nama.localeCompare(b.nama)),
   }));
+  classes.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
 
   // Ambil settings untuk libur sabtu/minggu
   const settingsList = await prisma.appSetting.findMany();

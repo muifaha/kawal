@@ -46,6 +46,7 @@ export default async function RemisiPage() {
     bkId: c.bkId,
     siswa: c.siswaKelas.map((sk) => sk.siswa).sort((a, b) => a.nama.localeCompare(b.nama)),
   }));
+  classes.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
 
   // 2. Ambil daftar master remisi kondisional
   const masterRemisiList = await prisma.masterRemisi.findMany({

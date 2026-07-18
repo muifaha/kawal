@@ -35,6 +35,7 @@ export default async function KesiswaanPage() {
     },
     orderBy: { nama: "asc" },
   });
+  classes.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
 
   // 3. Ambil data Siswa aktif di tahun ajaran aktif
   const dbStudents = await prisma.siswa.findMany({
