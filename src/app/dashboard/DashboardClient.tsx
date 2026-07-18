@@ -596,10 +596,10 @@ export default function DashboardClient({
         item.nama,
         item.kelasNama,
         item.H,
-        item.S,
-        item.I,
-        item.A,
-        item.D,
+        item.S === 0 ? "" : item.S,
+        item.I === 0 ? "" : item.I,
+        item.A === 0 ? "" : item.A,
+        item.D === 0 ? "" : item.D,
         item.totalHari,
         `${rate}%`
       ];
@@ -762,7 +762,14 @@ export default function DashboardClient({
         rowData.push(status);
       }
 
-      rowData.push(totals.H, totals.S, totals.I, totals.A, totals.D, `${rate}%`);
+      rowData.push(
+        totals.H,
+        totals.S === 0 ? "" : totals.S,
+        totals.I === 0 ? "" : totals.I,
+        totals.A === 0 ? "" : totals.A,
+        totals.D === 0 ? "" : totals.D,
+        `${rate}%`
+      );
 
       const row = worksheet.addRow(rowData);
       row.height = 22;
@@ -1964,10 +1971,10 @@ export default function DashboardClient({
                           </td>
                           <td className="py-3 text-slate-300">{item.kelasNama}</td>
                           <td className="py-3 text-center text-emerald-400 font-bold">{item.H}</td>
-                          <td className="py-3 text-center text-amber-400 font-bold">{item.S}</td>
-                          <td className="py-3 text-center text-sky-400 font-bold">{item.I}</td>
-                          <td className="py-3 text-center text-rose-400 font-bold">{item.A}</td>
-                          <td className="py-3 text-center text-purple-400 font-bold">{item.D}</td>
+                          <td className="py-3 text-center text-amber-400 font-bold">{item.S === 0 ? "-" : item.S}</td>
+                          <td className="py-3 text-center text-sky-400 font-bold">{item.I === 0 ? "-" : item.I}</td>
+                          <td className="py-3 text-center text-rose-400 font-bold">{item.A === 0 ? "-" : item.A}</td>
+                          <td className="py-3 text-center text-purple-400 font-bold">{item.D === 0 ? "-" : item.D}</td>
                           <td className="py-3 text-center">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
@@ -2116,16 +2123,16 @@ export default function DashboardClient({
                                 {totals.H}
                               </td>
                               <td className="py-3 text-center w-10 min-w-[2.5rem] text-amber-400 font-bold border-l border-slate-800/40">
-                                {totals.S}
+                                {totals.S === 0 ? "-" : totals.S}
                               </td>
                               <td className="py-3 text-center w-10 min-w-[2.5rem] text-sky-400 font-bold border-l border-slate-800/40">
-                                {totals.I}
+                                {totals.I === 0 ? "-" : totals.I}
                               </td>
                               <td className="py-3 text-center w-10 min-w-[2.5rem] text-rose-400 font-bold border-l border-slate-800/40">
-                                {totals.A}
+                                {totals.A === 0 ? "-" : totals.A}
                               </td>
                               <td className="py-3 text-center w-10 min-w-[2.5rem] text-purple-400 font-bold border-l border-slate-800/40">
-                                {totals.D}
+                                {totals.D === 0 ? "-" : totals.D}
                               </td>
                               <td className="py-3 text-center w-20 min-w-[5rem] text-indigo-400 font-bold border-l border-slate-800">
                                 {(() => {
