@@ -512,26 +512,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
 
       {/* Floating Bottom Summary Bar */}
       {selectedClassId && students.length > 0 && (
-        <div className="fixed bottom-0 left-0 md:left-64 right-0 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800/80 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 z-30">
-          {/* Summary Counter */}
-          <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
-            <span className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-semibold">
-              Hadir (H): <span className="text-emerald-400 font-bold ml-1">{summary.H}</span>
-            </span>
-            <span className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-semibold">
-              Sakit (S): <span className="text-amber-400 font-bold ml-1">{summary.S}</span>
-            </span>
-            <span className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-semibold">
-              Izin (I): <span className="text-sky-400 font-bold ml-1">{summary.I}</span>
-            </span>
-            <span className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-semibold">
-              Alpha (A): <span className="text-rose-400 font-bold ml-1">{summary.A}</span>
-            </span>
-            <span className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-semibold">
-              Disp (D): <span className="text-purple-400 font-bold ml-1">{summary.D}</span>
-            </span>
-          </div>
-
+        <div className="fixed bottom-0 left-0 md:left-64 right-0 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800/80 p-4 flex items-center justify-end z-30">
           {/* Submit Action */}
           {isReadOnly ? (
             <div className="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-800 text-slate-400 px-6 py-2.5 rounded-xl text-sm font-semibold border border-slate-700">
@@ -541,7 +522,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 px-6 py-2.5 rounded-xl text-sm font-bold-emerald-500/10 transition-all active:scale-98 cursor-pointer"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 px-6 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-98 cursor-pointer"
             >
               {isSaving ? (
                 <span className="flex items-center gap-2">
