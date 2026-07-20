@@ -236,11 +236,33 @@ export default function ViolationClient({ user, classes, categories, initialHist
 
   const filteredStudents = React.useMemo(() => {
     if (!isSearchingStudent) return [];
-    return allStudents.filter(
+    
+    // Split query by spaces to allow searching like "budi x 1"
+    const searchTerms = studentQuery.split(" ").filter(t => t.length > 0);
+
+    const matches = allStudents.filter(
       (s) =>
-        s.searchString.includes(studentQuery) &&
+        searchTerms.every(term => s.searchString.includes(term)) &&
         !selectedStudents.some((sel) => sel.id === s.id)
-    ).slice(0, 8);
+    );
+
+    // Sort to prioritize exact or startsWith matches, especially helpful for 1-word names
+    matches.sort((a, b) => {
+      const aName = a.nama.toLowerCase();
+      const bName = b.nama.toLowerCase();
+      
+      const aExact = aName === studentQuery ? 1 : 0;
+      const bExact = bName === studentQuery ? 1 : 0;
+      if (aExact !== bExact) return bExact - aExact;
+      
+      const aStarts = aName.startsWith(studentQuery) ? 1 : 0;
+      const bStarts = bName.startsWith(studentQuery) ? 1 : 0;
+      if (aStarts !== bStarts) return bStarts - aStarts;
+      
+      return 0;
+    });
+
+    return matches.slice(0, 15);
   }, [allStudents, isSearchingStudent, studentQuery, selectedStudents]);
 
   // Grouped and filtered violations by category
