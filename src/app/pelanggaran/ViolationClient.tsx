@@ -155,6 +155,22 @@ export default function ViolationClient({ user, classes, categories, initialHist
   const [showEditViolationDropdown, setShowEditViolationDropdown] = useState(false);
   const [editNotes, setEditNotes] = useState("");
 
+  const violationTextareaRef = React.useRef<HTMLTextAreaElement>(null);
+  React.useEffect(() => {
+    if (violationTextareaRef.current) {
+      violationTextareaRef.current.style.height = "auto";
+      violationTextareaRef.current.style.height = `${violationTextareaRef.current.scrollHeight}px`;
+    }
+  }, [violationSearch]);
+
+  const editViolationTextareaRef = React.useRef<HTMLTextAreaElement>(null);
+  React.useEffect(() => {
+    if (editViolationTextareaRef.current) {
+      editViolationTextareaRef.current.style.height = "auto";
+      editViolationTextareaRef.current.style.height = `${editViolationTextareaRef.current.scrollHeight}px`;
+    }
+  }, [editViolationSearch]);
+
   const handleDeleteReport = async (reportId: string) => {
     if (!confirm("Apakah Anda yakin ingin menghapus laporan pelanggaran ini? Tindakan ini tidak dapat dibatalkan.")) {
       return;
@@ -491,8 +507,8 @@ export default function ViolationClient({ user, classes, categories, initialHist
               </label>
               
               <div className="relative">
-                <input
-                  type="text"
+                <textarea
+                  ref={violationTextareaRef}
                   value={violationSearch}
                   onChange={(e) => {
                     setViolationSearch(e.target.value);
@@ -502,7 +518,8 @@ export default function ViolationClient({ user, classes, categories, initialHist
                   onFocus={() => setShowViolationDropdown(true)}
                   onBlur={() => setTimeout(() => setShowViolationDropdown(false), 200)}
                   placeholder="Ketik kata kunci jenis pelanggaran (misal: baju, dasi)..."
-                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm min-h-[44px] max-h-32 resize-none overflow-y-hidden"
+                  rows={1}
                 />
                 
                 {showViolationDropdown && Object.keys(groupedFilteredViolations).length > 0 && (
@@ -805,8 +822,8 @@ export default function ViolationClient({ user, classes, categories, initialHist
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
                     <Search className="h-4 w-4" />
                   </div>
-                  <input
-                    type="text"
+                  <textarea
+                    ref={editViolationTextareaRef}
                     placeholder="Cari kategori atau detail pelanggaran..."
                     value={editViolationSearch}
                     onChange={(e) => {
@@ -814,7 +831,8 @@ export default function ViolationClient({ user, classes, categories, initialHist
                       setShowEditViolationDropdown(true);
                     }}
                     onFocus={() => setShowEditViolationDropdown(true)}
-                    className="block w-full pl-9 pr-8 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+                    className="block w-full pl-9 pr-8 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs min-h-[38px] max-h-32 resize-none overflow-y-hidden"
+                    rows={1}
                   />
                   {editViolationSearch && (
                     <button
