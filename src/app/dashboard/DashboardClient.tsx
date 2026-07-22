@@ -2572,7 +2572,7 @@ export default function DashboardClient({
                           : "text-slate-400 hover:text-white"
                       }`}
                     >
-                      Riwayat Laporan (Logs)
+                      Riwayat Laporan
                     </button>
                   </div>
                 </div>
@@ -2629,9 +2629,9 @@ export default function DashboardClient({
 
               {/* Render Summary Mode */}
               {violationViewMode === "summary" && (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-800">
-                    <thead>
+                <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
+                  <table className="min-w-[650px] w-full divide-y divide-slate-800">
+                    <thead className="bg-slate-900/60">
                       <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider select-none">
                         <th className="pb-3 px-4 w-12">No</th>
                         <th
@@ -2774,9 +2774,9 @@ export default function DashboardClient({
 
               {/* Render Detail Log Mode */}
               {violationViewMode === "log" && (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-800">
-                    <thead>
+                <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
+                  <table className="min-w-[700px] w-full divide-y divide-slate-800">
+                    <thead className="bg-slate-900/60">
                       <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider select-none">
                         <th className="pb-3 px-4 w-12">No</th>
                         <th className="pb-3 px-4">Tanggal</th>
