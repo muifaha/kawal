@@ -1832,50 +1832,53 @@ export default function DashboardClient({
       {activeTab === "absen_rekap" && isWakaOrBKOrWalas && (
         <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl animate-fade-in space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <CalendarCheck className="w-5 h-5 text-emerald-400" />
-                Rekapitulasi Kehadiran Siswa
-              </h3>
+            {/* View mode toggle & title */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <CalendarCheck className="w-5 h-5 text-emerald-400" />
+                  Rekapitulasi Kehadiran Siswa
+                </h3>
 
-              {/* View mode toggle */}
-              <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800">
-                <button
-                  onClick={() => {
-                    setAbsenViewMode("cumulative");
-                    setSearchQuery("");
-                  }}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
-                    absenViewMode === "cumulative"
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Kumulatif (Semester)
-                </button>
-                <button
-                  onClick={() => {
-                    setAbsenViewMode("monthly");
-                    setSearchQuery("");
-                  }}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
-                    absenViewMode === "monthly"
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Matriks Bulanan
-                </button>
+                {/* View mode toggle */}
+                <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800 w-fit">
+                  <button
+                    onClick={() => {
+                      setAbsenViewMode("cumulative");
+                      setSearchQuery("");
+                    }}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                      absenViewMode === "cumulative"
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Kumulatif (Semester)
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAbsenViewMode("monthly");
+                      setSearchQuery("");
+                    }}
+                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                      absenViewMode === "monthly"
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Matriks Bulanan
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Actions & Filters */}
-            <div className="flex flex-wrap items-center gap-2.5 lg:justify-end">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5 lg:justify-end">
               {/* Export Button */}
               <div className="flex items-center shrink-0">
                 <button
                   onClick={() => setShowExportModal(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-800 rounded-xl bg-slate-950 hover:bg-slate-900 text-xs font-semibold text-slate-300 transition-all cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 border border-slate-800 rounded-xl bg-slate-950 hover:bg-slate-900 text-xs font-semibold text-slate-300 transition-all cursor-pointer"
                   title="Pilih tipe ekspor Excel (.xlsx)"
                 >
                   <Upload className="w-3.5 h-3.5 rotate-180 text-emerald-400" />
@@ -1887,7 +1890,7 @@ export default function DashboardClient({
               <div className="h-5 w-px bg-slate-800 hidden sm:block"></div>
 
               {/* Input Cari */}
-              <div className="relative rounded-xl w-44 sm:w-60 shrink-0">
+              <div className="relative rounded-xl w-full sm:w-60">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-slate-500" />
                 </div>
@@ -1896,7 +1899,7 @@ export default function DashboardClient({
                   placeholder="Cari siswa atau NIS..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="block w-full pl-9 pr-3 py-1.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="block w-full pl-9 pr-3 py-2 sm:py-1.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
@@ -1904,7 +1907,7 @@ export default function DashboardClient({
               <select
                 value={selectedClassId}
                 onChange={(e) => setSelectedClassId(e.target.value)}
-                className="py-1.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shrink-0 w-32 sm:w-36"
+                className="py-2 sm:py-1.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-36"
               >
                 <option value="">Semua Kelas</option>
                 {classes.map((c) => (
@@ -1923,7 +1926,7 @@ export default function DashboardClient({
                     setSelectedMonth(m);
                     setSelectedYear(y);
                   }}
-                  className="py-1.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shrink-0 w-44"
+                  className="py-2 sm:py-1.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-44"
                 >
                   {years.flatMap((y) =>
                     INDONESIAN_MONTHS.map((m) => (
@@ -1939,14 +1942,14 @@ export default function DashboardClient({
 
           {/* Render Cumulative Mode */}
           {absenViewMode === "cumulative" && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-800">
-                <thead>
+            <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
+              <table className="min-w-[750px] w-full divide-y divide-slate-800">
+                <thead className="bg-slate-900/60">
                   <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider select-none">
-                    <th className="pb-3 w-12">No</th>
+                    <th className="py-3 px-3 w-12 text-center">No</th>
                     <th
                       onClick={() => handleSort("nama")}
-                      className="pb-3 cursor-pointer hover:text-white transition-all w-[30%]"
+                      className="py-3 px-4 cursor-pointer hover:text-white transition-all whitespace-nowrap"
                     >
                       <div className="flex items-center gap-1">
                         Siswa
@@ -1959,7 +1962,7 @@ export default function DashboardClient({
                     </th>
                     <th
                       onClick={() => handleSort("kelasNama")}
-                      className="pb-3 cursor-pointer hover:text-white transition-all w-[15%]"
+                      className="py-3 px-4 cursor-pointer hover:text-white transition-all whitespace-nowrap"
                     >
                       <div className="flex items-center gap-1">
                         Kelas
@@ -1972,7 +1975,7 @@ export default function DashboardClient({
                     </th>
                     <th
                       onClick={() => handleSort("H")}
-                      className="pb-3 cursor-pointer hover:text-white transition-all text-center w-20"
+                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
                     >
                       <div className="flex items-center justify-center gap-1">
                         Hadir
@@ -1985,7 +1988,7 @@ export default function DashboardClient({
                     </th>
                     <th
                       onClick={() => handleSort("S")}
-                      className="pb-3 cursor-pointer hover:text-white transition-all text-center w-20"
+                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
                     >
                       <div className="flex items-center justify-center gap-1">
                         Sakit
@@ -1998,7 +2001,7 @@ export default function DashboardClient({
                     </th>
                     <th
                       onClick={() => handleSort("I")}
-                      className="pb-3 cursor-pointer hover:text-white transition-all text-center w-20"
+                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
                     >
                       <div className="flex items-center justify-center gap-1">
                         Izin
@@ -2011,7 +2014,7 @@ export default function DashboardClient({
                     </th>
                     <th
                       onClick={() => handleSort("A")}
-                      className="pb-3 cursor-pointer hover:text-white transition-all text-center w-20"
+                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
                     >
                       <div className="flex items-center justify-center gap-1">
                         Alpha
@@ -2024,7 +2027,7 @@ export default function DashboardClient({
                     </th>
                     <th
                       onClick={() => handleSort("D")}
-                      className="pb-3 cursor-pointer hover:text-white transition-all text-center w-20"
+                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
                     >
                       <div className="flex items-center justify-center gap-1">
                         Disp
@@ -2037,7 +2040,7 @@ export default function DashboardClient({
                     </th>
                     <th
                       onClick={() => handleSort("rate")}
-                      className="pb-3 cursor-pointer hover:text-white transition-all text-center w-32"
+                      className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
                     >
                       <div className="flex items-center justify-center gap-1">
                         Persentase
@@ -2064,18 +2067,18 @@ export default function DashboardClient({
                         item.totalHari > 0 ? Math.round((item.H / item.totalHari) * 100) : 100;
                       return (
                         <tr key={item.studentId} className="text-sm">
-                          <td className="py-3 text-slate-500 font-medium">{absoluteIndex}</td>
-                          <td className="py-3">
+                          <td className="py-3.5 px-3 text-slate-500 font-medium text-center whitespace-nowrap">{absoluteIndex}</td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
                             <div className="font-semibold text-white">{item.nama}</div>
-                            <div className="text-xs text-slate-400">NIS: {item.nis}</div>
+                            <div className="text-xs text-slate-400 font-mono">NIS: {item.nis}</div>
                           </td>
-                          <td className="py-3 text-slate-300">{item.kelasNama}</td>
-                          <td className="py-3 text-center text-emerald-400 font-bold">{item.H}</td>
-                          <td className="py-3 text-center text-amber-400 font-bold">{item.S === 0 ? "-" : item.S}</td>
-                          <td className="py-3 text-center text-sky-400 font-bold">{item.I === 0 ? "-" : item.I}</td>
-                          <td className="py-3 text-center text-rose-400 font-bold">{item.A === 0 ? "-" : item.A}</td>
-                          <td className="py-3 text-center text-purple-400 font-bold">{item.D === 0 ? "-" : item.D}</td>
-                          <td className="py-3 text-center">
+                          <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap">{item.kelasNama}</td>
+                          <td className="py-3.5 px-3 text-center text-emerald-400 font-bold whitespace-nowrap">{item.H}</td>
+                          <td className="py-3.5 px-3 text-center text-amber-400 font-bold whitespace-nowrap">{item.S === 0 ? "-" : item.S}</td>
+                          <td className="py-3.5 px-3 text-center text-sky-400 font-bold whitespace-nowrap">{item.I === 0 ? "-" : item.I}</td>
+                          <td className="py-3.5 px-3 text-center text-rose-400 font-bold whitespace-nowrap">{item.A === 0 ? "-" : item.A}</td>
+                          <td className="py-3.5 px-3 text-center text-purple-400 font-bold whitespace-nowrap">{item.D === 0 ? "-" : item.D}</td>
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
                                 rate >= 90
@@ -2117,12 +2120,12 @@ export default function DashboardClient({
             ) : (
               <div className="space-y-6">
                 <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
-                  <table className="min-w-full divide-y divide-slate-800 border-collapse table-fixed">
+                  <table className="divide-y divide-slate-800 border-collapse min-w-max">
                     <thead>
                       <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-900/60">
                         {/* Sticky headers */}
-                        <th className="py-3 px-3 w-12 sticky left-0 z-20 bg-slate-900 border-r border-slate-800/80 text-center">No</th>
-                        <th className="py-3 px-4 w-52 sticky left-12 z-20 bg-slate-900 border-r border-slate-800/80">Siswa</th>
+                        <th className="py-3 px-3 w-12 sticky left-0 z-20 bg-slate-950 border-r border-slate-800/80 text-center">No</th>
+                        <th className="py-3 px-4 w-44 sm:w-52 sticky left-12 z-20 bg-slate-950 border-r border-slate-800/80">Siswa</th>
                         
                         {/* Day columns */}
                         {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => {
@@ -2173,12 +2176,12 @@ export default function DashboardClient({
                           return (
                             <tr key={item.studentId} className="text-sm hover:bg-slate-900/20 group">
                               {/* Sticky column cells */}
-                              <td className="py-3 px-3 sticky left-0 z-10 bg-slate-950/90 text-center font-medium text-slate-500 border-r border-slate-800/80 group-hover:bg-slate-900 transition-colors">
+                              <td className="py-3 px-3 sticky left-0 z-10 bg-slate-950 text-center font-medium text-slate-500 border-r border-slate-800/80 group-hover:bg-slate-900 transition-colors">
                                 {index + 1}
                               </td>
-                              <td className="py-3 px-4 sticky left-12 z-10 bg-slate-950/90 border-r border-slate-800/80 group-hover:bg-slate-900 transition-colors">
-                                <div className="font-semibold text-white truncate max-w-[12rem]">{item.nama}</div>
-                                <div className="text-[10px] text-slate-400">NIS: {item.nis}</div>
+                              <td className="py-3 px-4 sticky left-12 z-10 bg-slate-950 border-r border-slate-800/80 group-hover:bg-slate-900 transition-colors">
+                                <div className="font-semibold text-white truncate max-w-[10rem] sm:max-w-[12rem]">{item.nama}</div>
+                                <div className="text-[10px] text-slate-400 font-mono">NIS: {item.nis}</div>
                               </td>
                               
                               {/* Day cells */}
