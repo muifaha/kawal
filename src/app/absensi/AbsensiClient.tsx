@@ -27,11 +27,12 @@ interface AbsensiClientProps {
   settings: Record<string, string>;
   holidays: HolidayItem[];
   initialClassId?: string;
+  initialDate?: string;
 }
 
 type StatusType = "H" | "S" | "I" | "A" | "D";
 
-export default function AbsensiClient({ classes, settings, holidays, initialClassId = "" }: AbsensiClientProps) {
+export default function AbsensiClient({ classes, settings, holidays, initialClassId = "", initialDate = "" }: AbsensiClientProps) {
   const [selectedClassId, setSelectedClassId] = useState<string>(initialClassId);
 
   useEffect(() => {
@@ -39,7 +40,9 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
       setSelectedClassId(initialClassId);
     }
   }, [initialClassId]);
+
   const [selectedDate, setSelectedDate] = useState<string>(() => {
+    if (initialDate) return initialDate;
     const today = new Date();
     const offset = today.getTimezoneOffset();
     const localDate = new Date(today.getTime() - offset * 60 * 1000);

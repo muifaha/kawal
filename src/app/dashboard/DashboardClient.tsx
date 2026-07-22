@@ -223,6 +223,11 @@ interface DashboardClientProps {
   todaySchedules?: TodayScheduleItem[];
   periods?: PeriodItem[];
   classesNotSubmittedToday?: ClassNotSubmitted[];
+  unsubmittedPastDates?: Array<{
+    dateStr: string;
+    formattedDate: string;
+    classes: ClassNotSubmitted[];
+  }>;
 }
 
 const INDONESIAN_MONTHS = [
@@ -261,6 +266,7 @@ export default function DashboardClient({
   todaySchedules = [],
   periods = [],
   classesNotSubmittedToday = [],
+  unsubmittedPastDates = [],
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "absen_rekap" | "pelanggaran_rekap">("summary");
   const [showExportModal, setShowExportModal] = useState(false);
@@ -1258,6 +1264,58 @@ export default function DashboardClient({
           </p>
         </div>
       </div>
+
+      {/* Alert Absensi Belum Diisi Tanggal-Tanggal Sebelumnya */}
+      {unsubmittedPastDates.length > 0 && (
+        <div className="space-y-3 mb-4">
+          {unsubmittedPastDates.map((pastItem) => (
+            <div
+              key={pastItem.dateStr}
+              className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-4 text-amber-300 animate-fade-in"
+            >
+              <AlertOctagon className="w-5 h-5 mt-0.5 shrink-0 text-amber-400" />
+              <div className="space-y-1 w-full">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <h4 className="text-sm font-bold text-amber-300">
+                    Pemberitahuan Absensi {pastItem.formattedDate}
+                  </h4>
+                  <span className="text-[11px] font-bold text-amber-400/90 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                    {pastItem.classes.length} kelas belum input absensi
+                  </span>
+                </div>
+                {user.role === "WALAS" ? (
+                  <div className="text-xs text-amber-300 leading-relaxed pt-1">
+                    Kelas Anda (<strong className="text-white font-bold">{pastItem.classes[0].nama}</strong>) belum melakukan pencatatan absensi harian pada tanggal ini.
+                    Silakan segera catat absensi kelas di menu{" "}
+                    <Link href={`/absensi?classId=${pastItem.classes[0].id}&date=${pastItem.dateStr}`} className="underline hover:text-white font-bold transition-all">
+                      Catat Absensi
+                    </Link>.
+                  </div>
+                ) : (
+                  <div className="text-xs text-amber-300 leading-relaxed space-y-1.5 pt-1">
+                    <p>
+                      Terdapat <strong className="text-white font-bold">{pastItem.classes.length} kelas</strong> {user.role === "BK" ? "binaan Anda " : ""}yang belum melakukan pencatatan absensi harian pada <strong className="text-white font-bold">{pastItem.formattedDate}</strong>:
+                    </p>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {pastItem.classes.map((c) => (
+                        <Link
+                          key={c.id}
+                          href={`/absensi?classId=${c.id}&date=${pastItem.dateStr}`}
+                          className="px-2.5 py-1 bg-slate-950/80 border border-amber-500/30 hover:border-amber-500/50 hover:bg-slate-950 rounded-lg text-[10px] font-bold text-amber-300 flex items-center gap-1.5 transition-all cursor-pointer"
+                          title={`Klik untuk mengisi absensi kelas ${c.nama} tanggal ${pastItem.formattedDate}`}
+                        >
+                          <span className="bg-amber-500 text-slate-950 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-extrabold font-mono shrink-0">!</span>
+                          <span>{c.nama}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Alert Absensi Belum Diisi Hari Ini */}
       {classesNotSubmittedToday.length > 0 && (

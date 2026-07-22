@@ -10,9 +10,9 @@ export const revalidate = 0;
 export default async function AbsensiPage({
   searchParams,
 }: {
-  searchParams: Promise<{ classId?: string }>;
+  searchParams: Promise<{ classId?: string; date?: string }>;
 }) {
-  const { classId } = await searchParams;
+  const { classId, date } = await searchParams;
   const user = await getSessionUser();
   if (!user) {
     redirect("/login");
@@ -81,7 +81,7 @@ export default async function AbsensiPage({
         </p>
       </div>
 
-      <AbsensiClient classes={classes} settings={settings} holidays={holidays} initialClassId={classId || ""} />
+      <AbsensiClient classes={classes} settings={settings} holidays={holidays} initialClassId={classId || ""} initialDate={date || ""} />
     </SidebarLayout>
   );
 }
