@@ -1492,31 +1492,31 @@ export default function DashboardClient({
                       </p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-slate-800">
-                        <thead>
+                    <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
+                      <table className="min-w-[600px] w-full divide-y divide-slate-800">
+                        <thead className="bg-slate-900/60">
                           <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                            <th className={`pb-3 ${isWakaOrBK ? "w-[34%]" : "w-[50%]"}`}>Siswa</th>
-                            <th className="pb-3 w-[15%]">Kelas</th>
-                            <th className="pb-3 w-[15%] text-center">Poin / Alfa</th>
-                            <th className="pb-3 w-[20%] text-center">Peringatan</th>
-                            {isWakaOrBK && <th className="pb-3 text-right">Aksi</th>}
+                            <th className="py-3 px-4">Siswa</th>
+                            <th className="py-3 px-4">Kelas</th>
+                            <th className="py-3 px-4 text-center">Poin / Alfa</th>
+                            <th className="py-3 px-4 text-center">Peringatan</th>
+                            {isWakaOrBK && <th className="py-3 px-4 text-right">Aksi</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800/60">
                           {(showAllSummons ? summonsList : summonsList.slice(0, 10)).map((summons) => (
                             <tr key={summons.id} className="text-sm">
-                              <td className="py-4">
+                              <td className="py-3.5 px-4 whitespace-nowrap">
                                 <button
                                   onClick={() => setSelectedStudentNis(summons.nis)}
                                   className="font-semibold text-white hover:text-rose-400 transition-colors text-left focus:outline-none"
                                 >
                                   {summons.nama}
                                 </button>
-                                <div className="text-xs text-slate-400">NIS: {summons.nis}</div>
+                                <div className="text-xs text-slate-400 font-mono">NIS: {summons.nis}</div>
                               </td>
-                              <td className="py-4 text-slate-300">{summons.kelas}</td>
-                              <td className="py-4 text-center">
+                              <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap">{summons.kelas}</td>
+                              <td className="py-3.5 px-4 text-center whitespace-nowrap">
                                 <span
                                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
                                     summons.type === "ALFA"
@@ -1529,7 +1529,7 @@ export default function DashboardClient({
                                   {summons.type === "ALFA" ? `${summons.alphaCount} Alfa` : `${summons.points} Poin`}
                                 </span>
                               </td>
-                              <td className="py-4 text-center">
+                              <td className="py-3.5 px-4 text-center whitespace-nowrap">
                                 <div className="relative group inline-block">
                                   <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold cursor-help ${
                                     summons.level === 3 
@@ -1562,7 +1562,7 @@ export default function DashboardClient({
                                 </div>
                               </td>
                               {isWakaOrBK && (
-                                <td className="py-4 text-right space-x-1.5 whitespace-nowrap">
+                                <td className="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
                                   {summons.status === "SELESAI" ? (
                                     <span 
                                       className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
@@ -1657,26 +1657,26 @@ export default function DashboardClient({
                 {highRiskStudents.length === 0 ? (
                   <p className="text-slate-500 text-sm">Tidak ada siswa berisiko terdeteksi saat ini.</p>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-800">
-                      <thead>
+                  <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
+                    <table className="min-w-[600px] w-full divide-y divide-slate-800">
+                      <thead className="bg-slate-900/60">
                         <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                          <th className="pb-3 w-[34%]">Siswa</th>
-                          <th className="pb-3 w-[15%]">Kelas</th>
-                          <th className="pb-3 w-[15%] text-center">Akumulasi Poin</th>
-                          <th className="pb-3 w-[20%] text-center">Jumlah Alfa</th>
-                          <th className="pb-3 text-right">Tingkat Risiko</th>
+                          <th className="py-3 px-4">Siswa</th>
+                          <th className="py-3 px-4">Kelas</th>
+                          <th className="py-3 px-4 text-center">Akumulasi Poin</th>
+                          <th className="py-3 px-4 text-center">Jumlah Alfa</th>
+                          <th className="py-3 px-4 text-right">Tingkat Risiko</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800/60">
                         {(showAllHighRisk ? highRiskStudents : highRiskStudents.slice(0, 10)).map((student) => (
                           <tr key={student.studentId} className="text-sm">
-                            <td className="py-4">
+                            <td className="py-3.5 px-4 whitespace-nowrap">
                               <div className="font-semibold text-white">{student.nama}</div>
                               <div className="text-xs text-slate-400 font-mono">NIS: {student.nis}</div>
                             </td>
-                            <td className="py-4 text-slate-300">{student.kelasNama}</td>
-                            <td className="py-4 text-center">
+                            <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap">{student.kelasNama}</td>
+                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
                               <span
                                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
                                   student.points >= 50
@@ -1689,7 +1689,7 @@ export default function DashboardClient({
                                 {student.points} Poin
                               </span>
                             </td>
-                            <td className="py-4 text-center">
+                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
                               <span
                                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
                                   student.alphaCount >= 3
@@ -1702,7 +1702,7 @@ export default function DashboardClient({
                                 {student.alphaCount} Hari
                               </span>
                             </td>
-                            <td className="py-4 text-right">
+                            <td className="py-3.5 px-4 text-right whitespace-nowrap">
                               <span
                                 className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-black uppercase tracking-wider ${
                                   student.riskScore >= 50
