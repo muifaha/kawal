@@ -128,14 +128,7 @@ export default function AbsensiClient({ classes, settings, holidays, initialClas
     }));
   }, []);
 
-  const todayStr = (() => {
-    const today = new Date();
-    const offset = today.getTimezoneOffset();
-    const localDate = new Date(today.getTime() - offset * 60 * 1000);
-    return localDate.toISOString().split("T")[0];
-  })();
-
-  const isReadOnly = selectedDate !== todayStr && hasExistingRecords;
+  const isReadOnly = false;
 
   // Keyboard Shortcuts (Arrow Keys & Keyboard Input)
   useEffect(() => {

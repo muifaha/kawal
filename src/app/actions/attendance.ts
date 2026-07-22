@@ -44,37 +44,6 @@ export async function saveAttendanceAction(
 
     const targetDate = new Date(`${dateString}T00:00:00.000Z`);
 
-    // Proteksi: Hanya izinkan edit/overwrite di hari yang sama.
-    // Jika tanggal target bukan hari ini (Jakarta) dan data absensi kelas tersebut sudah ada di database, tolak.
-    const getJakartaTodayStr = () => {
-      const options = { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" } as const;
-      const formatter = new Intl.DateTimeFormat("en-US", options);
-      const parts = formatter.formatToParts(new Date());
-      const y = parts.find((p) => p.type === "year")?.value;
-      const m = parts.find((p) => p.type === "month")?.value;
-      const d = parts.find((p) => p.type === "day")?.value;
-      return `${y}-${m}-${d}`;
-    };
-
-    const todayStr = getJakartaTodayStr();
-    
-    const existingCount = await prisma.absensi.count({
-      where: {
-        tanggal: targetDate,
-        siswa: {
-          riwayatKelas: {
-            some: {
-              kelasId: classId,
-              tahunAjaran: { isActive: true },
-            },
-          },
-        },
-      },
-    });
-
-    if (dateString !== todayStr && existingCount > 0) {
-      return { error: "Akses ditolak. Absensi hari sebelumnya sudah pernah disimpan dan tidak dapat diubah lagi." };
-    }
 
     // 1. Simpan/Upsert absensi untuk seluruh siswa secara transaksional
     await prisma.$transaction(
