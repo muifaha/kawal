@@ -1344,53 +1344,53 @@ export default function DashboardClient({
 
       {/* Mobile Compact Aksi Cepat */}
       <div className="mb-6 lg:hidden">
-        <div className="p-3 bg-slate-900/60 border border-slate-900 rounded-2xl space-y-2">
+        <div className="p-3.5 bg-slate-900/60 border border-slate-900 rounded-2xl space-y-2.5">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
             Aksi Cepat
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {user.role === "WAKA" && (
               <Link
                 href="/kesiswaan"
-                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold rounded-xl shrink-0 active:scale-95 transition-all"
+                className="flex items-center justify-center gap-2 p-2.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold rounded-xl active:scale-95 transition-all text-center"
               >
-                <Settings className="w-3.5 h-3.5" />
-                <span>Kesiswaan</span>
+                <Settings className="w-4 h-4 shrink-0" />
+                <span className="truncate">Kesiswaan</span>
               </Link>
             )}
             {(user.role === "BK" || user.role === "GURU" || user.role === "WALAS") && (
               <Link
                 href="/absensi"
-                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-xl shrink-0 active:scale-95 transition-all"
+                className="flex items-center justify-center gap-2 p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-xl active:scale-95 transition-all text-center"
               >
-                <CalendarCheck className="w-3.5 h-3.5" />
-                <span>Catat Absensi</span>
+                <CalendarCheck className="w-4 h-4 shrink-0" />
+                <span className="truncate">Catat Absensi</span>
               </Link>
             )}
             {(user.role === "BK" || user.role === "WAKA") && (
               <Link
                 href="/approval"
-                className="flex items-center gap-1.5 px-3 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold rounded-xl shrink-0 active:scale-95 transition-all"
+                className="flex items-center justify-center gap-2 p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold rounded-xl active:scale-95 transition-all text-center"
               >
-                <CheckSquare className="w-3.5 h-3.5" />
-                <span>Persetujuan</span>
+                <CheckSquare className="w-4 h-4 shrink-0" />
+                <span className="truncate">Persetujuan</span>
               </Link>
             )}
             {user.role === "BK" && (
               <Link
                 href="/penanganan"
-                className="flex items-center gap-1.5 px-3 py-2 bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-semibold rounded-xl shrink-0 active:scale-95 transition-all"
+                className="flex items-center justify-center gap-2 p-2.5 bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-semibold rounded-xl active:scale-95 transition-all text-center"
               >
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>Penanganan BK</span>
+                <BookOpen className="w-4 h-4 shrink-0" />
+                <span className="truncate">Penanganan BK</span>
               </Link>
             )}
             <Link
               href="/pelanggaran"
-              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold rounded-xl shrink-0 active:scale-95 transition-all"
+              className="flex items-center justify-center gap-2 p-2.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold rounded-xl active:scale-95 transition-all text-center"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Laporkan Pelanggaran</span>
+              <Plus className="w-4 h-4 shrink-0" />
+              <span className="truncate">Lapor Pelanggaran</span>
             </Link>
           </div>
         </div>
