@@ -527,10 +527,16 @@ export default function DashboardClient({
     if (!startVal || !endVal) return "";
     return `${formatDate(startVal)} s.d. ${formatDate(endVal)}`;
   }, [activeTA]);
-
   // Excel Export: Cumulative Mode
   const exportCumulativeToExcel = async () => {
     if (filteredAttendance.length === 0) return;
+
+    const studentPoinMap: Record<string, number> = {};
+    localViolationRecap.forEach((v) => {
+      if (v.status === "APPROVED") {
+        studentPoinMap[v.studentNis] = (studentPoinMap[v.studentNis] || 0) + v.poin;
+      }
+    });
 
     const ExcelJS = await import("exceljs");
     const workbook = new ExcelJS.Workbook();
@@ -564,10 +570,10 @@ export default function DashboardClient({
     }
 
     // Merge cells for title block
-    worksheet.mergeCells('A1:K1');
-    worksheet.mergeCells('A2:K2');
+    worksheet.mergeCells('A1:L1');
+    worksheet.mergeCells('A2:L2');
     if (rangeText) {
-      worksheet.mergeCells('A3:K3');
+      worksheet.mergeCells('A3:L3');
     }
 
     // Headers
@@ -582,7 +588,8 @@ export default function DashboardClient({
       "Alpha (A)",
       "Dispensasi (D)",
       "Total Hari Efektif",
-      "Persentase Kehadiran (%)"
+      "Persentase Kehadiran (%)",
+      "Akumulasi Poin Pelanggaran"
     ];
 
     const headerRow = worksheet.addRow(headers);
@@ -616,6 +623,7 @@ export default function DashboardClient({
     // Populate data
     filteredAttendance.forEach((item, index) => {
       const rate = item.totalHari > 0 ? Math.round((item.H / item.totalHari) * 100) : 100;
+      const poin = Math.max(0, Math.round((studentPoinMap[item.nis] || 0) * 100) / 100);
       const rowData = [
         index + 1,
         item.nis,
@@ -627,7 +635,8 @@ export default function DashboardClient({
         item.A === 0 ? "" : item.A,
         item.D === 0 ? "" : item.D,
         item.totalHari,
-        `${rate}%`
+        `${rate}%`,
+        poin
       ];
 
       const row = worksheet.addRow(rowData);
@@ -688,11 +697,29 @@ export default function DashboardClient({
             cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF065F46' } };
           }
         }
+
+        if (colNum === 12) {
+          if (poin >= 50) {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFEE2E2' } // Soft Red
+            };
+            cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF991B1B' } };
+          } else if (poin >= 20) {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFEF3C7' } // Soft Amber
+            };
+            cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF92400E' } };
+          }
+        }
       });
     });
 
     // Set Column Widths
-    const widths = [6, 16, 32, 12, 11, 10, 10, 10, 14, 18, 24];
+    const widths = [6, 16, 32, 12, 11, 10, 10, 10, 14, 18, 24, 26];
     widths.forEach((width, index) => {
       worksheet.getColumn(index + 1).width = width;
     });
@@ -714,6 +741,13 @@ export default function DashboardClient({
   const exportMonthlyMatrixToExcel = async () => {
     if (filteredAttendance.length === 0) return;
 
+    const studentPoinMap: Record<string, number> = {};
+    localViolationRecap.forEach((v) => {
+      if (v.status === "APPROVED") {
+        studentPoinMap[v.studentNis] = (studentPoinMap[v.studentNis] || 0) + v.poin;
+      }
+    });
+
     const ExcelJS = await import("exceljs");
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Matriks Bulanan");
@@ -724,7 +758,7 @@ export default function DashboardClient({
     const classText = selectedClassId === "" ? "Semua Kelas" : `Kelas ${selectedClassId}`;
 
     // Add Titles
-    worksheet.addRow([`LAPORAN MATRIKS KEHADIRAN SISWA BULANAN - ${schoolName.toUpperCase()}`]);
+    worksheet.addRow([`MATRIKS KEHADIRAN BULANAN SISWA - ${schoolName.toUpperCase()}`]);
     worksheet.addRow([`${periodText} | ${classText}`]);
     worksheet.addRow([]); // Spacing
 
@@ -739,7 +773,7 @@ export default function DashboardClient({
     for (let d = 1; d <= daysInMonth; d++) {
       headers.push(String(d));
     }
-    headers.push("H", "S", "I", "A", "D", "%");
+    headers.push("H", "S", "I", "A", "D", "%", "Poin Pelanggaran");
 
     const totalCols = headers.length;
 
@@ -779,6 +813,7 @@ export default function DashboardClient({
       const totals = studentMonthlyTotals[item.studentId] || { H: 0, S: 0, I: 0, A: 0, D: 0 };
       const totalRecorded = totals.H + totals.S + totals.I + totals.A + totals.D;
       const rate = totalRecorded > 0 ? Math.round((totals.H / totalRecorded) * 100) : 100;
+      const poin = Math.max(0, Math.round((studentPoinMap[item.nis] || 0) * 100) / 100);
 
       const rowData: any[] = [index + 1, item.nis, item.nama, item.kelasNama];
 
@@ -794,7 +829,8 @@ export default function DashboardClient({
         totals.I === 0 ? "" : totals.I,
         totals.A === 0 ? "" : totals.A,
         totals.D === 0 ? "" : totals.D,
-        `${rate}%`
+        `${rate}%`,
+        poin
       );
 
       const row = worksheet.addRow(rowData);
@@ -859,7 +895,7 @@ export default function DashboardClient({
 
         // Summary columns (H, S, I, A, D) values formatting
         const summaryColsStart = 5 + daysInMonth;
-        if (colNum >= summaryColsStart && colNum < totalCols) {
+        if (colNum >= summaryColsStart && colNum < totalCols - 1) {
           const valStr = headers[colNum - 1]; // "H", "S", "I", "A", or "D"
           const cellVal = Number(cell.value) || 0;
           if (cellVal > 0) {
@@ -877,7 +913,7 @@ export default function DashboardClient({
         }
 
         // Percentage column rate styles
-        if (colNum === totalCols) {
+        if (colNum === totalCols - 1) {
           const rateVal = parseInt(String(cell.value).replace("%", ""), 10) || 100;
           if (rateVal < 85) {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
@@ -885,6 +921,17 @@ export default function DashboardClient({
           } else if (rateVal >= 95) {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
             cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF065F46' } };
+          }
+        }
+
+        // Poin Pelanggaran column styles
+        if (colNum === totalCols) {
+          if (poin >= 50) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+            cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF991B1B' } };
+          } else if (poin >= 20) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+            cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF92400E' } };
           }
         }
       });
@@ -900,6 +947,7 @@ export default function DashboardClient({
       ["• I : Izin", "Kuning/Oranye Muda (Perlu Perhatian)"],
       ["• A : Alpha (Tanpa Keterangan)", "Merah Muda (Risiko/Evaluasi)"],
       ["• D : Dispensasi", "Kuning/Oranye Muda (Perlu Perhatian)"],
+      ["• Poin Pelanggaran", "Akumulasi Poin Pelanggaran Aktif Siswa"],
       ["• - : Belum Ada Catatan / Hari Libur", "Putih (Kosong)"],
       ["• Hari Berwarna Abu-Abu", "Hari Sabtu / Minggu (Hari Libur Akhir Pekan)"]
     ];
@@ -918,7 +966,7 @@ export default function DashboardClient({
     for (let d = 1; d <= daysInMonth; d++) {
       widths.push(4.5);
     }
-    widths.push(6, 6, 6, 6, 6, 8);
+    widths.push(6, 6, 6, 6, 6, 8, 16);
     
     widths.forEach((width, index) => {
       worksheet.getColumn(index + 1).width = width;
@@ -940,7 +988,6 @@ export default function DashboardClient({
 
   // Grouped violation points per student
   const studentViolationSummaries = useMemo(() => {
-    // violationRecap contains individual reports (and remissions). We can group by student.
     const studentMap: Record<
       string,
       {
