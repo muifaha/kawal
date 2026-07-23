@@ -372,9 +372,9 @@ export default function PenangananClient({ user, students, initialLogs, classes 
                         ))}
                       </optgroup>
                     )}
-                    {selectedStudent.approvedViolations.length > 0 && (
+                    {selectedStudent.violations.length > 0 && (
                       <optgroup label="Laporan Pelanggaran Terbuka">
-                        {selectedStudent.approvedViolations.map((v) => (
+                        {selectedStudent.violations.map((v) => (
                           <option key={v.id} value={`violation:${v.id}:${v.kategori}:${v.nama}:${v.poin}`}>
                             {v.kategori}: {v.nama} (+{v.poin} Poin) - {new Date(v.tanggal).toLocaleDateString("id-ID")}
                           </option>

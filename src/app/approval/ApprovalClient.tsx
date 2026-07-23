@@ -167,10 +167,10 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
             r.id === activeReport.id
               ? {
                   ...r,
-                  violationDetailId: res.data.detailPelanggaranId,
-                  violationName: res.data.detailPelanggaran.nama,
-                  violationCategory: res.data.detailPelanggaran.kategori.nama,
-                  violationPoin: res.data.detailPelanggaran.poin,
+                  violationDetailId: res.data.violationDetailId,
+                  violationName: res.data.violationName,
+                  violationCategory: res.data.violationCategory,
+                  violationPoin: res.data.violationPoin,
                   notes: res.data.notes,
                 }
               : r

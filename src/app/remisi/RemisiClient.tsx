@@ -203,7 +203,7 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
                     className="w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="">-- Pilih Siswa --</option>
-                    {filteredStudentsForRemisi.map((s) => (
+                    {students.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.nama} (NIS: {s.nis})
                       </option>
@@ -244,7 +244,12 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
                       type="file"
                       multiple
                       accept="image/*,.pdf,.doc,.docx"
-                      onChange={handleRemisiFileChange}
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          const newFiles = Array.from(e.target.files);
+                          setSelectedFiles((prev) => [...prev, ...newFiles]);
+                        }
+                      }}
                       className="hidden"
                     />
                   </label>
@@ -261,7 +266,7 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
                         <span className="truncate max-w-xs">{file.name}</span>
                         <button
                           type="button"
-                          onClick={() => removeRemisiFile(idx)}
+                          onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== idx))}
                           className="text-slate-500 hover:text-rose-400 transition-colors"
                         >
                           <X className="w-3 h-3" />
