@@ -1841,8 +1841,8 @@ export default function DashboardClient({
 
             {/* Right Column (lg:col-span-1) */}
             <div className="space-y-6">
-              {/* Quick Actions Panel */}
-              <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
+              {/* Quick Actions Panel (Desktop Only - Mobile is rendered at the top) */}
+              <div className="hidden lg:block bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
                 <h3 className="text-lg font-bold text-white mb-4">Aksi Cepat</h3>
                 <div className="space-y-3">
                   {user.role === "WAKA" && (
