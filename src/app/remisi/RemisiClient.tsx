@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition } from "react";
 import { applyConditionalRemisiAction } from "@/app/actions/remisi";
-import { AlertCircle, CheckCircle, Sparkles, User, Calendar, Search, X, Paperclip } from "lucide-react";
+import { AlertCircle, CheckCircle, Sparkles, User, Calendar, Search, X, Paperclip, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
 interface Siswa {
@@ -108,10 +108,22 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
 
 
 
-  // Filter History
   const filteredHistory = history.filter((item) =>
     item.siswa.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.siswa.nis.includes(searchQuery)
+  );
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const totalPages = Math.ceil(filteredHistory.length / pageSize) || 1;
+  const paginatedHistory = filteredHistory.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
   );
 
   const [activeTab, setActiveTab] = useState<"form" | "log">("form");
@@ -139,168 +151,158 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
               : "border-transparent text-slate-500 hover:text-slate-300"
           }`}
         >
-          <Search className="w-4 h-4" />
-          Log Transaksi
-          {history.length > 0 && (
-            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400">
-              {history.length}
-            </span>
-          )}
+          <Calendar className="w-4 h-4" />
+          Log Riwayat Remisi ({filteredHistory.length})
         </button>
       </div>
 
       {/* Tab: Form Tambah Remisi */}
       {activeTab === "form" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Remisi Kondisional (Manual) */}
-          <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-emerald-400" />
-              Remisi Kondisional (Manual)
-            </h2>
+          <div className="lg:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
+            <div className="border-b border-slate-900 pb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-emerald-400" />
+                Remisi Kondisional (Manual)
+              </h3>
+            </div>
 
             <form onSubmit={handleApplyRemisi} className="space-y-4">
-              {/* Pilih Kelas */}
+              {/* Filter Kelas */}
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Pilih Kelas
+                  Pilih Kelas <span className="text-rose-400">*</span>
                 </label>
                 <select
-                  required
                   value={selectedClassId}
                   onChange={(e) => {
                     setSelectedClassId(e.target.value);
-                    setSelectedStudentId(""); // Reset student
+                    setSelectedStudentId("");
                   }}
-                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="">-- Pilih Kelas --</option>
                   {classes.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.nama}
+                      {c.nama} ({c.siswa.length} Siswa)
                     </option>
                   ))}
                 </select>
               </div>
 
               {/* Pilih Siswa */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Pilih Siswa
-                </label>
-                <select
-                  required
-                  disabled={!selectedClassId}
-                  value={selectedStudentId}
-                  onChange={(e) => setSelectedStudentId(e.target.value)}
-                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-40"
-                >
-                  <option value="">-- Pilih Siswa --</option>
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.nama} ({s.nis})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {selectedClassId && (
+                <div className="animate-fade-in">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Pilih Siswa <span className="text-rose-400">*</span>
+                  </label>
+                  <select
+                    value={selectedStudentId}
+                    onChange={(e) => setSelectedStudentId(e.target.value)}
+                    className="w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="">-- Pilih Siswa --</option>
+                    {filteredStudentsForRemisi.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.nama} (NIS: {s.nis})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Pilih Jenis Remisi */}
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Pilih Aksi Remisi
+                  Pilih Aksi Remisi <span className="text-rose-400">*</span>
                 </label>
                 <select
-                  required
                   value={selectedRemisiId}
                   onChange={(e) => setSelectedRemisiId(e.target.value)}
-                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="">-- Pilih Jenis Remisi --</option>
                   {masterRemisiList.map((mr) => (
                     <option key={mr.id} value={mr.id}>
-                      {mr.nama} (Potong {mr.persentasePengurangan}%)
+                      {mr.nama} (Potongan {mr.persentasePengurangan}% Poin)
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Lampiran Bukti (Optional) */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Paperclip className="w-3.5 h-3.5 text-slate-400" />
-                  Unggah Foto / Dokumen Bukti (Opsional)
+              {/* Upload Bukti Remisi */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Unggah Dokumen / Bukti Foto (Opsional)
                 </label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*,application/pdf"
-                  onChange={(e) => {
-                    if (e.target.files) {
-                      const newFiles = Array.from(e.target.files);
-                      setSelectedFiles((prev) => [...prev, ...newFiles]);
-                    }
-                  }}
-                  className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20 transition-all cursor-pointer bg-slate-950 border border-slate-800 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                />
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 px-4 py-2 border border-slate-800 rounded-xl bg-slate-950 hover:bg-slate-900 text-xs font-semibold text-slate-300 cursor-pointer transition-all">
+                    <Paperclip className="w-4 h-4 text-emerald-400" />
+                    <span>Pilih Berkas</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx"
+                      onChange={handleRemisiFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                  <span className="text-xs text-slate-500">Mendukung Gambar, PDF, DOC</span>
+                </div>
+
                 {selectedFiles.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2 bg-slate-950/40 border border-slate-900 rounded-xl p-2">
+                  <div className="flex flex-wrap gap-2 mt-3">
                     {selectedFiles.map((file, idx) => (
-                      <span
+                      <div
                         key={idx}
-                        className="inline-flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-300"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-300"
                       >
-                        <span className="truncate max-w-[150px]">{file.name}</span>
+                        <span className="truncate max-w-xs">{file.name}</span>
                         <button
                           type="button"
-                          onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== idx))}
-                          className="text-slate-500 hover:text-rose-400 focus:outline-none shrink-0"
+                          onClick={() => removeRemisiFile(idx)}
+                          className="text-slate-500 hover:text-rose-400 transition-colors"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="w-3 h-3" />
                         </button>
-                      </span>
+                      </div>
                     ))}
                   </div>
                 )}
               </div>
 
+              {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isPending}
-                className="w-full flex items-center justify-center bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all active:scale-98"
+                disabled={isPending || !selectedStudentId || !selectedRemisiId}
+                className="w-full py-3 px-4 border border-transparent rounded-xl text-sm font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                Terapkan Pengurangan Poin
+                {isPending ? "Memproses Remisi..." : "Berikan Remisi"}
               </button>
             </form>
           </div>
 
           {/* Kard Remisi Otomatis (Background) */}
-          <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-indigo-400" />
+          <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-4 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-indigo-400 font-bold text-sm mb-2">
+                <Sparkles className="w-4 h-4" />
                 Remisi Otomatis (Background)
-              </h2>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xxs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Sistem Aktif
-              </span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Sistem secara otomatis memindai seluruh siswa setiap hari. Siswa yang <strong className="text-white">bersih dari pelanggaran selama 30 hari berturut-turut</strong> akan secara otomatis menerima potongan poin sebesar <strong className="text-emerald-400">10%</strong>.
+              </p>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Pemindaian berjalan otomatis di background sekali sehari saat sistem diakses.
-            </p>
-            <div className="bg-slate-950/40 p-4 border border-slate-900 rounded-xl space-y-3">
-              <div className="flex items-start gap-2.5">
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-bold shrink-0 mt-0.5">1</span>
-                <p className="text-xs text-slate-300">
-                  Poin otomatis dikurangi <strong>10%</strong> (minimal 1 poin) jika siswa tidak melanggar selama <strong>30 hari</strong> berturut-turut.
-                </p>
+
+            <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-400 space-y-2">
+              <div className="font-semibold text-white flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-indigo-400" />
+                Pemindaian Otomatis
               </div>
-              <div className="flex items-start gap-2.5">
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-bold shrink-0 mt-0.5">2</span>
-                <p className="text-xs text-slate-300">
-                  Siklus rolling akan diatur ulang (*reset*) seketika jika siswa terbukti melakukan pelanggaran baru.
-                </p>
-              </div>
+              <p className="text-[11px] leading-relaxed">
+                Tidak memerlukan tindakan manual. Log transaksi remisi otomatis akan tercatat secara resmi di tab <strong className="text-white">Log Transaksi Remisi</strong>.
+              </p>
             </div>
           </div>
         </div>
@@ -312,7 +314,6 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h2 className="text-lg font-bold text-white">Log Transaksi Remisi</h2>
             
-            {/* Search Box */}
             <div className="relative rounded-xl max-w-xs w-full">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-slate-500" />
@@ -349,55 +350,105 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
                     </td>
                   </tr>
                 ) : (
-                  filteredHistory.map((item, idx) => (
-                    <tr key={item.id} className="text-xs hover:bg-slate-900/10 transition-colors">
-                      <td className="py-3 px-4 text-slate-500 font-medium">{idx + 1}</td>
-                      <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
-                        {new Date(item.tanggal).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-white">{item.siswa.nama}</div>
-                        <div className="text-[10px] text-slate-400">
-                          {item.siswa.kelas.nama} • NIS: {item.siswa.nis}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                            item.jenis === "OTOMATIS"
-                              ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
-                              : "bg-sky-500/10 text-sky-400 border-sky-500/20"
-                          }`}
-                        >
-                          {item.jenis === "OTOMATIS" ? "OTOMATIS" : "KONDISIONAL"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-300">
-                        {item.jenis === "OTOMATIS"
-                          ? "Pembersihan Poin Harian (Bersih Pelanggaran 1 Bulan)"
-                          : item.masterRemisi?.nama}
-                      </td>
-                      <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <span className="font-bold text-emerald-400 font-mono">
-                          -{item.poinDikurangi} Pts
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
-                        {item.approver?.nama || "Sistem"}
-                      </td>
-                    </tr>
-                  ))
+                  paginatedHistory.map((item, idx) => {
+                    const absoluteIndex = (currentPage - 1) * pageSize + idx + 1;
+                    return (
+                      <tr key={item.id} className="text-xs hover:bg-slate-900/10 transition-colors">
+                        <td className="py-3 px-4 text-slate-500 font-medium">{absoluteIndex}</td>
+                        <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
+                          {new Date(item.tanggal).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-white">{item.siswa.nama}</div>
+                          <div className="text-[10px] text-slate-400">
+                            {item.siswa.kelas.nama} • NIS: {item.siswa.nis}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                              item.jenis === "OTOMATIS"
+                                ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                                : "bg-sky-500/10 text-sky-400 border-sky-500/20"
+                            }`}
+                          >
+                            {item.jenis === "OTOMATIS" ? "OTOMATIS" : "KONDISIONAL"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-300">
+                          {item.jenis === "OTOMATIS"
+                            ? "Pembersihan Poin Harian (Bersih Pelanggaran 1 Bulan)"
+                            : item.masterRemisi?.nama}
+                        </td>
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <span className="font-bold text-emerald-400 font-mono">
+                            -{item.poinDikurangi} Pts
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
+                          {item.approver?.nama || "Sistem"}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {filteredHistory.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-900/60 text-xs text-slate-400">
+              <div className="flex items-center gap-2">
+                <span>Tampilkan:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="py-1 px-2 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer text-xs"
+                >
+                  <option value={20}>20 Baris</option>
+                  <option value={50}>50 Baris</option>
+                  <option value={100}>100 Baris</option>
+                  <option value={500}>500 Baris</option>
+                </select>
+                <span>
+                  Menampilkan {(currentPage - 1) * pageSize + 1}-
+                  {Math.min(currentPage * pageSize, filteredHistory.length)} dari {filteredHistory.length} data
+                </span>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-slate-300" />
+                  </button>
+                  <span className="px-2 font-semibold text-slate-300">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    <ChevronRight className="w-4 h-4 text-slate-300" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
-

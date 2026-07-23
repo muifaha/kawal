@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition, useEffect, useMemo } from "react";
 import { approveViolationAction, rejectViolationAction, bulkApproveViolationsAction, updateViolationReportAction } from "@/app/actions/approval";
-import { AlertCircle, CheckCircle, CheckSquare, Trash, Inbox, User, Clock, AlertTriangle, ShieldCheck, Edit2 } from "lucide-react";
+import { AlertCircle, CheckCircle, CheckSquare, Trash, Inbox, User, Clock, AlertTriangle, ShieldCheck, Edit2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
 interface TransformedReport {
@@ -48,6 +48,32 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
   
   const [isPending, startTransition] = useTransition();
   const { showToast } = useToast();
+
+  // Search & Pagination states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  const filteredReports = useMemo(() => {
+    if (!searchQuery.trim()) return reports;
+    const q = searchQuery.toLowerCase();
+    return reports.filter(
+      (r) =>
+        r.siswaNama.toLowerCase().includes(q) ||
+        r.siswaNis.toLowerCase().includes(q) ||
+        r.siswaKelas.toLowerCase().includes(q) ||
+        r.violationCategory.toLowerCase().includes(q) ||
+        r.violationName.toLowerCase().includes(q) ||
+        r.pelaporNama.toLowerCase().includes(q)
+    );
+  }, [reports, searchQuery]);
+
+  const totalPages = Math.ceil(filteredReports.length / pageSize) || 1;
+
+  const paginatedReports = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredReports.slice(start, start + pageSize);
+  }, [filteredReports, currentPage, pageSize]);
 
   // Edit states
   const [isEditing, setIsEditing] = useState(false);
@@ -141,10 +167,10 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
             r.id === activeReport.id
               ? {
                   ...r,
-                  violationDetailId: res.data.violationDetailId,
-                  violationName: res.data.violationName,
-                  violationCategory: res.data.violationCategory,
-                  violationPoin: res.data.violationPoin,
+                  violationDetailId: res.data.detailPelanggaranId,
+                  violationName: res.data.detailPelanggaran.nama,
+                  violationCategory: res.data.detailPelanggaran.kategori.nama,
+                  violationPoin: res.data.detailPelanggaran.poin,
                   notes: res.data.notes,
                 }
               : r
@@ -247,17 +273,34 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
     <div className="space-y-4">
 
       {/* Split Layout Container */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 h-[650px] items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 h-[700px] items-stretch">
         
         {/* Left Side: Inbox List (40% width) */}
-        <div className="lg:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 flex flex-col h-full overflow-hidden">
+        <div className="lg:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-4 flex flex-col h-full overflow-hidden space-y-3">
           
+          {/* Search Box */}
+          <div className="relative rounded-xl w-full">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-slate-500" />
+            </div>
+            <input
+              type="text"
+              placeholder="Cari siswa, kelas, pelapor..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="block w-full pl-9 pr-3 py-1.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
           {/* List Toolbar */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-900 mb-4 gap-2">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-900 gap-2">
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={bulkSelection.length === reports.length}
+                checked={reports.length > 0 && bulkSelection.length === reports.length}
                 onChange={handleSelectAll}
                 className="w-4 h-4 rounded border-slate-800 bg-slate-950 text-emerald-400 focus:ring-emerald-500"
               />
@@ -268,68 +311,115 @@ export default function ApprovalClient({ initialReports, categories }: ApprovalC
               <button
                 onClick={handleBulkApprove}
                 disabled={isPending}
-                className="flex items-center gap-1.5 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                className="flex items-center gap-1.5 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 px-2.5 py-1 rounded-lg text-xs font-bold transition-all"
               >
                 <CheckSquare className="w-3.5 h-3.5" />
-                ACC Terpilih ({bulkSelection.length})
+                ACC ({bulkSelection.length})
               </button>
             )}
           </div>
 
           {/* Cards Scrollbox */}
           <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-            {reports.map((report) => {
-              const isSelected = activeReport?.id === report.id;
-              const isChecked = bulkSelection.includes(report.id);
+            {paginatedReports.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 text-xs">
+                Tidak ada laporan yang cocok dengan pencarian.
+              </div>
+            ) : (
+              paginatedReports.map((report) => {
+                const isSelected = activeReport?.id === report.id;
+                const isChecked = bulkSelection.includes(report.id);
 
-              return (
-                <div
-                  key={report.id}
-                  onClick={() => setSelectedId(report.id)}
-                  className={`p-4 rounded-xl border flex gap-3 cursor-pointer transition-all duration-200 ${
-                    isSelected
-                      ? "bg-slate-900/80 border-emerald-500/30"
-                      : "bg-slate-950/40 border-slate-900/80 hover:border-slate-800"
-                  }`}
+                return (
+                  <div
+                    key={report.id}
+                    onClick={() => setSelectedId(report.id)}
+                    className={`p-3 rounded-xl border flex gap-3 cursor-pointer transition-all duration-200 ${
+                      isSelected
+                        ? "bg-slate-900/80 border-emerald-500/30"
+                        : "bg-slate-950/40 border-slate-900/80 hover:border-slate-800"
+                    }`}
+                  >
+                    {/* Select Checkbox */}
+                    <div className="pt-0.5 flex items-start">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onClick={(e) => handleSelectToggle(report.id, e)}
+                        onChange={() => {}} // Handle on click
+                        className="w-4 h-4 rounded border-slate-800 bg-slate-950 text-emerald-400 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    {/* Card Body */}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="font-semibold text-white text-xs truncate">{report.siswaNama}</h4>
+                        <span className="text-rose-400 text-[11px] font-extrabold shrink-0">
+                          +{report.violationPoin} Pts
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">Kelas: {report.siswaKelas}</p>
+                      <p className="text-[11px] text-slate-300 truncate font-semibold">
+                        {report.violationCategory}: {report.violationName}
+                      </p>
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 pt-0.5">
+                        <Clock className="w-3 h-3" />
+                        <span>
+                          {new Date(report.tanggal).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </span>
+                        <span>•</span>
+                        <span>Pelapor: {report.pelaporNama}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="pt-2 border-t border-slate-900 text-xs text-slate-400 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <span>Tampilkan:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="py-0.5 px-1.5 border border-slate-800 rounded-lg bg-slate-950 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer text-[11px]"
+              >
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={500}>500</option>
+              </select>
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="p-1 rounded border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  {/* Select Checkbox */}
-                  <div className="pt-0.5 flex items-start">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onClick={(e) => handleSelectToggle(report.id, e)}
-                      onChange={() => {}} // Handle on click
-                      className="w-4 h-4 rounded border-slate-800 bg-slate-950 text-emerald-400 focus:ring-emerald-500"
-                    />
-                  </div>
-
-                  {/* Card Body */}
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex justify-between items-start gap-2">
-                      <h4 className="font-semibold text-white text-sm truncate">{report.siswaNama}</h4>
-                      <span className="text-rose-400 text-xs font-extrabold shrink-0">
-                        +{report.violationPoin} Pts
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400">Kelas: {report.siswaKelas}</p>
-                    <p className="text-xs text-slate-300 truncate font-semibold">
-                      {report.violationCategory}: {report.violationName}
-                    </p>
-                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 pt-1">
-                      <Clock className="w-3 h-3" />
-                      <span>
-                        {new Date(report.tanggal).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "short",
-                        })}
-                      </span>
-                      <span>•</span>
-                      <span>Oleh: {report.pelaporNama}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                  <ChevronLeft className="w-3.5 h-3.5 text-slate-300" />
+                </button>
+                <span className="px-1 text-[11px] font-semibold text-slate-300">
+                  {currentPage}/{totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-1 rounded border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

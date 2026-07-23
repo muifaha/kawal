@@ -3,7 +3,7 @@
 import React, { useState, useTransition, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { savePenangananAction } from "@/app/actions/penanganan";
-import { Search, Calendar, FileText, CheckCircle, AlertCircle, Upload, X, Eye, ShieldAlert, BookOpen, ClipboardList } from "lucide-react";
+import { Search, Calendar, FileText, CheckCircle, AlertCircle, Upload, X, Eye, ShieldAlert, BookOpen, ClipboardList, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
 interface UserInfo {
@@ -226,7 +226,6 @@ export default function PenangananClient({ user, students, initialLogs, classes 
     });
   };
 
-  // Filter logs based on search query and class dropdown
   const filteredLogs = logs.filter((log) => {
     const matchSearch =
       log.siswaNama.toLowerCase().includes(logSearchQuery.toLowerCase()) ||
@@ -237,12 +236,23 @@ export default function PenangananClient({ user, students, initialLogs, classes 
     return matchSearch && matchClass;
   });
 
+  const [logCurrentPage, setLogCurrentPage] = useState(1);
+  const [logPageSize, setLogPageSize] = useState(20);
+
+  useEffect(() => {
+    setLogCurrentPage(1);
+  }, [logSearchQuery, logSelectedClass]);
+
+  const totalLogPages = Math.ceil(filteredLogs.length / logPageSize) || 1;
+  const paginatedLogs = filteredLogs.slice(
+    (logCurrentPage - 1) * logPageSize,
+    logCurrentPage * logPageSize
+  );
+
   const [activeTab, setActiveTab] = useState<"form" | "log">(isBK ? "form" : "log");
 
   return (
     <div className="space-y-6 pb-24">
-
-      {/* Tab Bar */}
       <div className="flex border-b border-slate-900">
         {isBK && (
           <button
@@ -253,7 +263,7 @@ export default function PenangananClient({ user, students, initialLogs, classes 
                 : "border-transparent text-slate-500 hover:text-slate-300"
             }`}
           >
-            <BookOpen className="w-4 h-4" />
+            <ClipboardList className="w-4 h-4" />
             Catat Penanganan
           </button>
         )}
@@ -265,207 +275,176 @@ export default function PenangananClient({ user, students, initialLogs, classes 
               : "border-transparent text-slate-500 hover:text-slate-300"
           }`}
         >
-          <ClipboardList className="w-4 h-4" />
-          Log Riwayat
-          {logs.length > 0 && (
-            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400">
-              {logs.length}
-            </span>
-          )}
+          <FileText className="w-4 h-4" />
+          Log Riwayat ({filteredLogs.length})
         </button>
       </div>
-      {/* Tab: Catat Penanganan */}
-      {activeTab === "form" && isBK && (
-        <div className="max-w-2xl">
-          <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-emerald-400" />
-              Catat Penanganan Baru
-            </h3>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Autocomplete Student Search */}
-              <div className="relative animate-none">
+      {activeTab === "form" && isBK && (
+        <div className="max-w-3xl space-y-6">
+          <div className="p-6 bg-slate-900/40 border border-slate-900 rounded-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-900 pb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-emerald-400" />
+                Catat Penanganan Baru
+              </h3>
+            </div>
+
+            {alert && (
+              <div
+                className={`p-4 rounded-xl border flex items-start gap-3 text-xs leading-relaxed ${
+                  alert.type === "error"
+                    ? "bg-rose-500/10 border-rose-500/20 text-rose-300"
+                    : "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+                }`}
+              >
+                {alert.type === "error" ? (
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                ) : (
+                  <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                )}
+                <div>{alert.message}</div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="relative">
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Cari Siswa
+                  Siswa Terlibat <span className="text-rose-400">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Masukkan nama siswa atau NIS..."
+                    placeholder="Ketik Nama atau NIS siswa..."
                     value={studentSearch}
                     onChange={(e) => {
                       setStudentSearch(e.target.value);
-                      setSelectedStudent(null);
                       setShowStudentDropdown(true);
-                    }}
-                    onFocus={() => setShowStudentDropdown(true)}
-                    onBlur={() => setTimeout(() => setShowStudentDropdown(false), 200)}
-                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                  />
-                  {selectedStudent && (
-                    <button
-                      type="button"
-                      onClick={() => {
+                      if (selectedStudent) {
                         setSelectedStudent(null);
-                        setStudentSearch("");
                         setSelectedSummonsId("");
                         setKasus("");
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
+                      }
+                    }}
+                    onFocus={() => setShowStudentDropdown(true)}
+                    className="w-full py-2.5 px-3.5 border border-slate-800 rounded-xl bg-slate-950 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <Search className="absolute right-3 top-3 h-4 w-4 text-slate-500" />
                 </div>
 
-                {/* Dropdown Options */}
-                {showStudentDropdown && (
-                  <div className="absolute z-40 mt-1 w-full max-h-56 overflow-y-auto rounded-xl bg-slate-950 border border-slate-850 py-1 divide-y divide-slate-900">
-                    {filteredStudents.length === 0 ? (
-                      <p className="p-3 text-xs text-slate-500 text-center">Siswa tidak ditemukan.</p>
-                    ) : (
-                      filteredStudents.map((s) => (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={() => handleSelectStudent(s)}
-                          className="w-full text-left px-4 py-2.5 hover:bg-slate-900 text-xs transition-colors flex items-center justify-between"
-                        >
-                          <span className="font-semibold text-white">{s.nama}</span>
-                          <span className="text-[10px] bg-slate-850 px-2 py-0.5 rounded text-slate-400">
-                            {s.kelasNama}
-                          </span>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
-
-                {/* Student Info & Case Correlation Card */}
-                {selectedStudent && (
-                  <div className="bg-slate-950/60 border border-slate-850 p-4 rounded-xl space-y-3 mt-3 animate-fade-in text-xs">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400 font-semibold uppercase">Informasi Murid</span>
-                      <span className="text-rose-400 font-bold bg-rose-500/5 px-2 py-0.5 rounded border border-rose-500/10">
-                        {selectedStudent.points} Poin
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5 pt-1">
-                      <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                        Kaitkan dengan Pelanggaran / Peringatan
-                      </label>
-                      {(() => {
-                        const selectValue = selectedSummonsId 
-                          ? (() => {
-                              const warning = selectedStudent.activeWarnings.find((w) => w.id === selectedSummonsId);
-                              return warning ? `summons:${warning.id}:${warning.level}:${warning.thresholdPoints}` : "kustom";
-                            })()
-                          : "kustom";
-                        return (
-                          <select
-                            value={selectValue}
-                            onChange={(e) => handleCaseSelection(e.target.value)}
-                            className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs cursor-pointer font-sans"
-                          >
-                            <option value="kustom">Masalah Lain / Kustom (Tulis Manual)</option>
-
-                            {selectedStudent.activeWarnings.length > 0 && (
-                              <optgroup label="Peringatan & Pemanggilan Aktif (Mengubah status menjadi Selesai)">
-                                {selectedStudent.activeWarnings.map((w) => (
-                                  <option key={w.id} value={`summons:${w.id}:${w.level}:${w.thresholdPoints}`}>
-                                    Panggilan {w.level === 3 ? "III" : w.level === 2 ? "II" : "I"} ({w.thresholdPoints > 100 ? `Batas ${w.thresholdPoints - 100} Alfa` : `Batas ${w.thresholdPoints} Poin`})
-                                  </option>
-                                ))}
-                              </optgroup>
-                            )}
-
-                            {selectedStudent.violations.length > 0 && (
-                              <optgroup label="Pelanggaran Aktif Siswa">
-                                {selectedStudent.violations.map((v) => (
-                                  <option key={v.id} value={`violation:${v.id}:${v.kategori}:${v.nama}:${v.poin}`}>
-                                    {v.kategori} - {v.nama} (+{v.poin} Poin)
-                                  </option>
-                                ))}
-                              </optgroup>
-                            )}
-                          </select>
-                        );
-                      })()}
-                    </div>
+                {showStudentDropdown && filteredStudents.length > 0 && (
+                  <div className="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto bg-slate-950 border border-slate-800 rounded-xl shadow-xl divide-y divide-slate-900">
+                    {filteredStudents.map((s) => (
+                      <div
+                        key={s.id}
+                        onClick={() => handleSelectStudent(s)}
+                        className="p-3 hover:bg-slate-900 cursor-pointer transition-colors"
+                      >
+                        <div className="text-sm font-semibold text-white">{s.nama}</div>
+                        <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                          <span>Kelas: {s.kelasNama}</span>
+                          <span>•</span>
+                          <span>NIS: {s.nis}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
 
-              {/* Kasus / Masalah Textarea */}
+              {selectedStudent && (
+                <div className="p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-3">
+                  <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Pilih Kasus / Peringatan Terkait (Opsional)
+                  </div>
+                  
+                  <select
+                    onChange={(e) => handleCaseSelection(e.target.value)}
+                    className="w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-900 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="kustom">-- Input Kasus Secara Manual --</option>
+                    {selectedStudent.activeWarnings.length > 0 && (
+                      <optgroup label="Surat Panggilan / Peringatan Belum Ditangani">
+                        {selectedStudent.activeWarnings.map((w) => (
+                          <option key={w.id} value={`summons:${w.id}:${w.level}:${w.thresholdPoints}`}>
+                            Peringatan Tingkat {w.level === 3 ? "III" : w.level === 2 ? "II" : "I"} ({w.thresholdPoints > 100 ? `${w.thresholdPoints - 100} Alfa` : `${w.thresholdPoints} Poin`})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {selectedStudent.approvedViolations.length > 0 && (
+                      <optgroup label="Laporan Pelanggaran Terbuka">
+                        {selectedStudent.approvedViolations.map((v) => (
+                          <option key={v.id} value={`violation:${v.id}:${v.kategori}:${v.nama}:${v.poin}`}>
+                            {v.kategori}: {v.nama} (+{v.poin} Poin) - {new Date(v.tanggal).toLocaleDateString("id-ID")}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Kasus / Masalah Siswa
+                  Kasus / Masalah yang Ditangani <span className="text-rose-400">*</span>
                 </label>
                 <textarea
-                  placeholder="Deskripsikan kasus atau masalah siswa..."
+                  rows={3}
+                  placeholder="Jelaskan kasus atau permasalahan yang dialami siswa..."
                   value={kasus}
                   onChange={(e) => setKasus(e.target.value)}
-                  rows={3}
-                  required
-                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm leading-relaxed"
+                  className="w-full py-2.5 px-3.5 border border-slate-800 rounded-xl bg-slate-950 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
-              {/* Solusi / Tindak Lanjut Textarea */}
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Solusi / Tindak Lanjut BK
+                  Solusi / Tindak Lanjut Konseling <span className="text-rose-400">*</span>
                 </label>
                 <textarea
-                  placeholder="Tuliskan solusi atau tindak lanjut dari BK..."
+                  rows={4}
+                  placeholder="Tuliskan arahan, perjanjian, atau solusi hasil bimbingan & konseling..."
                   value={solusi}
                   onChange={(e) => setSolusi(e.target.value)}
-                  rows={3}
-                  required
-                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm leading-relaxed"
+                  className="w-full py-2.5 px-3.5 border border-slate-800 rounded-xl bg-slate-950 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
-              {/* Upload Bukti */}
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Unggah Bukti / Dokumen (Opsional)
+                  Unggah Dokumen / Bukti Foto (Opsional)
                 </label>
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-800 hover:border-slate-700 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all bg-slate-950/20"
-                >
-                  <Upload className="w-6 h-6 text-slate-500" />
-                  <p className="text-xxs text-slate-400 text-center">
-                    Klik untuk memilih berkas pendukung (Gambar / PDF)
-                  </p>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/*,application/pdf"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 px-4 py-2 border border-slate-800 rounded-xl bg-slate-950 hover:bg-slate-900 text-xs font-semibold text-slate-300 cursor-pointer transition-all">
+                    <Upload className="w-4 h-4 text-emerald-400" />
+                    <span>Pilih Berkas</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                  <span className="text-xs text-slate-500">Mendukung Gambar, PDF, DOC</span>
                 </div>
 
-                {/* Selected Files List */}
                 {selectedFiles.length > 0 && (
-                  <div className="mt-3 space-y-1.5 max-h-36 overflow-y-auto">
+                  <div className="flex flex-wrap gap-2 mt-3">
                     {selectedFiles.map((file, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between p-2 rounded-lg bg-slate-950 border border-slate-850 text-xxs"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-300"
                       >
-                        <span className="truncate text-slate-300 max-w-[80%]">{file.name}</span>
+                        <span className="truncate max-w-xs">{file.name}</span>
                         <button
                           type="button"
                           onClick={() => removeFile(idx)}
                           className="text-slate-500 hover:text-rose-400 transition-colors"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="w-3 h-3" />
                         </button>
                       </div>
                     ))}
@@ -473,10 +452,9 @@ export default function PenangananClient({ user, students, initialLogs, classes 
                 )}
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isPending || !selectedStudent}
+                disabled={isPending}
                 className="w-full py-3 px-4 border border-transparent rounded-xl text-sm font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {isPending ? "Menyimpan..." : "Simpan Penanganan"}
@@ -486,7 +464,6 @@ export default function PenangananClient({ user, students, initialLogs, classes 
         </div>
       )}
 
-      {/* Tab: Log Riwayat */}
       {activeTab === "log" && (
         <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -496,7 +473,6 @@ export default function PenangananClient({ user, students, initialLogs, classes 
             </h3>
 
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-              {/* Search filter */}
               <div className="relative rounded-xl w-44 sm:w-60">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-slate-500" />
@@ -510,7 +486,6 @@ export default function PenangananClient({ user, students, initialLogs, classes 
                 />
               </div>
 
-              {/* Class filter */}
               <select
                 value={logSelectedClass}
                 onChange={(e) => setLogSelectedClass(e.target.value)}
@@ -526,7 +501,6 @@ export default function PenangananClient({ user, students, initialLogs, classes 
             </div>
           </div>
 
-          {/* Table Logs */}
           <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
             <table className="min-w-full divide-y divide-slate-800">
               <thead className="bg-slate-900/60">
@@ -548,60 +522,110 @@ export default function PenangananClient({ user, students, initialLogs, classes 
                     </td>
                   </tr>
                 ) : (
-                  filteredLogs.map((log, idx) => (
-                    <tr key={log.id} className="text-xs hover:bg-slate-900/10 transition-colors">
-                      <td className="py-3 px-4 text-slate-500 font-medium">{idx + 1}</td>
-                      <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
-                        <span className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                          {new Date(log.tanggal).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-white">{log.siswaNama}</div>
-                        <div className="text-[10px] text-slate-400">
-                          {log.kelasNama} • NIS: {log.siswaNis}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 max-w-xs break-words leading-relaxed text-slate-300">
-                        {log.kasus}
-                      </td>
-                      <td className="py-3 px-4 max-w-xs break-words leading-relaxed text-slate-300">
-                        {log.solusi}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex justify-center gap-1.5 flex-wrap">
-                          {log.bukti.length === 0 ? (
-                            <span className="text-slate-600">-</span>
-                          ) : (
-                            log.bukti.map((pathStr, bIdx) => (
-                              <a
-                                key={bIdx}
-                                href={pathStr}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex w-7 h-7 items-center justify-center rounded bg-slate-950 border border-slate-800 text-indigo-400 hover:text-indigo-300 transition-colors"
-                                title={`Bukti #${bIdx + 1}`}
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </a>
-                            ))
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
-                        @{log.petugasNama}
-                      </td>
-                    </tr>
-                  ))
+                  paginatedLogs.map((log, idx) => {
+                    const absoluteIndex = (logCurrentPage - 1) * logPageSize + idx + 1;
+                    return (
+                      <tr key={log.id} className="text-xs hover:bg-slate-900/10 transition-colors">
+                        <td className="py-3 px-4 text-slate-500 font-medium">{absoluteIndex}</td>
+                        <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                            {new Date(log.tanggal).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-white">{log.siswaNama}</div>
+                          <div className="text-[10px] text-slate-400">
+                            {log.kelasNama} • NIS: {log.siswaNis}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 max-w-xs break-words leading-relaxed text-slate-300">
+                          {log.kasus}
+                        </td>
+                        <td className="py-3 px-4 max-w-xs break-words leading-relaxed text-slate-300">
+                          {log.solusi}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex justify-center gap-1.5 flex-wrap">
+                            {log.bukti.length === 0 ? (
+                              <span className="text-slate-600">-</span>
+                            ) : (
+                              log.bukti.map((pathStr, bIdx) => (
+                                <a
+                                  key={bIdx}
+                                  href={pathStr}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex w-7 h-7 items-center justify-center rounded bg-slate-950 border border-slate-800 text-indigo-400 hover:text-indigo-300 transition-colors"
+                                  title={`Bukti #${bIdx + 1}`}
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </a>
+                              ))
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
+                          @{log.petugasNama}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
+
+          {filteredLogs.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-900/60 text-xs text-slate-400">
+              <div className="flex items-center gap-2">
+                <span>Tampilkan:</span>
+                <select
+                  value={logPageSize}
+                  onChange={(e) => {
+                    setLogPageSize(Number(e.target.value));
+                    setLogCurrentPage(1);
+                  }}
+                  className="py-1 px-2 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer text-xs"
+                >
+                  <option value={20}>20 Baris</option>
+                  <option value={50}>50 Baris</option>
+                  <option value={100}>100 Baris</option>
+                  <option value={500}>500 Baris</option>
+                </select>
+                <span>
+                  Menampilkan {(logCurrentPage - 1) * logPageSize + 1}-
+                  {Math.min(logCurrentPage * logPageSize, filteredLogs.length)} dari {filteredLogs.length} data
+                </span>
+              </div>
+
+              {totalLogPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setLogCurrentPage(Math.max(1, logCurrentPage - 1))}
+                    disabled={logCurrentPage === 1}
+                    className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-slate-300" />
+                  </button>
+                  <span className="px-2 font-semibold text-slate-300">
+                    {logCurrentPage} / {totalLogPages}
+                  </span>
+                  <button
+                    onClick={() => setLogCurrentPage(Math.min(totalLogPages, logCurrentPage + 1))}
+                    disabled={logCurrentPage === totalLogPages}
+                    className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    <ChevronRight className="w-4 h-4 text-slate-300" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

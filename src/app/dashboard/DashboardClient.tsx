@@ -379,15 +379,15 @@ export default function DashboardClient({
 
   // Pagination states for Cumulative Attendance Recap
   const [absenCurrentPage, setAbsenCurrentPage] = useState(1);
-  const [absenPageSize, setAbsenPageSize] = useState(50);
+  const [absenPageSize, setAbsenPageSize] = useState(20);
 
   // Pagination states for Violation Akumulasi Poin
   const [violationSummaryCurrentPage, setViolationSummaryCurrentPage] = useState(1);
-  const [violationSummaryPageSize, setViolationSummaryPageSize] = useState(50);
+  const [violationSummaryPageSize, setViolationSummaryPageSize] = useState(20);
 
   // Pagination states for Violation Logs
   const [violationLogCurrentPage, setViolationLogCurrentPage] = useState(1);
-  const [violationLogPageSize, setViolationLogPageSize] = useState(50);
+  const [violationLogPageSize, setViolationLogPageSize] = useState(20);
 
   // Reset pagination pages to 1 when filters change
   useEffect(() => {
@@ -1166,7 +1166,7 @@ export default function DashboardClient({
     setCurrentPage: (p: number) => void,
     setPageSize: (s: number) => void
   ) => {
-    if (totalItems <= 50 && pageSize === 50) return null;
+    if (totalItems <= 20 && pageSize === 20) return null;
 
     const totalPages = Math.ceil(totalItems / pageSize);
     const startItem = (currentPage - 1) * pageSize + 1;
@@ -1184,6 +1184,7 @@ export default function DashboardClient({
             }}
             className="py-1 px-2 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer text-xs"
           >
+            <option value={20}>20 Baris</option>
             <option value={50}>50 Baris</option>
             <option value={100}>100 Baris</option>
             <option value={500}>500 Baris</option>
