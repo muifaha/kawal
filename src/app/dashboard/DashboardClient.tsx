@@ -31,6 +31,7 @@ import {
   ArrowUp,
   ArrowDown,
   History,
+  X,
 } from "lucide-react";
 import { resolveSummonsAction } from "@/app/actions/kesiswaan";
 import { printSingleSummons, printBulkSummons } from "@/lib/printUtils";
@@ -377,6 +378,18 @@ export default function DashboardClient({
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
+  const [exportClassId, setExportClassId] = useState<string>("");
+  const [exportMonth, setExportMonth] = useState<number>(selectedMonth);
+  const [exportYear, setExportYear] = useState<number>(selectedYear);
+
+  useEffect(() => {
+    if (showExportModal) {
+      setExportClassId(selectedClassId);
+      setExportMonth(selectedMonth);
+      setExportYear(selectedYear);
+    }
+  }, [showExportModal, selectedClassId, selectedMonth, selectedYear]);
+
   // Pagination states for Cumulative Attendance Recap
   const [absenCurrentPage, setAbsenCurrentPage] = useState(1);
   const [absenPageSize, setAbsenPageSize] = useState(20);
@@ -527,9 +540,17 @@ export default function DashboardClient({
     if (!startVal || !endVal) return "";
     return `${formatDate(startVal)} s.d. ${formatDate(endVal)}`;
   }, [activeTA]);
+  
   // Excel Export: Cumulative Mode
-  const exportCumulativeToExcel = async () => {
-    if (filteredAttendance.length === 0) return;
+  const exportCumulativeToExcel = async (targetClassId: string = exportClassId) => {
+    const dataToExport = attendanceRecap.filter((item) => {
+      return targetClassId === "" || item.kelasNama === targetClassId;
+    });
+
+    if (dataToExport.length === 0) {
+      alert("Tidak ada data absensi untuk kelas terpilih.");
+      return;
+    }
 
     const studentPoinMap: Record<string, number> = {};
     localViolationRecap.forEach((v) => {
@@ -545,7 +566,7 @@ export default function DashboardClient({
     const rangeText = dateRangeStr ? `Periode: ${dateRangeStr}` : "";
 
     const schoolName = settings?.school_name || "SMK NEGERI KAWAL";
-    const classText = selectedClassId === "" ? "Semua Kelas" : `Kelas ${selectedClassId}`;
+    const classText = targetClassId === "" ? "Semua Kelas" : `Kelas ${targetClassId}`;
 
     // Add Titles
     worksheet.addRow([`LAPORAN AKUMULASI KEHADIRAN SISWA - ${schoolName.toUpperCase()}`]);
@@ -621,7 +642,7 @@ export default function DashboardClient({
     });
 
     // Populate data
-    filteredAttendance.forEach((item, index) => {
+    dataToExport.forEach((item, index) => {
       const rate = item.totalHari > 0 ? Math.round((item.H / item.totalHari) * 100) : 100;
       const poin = Math.max(0, Math.round((studentPoinMap[item.nis] || 0) * 100) / 100);
       const rowData = [
@@ -729,7 +750,7 @@ export default function DashboardClient({
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = window.URL.createObjectURL(blob);
     const anchor = document.createElement('a');
-    const cleanClass = selectedClassId === "" ? "Semua_Kelas" : selectedClassId.replace(/\s+/g, "_");
+    const cleanClass = targetClassId === "" ? "Semua_Kelas" : targetClassId.replace(/\s+/g, "_");
     
     anchor.href = url;
     anchor.download = `Rekap_Kehadiran_Akumulasi_${cleanClass}.xlsx`;
@@ -738,8 +759,19 @@ export default function DashboardClient({
   };
 
   // Excel Export: Monthly Matrix Mode
-  const exportMonthlyMatrixToExcel = async () => {
-    if (filteredAttendance.length === 0) return;
+  const exportMonthlyMatrixToExcel = async (
+    targetClassId: string = exportClassId,
+    targetMonth: number = exportMonth,
+    targetYear: number = exportYear
+  ) => {
+    const dataToExport = attendanceRecap.filter((item) => {
+      return targetClassId === "" || item.kelasNama === targetClassId;
+    });
+
+    if (dataToExport.length === 0) {
+      alert("Tidak ada data absensi untuk kelas terpilih.");
+      return;
+    }
 
     const studentPoinMap: Record<string, number> = {};
     localViolationRecap.forEach((v) => {
@@ -748,14 +780,16 @@ export default function DashboardClient({
       }
     });
 
+    const targetDaysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
     const ExcelJS = await import("exceljs");
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Matriks Bulanan");
 
     const schoolName = settings?.school_name || "SMK NEGERI KAWAL";
-    const monthLabel = INDONESIAN_MONTHS.find((m) => m.value === selectedMonth)?.label || "";
-    const periodText = `Bulan: ${monthLabel} ${selectedYear}`;
-    const classText = selectedClassId === "" ? "Semua Kelas" : `Kelas ${selectedClassId}`;
+    const monthLabel = INDONESIAN_MONTHS.find((m) => m.value === targetMonth)?.label || "";
+    const periodText = `Bulan: ${monthLabel} ${targetYear}`;
+    const classText = targetClassId === "" ? "Semua Kelas" : `Kelas ${targetClassId}`;
 
     // Add Titles
     worksheet.addRow([`MATRIKS KEHADIRAN BULANAN SISWA - ${schoolName.toUpperCase()}`]);
@@ -770,7 +804,7 @@ export default function DashboardClient({
 
     // Headers
     const headers = ["No", "NIS", "Nama Siswa", "Kelas"];
-    for (let d = 1; d <= daysInMonth; d++) {
+    for (let d = 1; d <= targetDaysInMonth; d++) {
       headers.push(String(d));
     }
     headers.push("H", "S", "I", "A", "D", "%", "Poin Pelanggaran");
@@ -809,16 +843,27 @@ export default function DashboardClient({
     });
 
     // Populate data
-    filteredAttendance.forEach((item, index) => {
-      const totals = studentMonthlyTotals[item.studentId] || { H: 0, S: 0, I: 0, A: 0, D: 0 };
+    dataToExport.forEach((item, index) => {
+      // Calculate totals for targetMonth & targetYear dynamically
+      const totals = { H: 0, S: 0, I: 0, A: 0, D: 0 };
+      for (let d = 1; d <= targetDaysInMonth; d++) {
+        const dateStr = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        const status = attendanceMatrix[item.studentId]?.[dateStr];
+        if (status === "H") totals.H++;
+        else if (status === "S") totals.S++;
+        else if (status === "I") totals.I++;
+        else if (status === "A") totals.A++;
+        else if (status === "D") totals.D++;
+      }
+
       const totalRecorded = totals.H + totals.S + totals.I + totals.A + totals.D;
       const rate = totalRecorded > 0 ? Math.round((totals.H / totalRecorded) * 100) : 100;
       const poin = Math.max(0, Math.round((studentPoinMap[item.nis] || 0) * 100) / 100);
 
       const rowData: any[] = [index + 1, item.nis, item.nama, item.kelasNama];
 
-      for (let d = 1; d <= daysInMonth; d++) {
-        const dateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      for (let d = 1; d <= targetDaysInMonth; d++) {
+        const dateStr = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
         const status = attendanceMatrix[item.studentId]?.[dateStr] || "-";
         rowData.push(status);
       }
@@ -864,9 +909,9 @@ export default function DashboardClient({
         };
 
         // Highlight weekend columns
-        if (colNum >= 5 && colNum <= 4 + daysInMonth) {
+        if (colNum >= 5 && colNum <= 4 + targetDaysInMonth) {
           const dayNum = colNum - 4;
-          const dayOfWeek = new Date(selectedYear, selectedMonth, dayNum).getDay();
+          const dayOfWeek = new Date(targetYear, targetMonth, dayNum).getDay();
           const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
           const val = cell.value;
@@ -894,7 +939,7 @@ export default function DashboardClient({
         }
 
         // Summary columns (H, S, I, A, D) values formatting
-        const summaryColsStart = 5 + daysInMonth;
+        const summaryColsStart = 5 + targetDaysInMonth;
         if (colNum >= summaryColsStart && colNum < totalCols - 1) {
           const valStr = headers[colNum - 1]; // "H", "S", "I", "A", or "D"
           const cellVal = Number(cell.value) || 0;
@@ -963,7 +1008,7 @@ export default function DashboardClient({
 
     // Set Column Widths
     const widths = [6, 16, 32, 12];
-    for (let d = 1; d <= daysInMonth; d++) {
+    for (let d = 1; d <= targetDaysInMonth; d++) {
       widths.push(4.5);
     }
     widths.push(6, 6, 6, 6, 6, 8, 16);
@@ -977,11 +1022,10 @@ export default function DashboardClient({
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = window.URL.createObjectURL(blob);
     const anchor = document.createElement('a');
-    const cleanClass = selectedClassId === "" ? "Semua_Kelas" : selectedClassId.replace(/\s+/g, "_");
-    const monthName = monthLabel.replace(/\s+/g, "_");
+    const cleanClass = targetClassId === "" ? "Semua_Kelas" : targetClassId.replace(/\s+/g, "_");
     
     anchor.href = url;
-    anchor.download = `Rekap_Kehadiran_Matriks_${monthName}_${selectedYear}_${cleanClass}.xlsx`;
+    anchor.download = `Rekap_Kehadiran_Matriks_${monthLabel.replace(/\s+/g, "_")}_${targetYear}_${cleanClass}.xlsx`;
     anchor.click();
     window.URL.revokeObjectURL(url);
   };
@@ -3173,15 +3217,48 @@ export default function DashboardClient({
       {/* Export Selection Modal */}
       {showExportModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-6 animate-in fade-in zoom-in-95 duration-150">
-            <div>
-              <h4 className="text-base font-bold text-white mb-2">Pilih Tipe Ekspor Excel</h4>
-              <p className="text-xs text-slate-400">
-                Silakan pilih jenis laporan absensi yang ingin Anda unduh untuk kelas yang aktif.
-              </p>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-6 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h4 className="text-base font-bold text-white">Ekspor Laporan Absensi (.xlsx)</h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Atur opsi filter kelas, bulan, dan tipe laporan sebelum mengunduh.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowExportModal(false)}
+                className="text-slate-500 hover:text-white p-1 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {/* Opsi Filter Kelas */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Pilih Kelas yang Ingin Diekspor
+                </label>
+                <select
+                  value={exportClassId}
+                  onChange={(e) => setExportClassId(e.target.value)}
+                  className="w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="">Semua Kelas (Seluruh Siswa Sekolah)</option>
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.nama}>
+                      Kelas {c.nama}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tipe Laporan */}
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Pilih Format Laporan
+              </label>
+
               {/* Option 1: Cumulative */}
               <div 
                 className={`flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
@@ -3201,7 +3278,7 @@ export default function DashboardClient({
                 <div>
                   <span className="font-bold text-sm block">Rekap Akumulasi Keseluruhan</span>
                   <span className="text-xs text-slate-400 mt-1 block">
-                    Menampilkan total Hadir, Sakit, Izin, Alfa, Disp, & % persentase kehadiran sepanjang semester aktif.
+                    Menampilkan total Hadir, Sakit, Izin, Alfa, Disp, % kehadiran & poin pelanggaran sepanjang semester aktif.
                   </span>
                   {dateRangeStr && (
                     <span className="inline-flex mt-2 text-[10px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 font-medium">
@@ -3227,31 +3304,68 @@ export default function DashboardClient({
                   onChange={() => setSelectedExportType("monthly")}
                   className="mt-0.5 text-indigo-500 focus:ring-indigo-500 cursor-pointer"
                 />
-                <div>
+                <div className="w-full">
                   <span className="font-bold text-sm block">Matriks Kehadiran Bulanan</span>
                   <span className="text-xs text-slate-400 mt-1 block">
-                    Menampilkan matriks status absensi harian (1 s.d. 30/31) beserta total rekap bulanan.
+                    Menampilkan matriks status absensi harian (1 s.d. 30/31) beserta total rekap & poin pelanggaran.
                   </span>
-                  <span className="inline-flex mt-2 text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-medium">
-                    Bulan: {INDONESIAN_MONTHS.find(m => m.value === selectedMonth)?.label} {selectedYear}
-                  </span>
+
+                  {/* Filter Bulan & Tahun untuk Matriks Bulanan */}
+                  {selectedExportType === "monthly" && (
+                    <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-800/80" onClick={(e) => e.stopPropagation()}>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                          Pilih Bulan
+                        </label>
+                        <select
+                          value={exportMonth}
+                          onChange={(e) => setExportMonth(Number(e.target.value))}
+                          className="w-full py-1.5 px-2.5 border border-slate-800 rounded-xl bg-slate-900 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                        >
+                          {INDONESIAN_MONTHS.map((m) => (
+                            <option key={m.value} value={m.value}>
+                              {m.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                          Pilih Tahun
+                        </label>
+                        <select
+                          value={exportYear}
+                          onChange={(e) => setExportYear(Number(e.target.value))}
+                          className="w-full py-1.5 px-2.5 border border-slate-800 rounded-xl bg-slate-900 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                        >
+                          {[selectedYear - 2, selectedYear - 1, selectedYear, selectedYear + 1].map((y) => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
+                type="button"
                 onClick={() => setShowExportModal(false)}
                 className="px-4 py-2 border border-slate-800 rounded-xl hover:bg-slate-800 text-xs font-semibold text-slate-300 transition-all cursor-pointer"
               >
                 Batal
               </button>
               <button
+                type="button"
                 onClick={() => {
                   if (selectedExportType === "cumulative") {
-                    exportCumulativeToExcel();
+                    exportCumulativeToExcel(exportClassId);
                   } else {
-                    exportMonthlyMatrixToExcel();
+                    exportMonthlyMatrixToExcel(exportClassId, exportMonth, exportYear);
                   }
                   setShowExportModal(false);
                 }}
