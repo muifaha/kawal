@@ -2634,10 +2634,10 @@ export default function DashboardClient({
                   <table className="min-w-[650px] w-full divide-y divide-slate-800">
                     <thead className="bg-slate-900/60">
                       <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider select-none">
-                        <th className="pb-3 px-4 w-12">No</th>
+                        <th className="py-3 px-4 w-12">No</th>
                         <th
                           onClick={() => handleViolationSort("nama")}
-                          className="pb-3 px-4 cursor-pointer hover:text-white transition-all w-[28%]"
+                          className="py-3 px-4 cursor-pointer hover:text-white transition-all w-[28%]"
                         >
                           <div className="flex items-center gap-1">
                             Siswa
@@ -2650,7 +2650,7 @@ export default function DashboardClient({
                         </th>
                         <th
                           onClick={() => handleViolationSort("kelasNama")}
-                          className="pb-3 px-4 cursor-pointer hover:text-white transition-all w-[15%]"
+                          className="py-3 px-4 cursor-pointer hover:text-white transition-all w-[15%]"
                         >
                           <div className="flex items-center gap-1">
                             Kelas
@@ -2663,7 +2663,7 @@ export default function DashboardClient({
                         </th>
                         <th
                           onClick={() => handleViolationSort("countApproved")}
-                          className="pb-3 px-4 cursor-pointer hover:text-white transition-all text-center"
+                          className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center"
                         >
                           <div className="flex items-center justify-center gap-1">
                             Total Kasus Sah
@@ -2676,7 +2676,7 @@ export default function DashboardClient({
                         </th>
                         <th
                           onClick={() => handleViolationSort("countPending")}
-                          className="pb-3 px-4 cursor-pointer hover:text-white transition-all text-center"
+                          className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center"
                         >
                           <div className="flex items-center justify-center gap-1">
                             Kasus Tertunda
@@ -2689,7 +2689,7 @@ export default function DashboardClient({
                         </th>
                         <th
                           onClick={() => handleViolationSort("totalPoin")}
-                          className="pb-3 px-4 cursor-pointer hover:text-white transition-all text-right"
+                          className="py-3 px-4 cursor-pointer hover:text-white transition-all text-right"
                         >
                           <div className="flex items-center justify-end gap-1">
                             Akumulasi Poin Aktif
@@ -2700,7 +2700,7 @@ export default function DashboardClient({
                             )}
                           </div>
                         </th>
-                        <th className="pb-3 px-4 text-center">Aksi</th>
+                        <th className="py-3 px-4 text-center">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60">
@@ -2779,14 +2779,14 @@ export default function DashboardClient({
                   <table className="min-w-[700px] w-full divide-y divide-slate-800">
                     <thead className="bg-slate-900/60">
                       <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider select-none">
-                        <th className="pb-3 px-4 w-12">No</th>
-                        <th className="pb-3 px-4">Tanggal</th>
-                        <th className="pb-3 px-4">Siswa</th>
-                        <th className="pb-3 px-4">Pelanggaran</th>
-                        <th className="pb-3 px-4 text-center">Poin</th>
-                        <th className="pb-3 px-4">Pelapor</th>
-                        <th className="pb-3 px-4 text-center">Status</th>
-                        <th className="pb-3 px-4 text-center">Aksi</th>
+                        <th className="py-3 px-4 w-12">No</th>
+                        <th className="py-3 px-4">Tanggal</th>
+                        <th className="py-3 px-4">Siswa</th>
+                        <th className="py-3 px-4">Pelanggaran</th>
+                        <th className="py-3 px-4 text-center">Poin</th>
+                        <th className="py-3 px-4">Pelapor</th>
+                        <th className="py-3 px-4 text-center">Status</th>
+                        <th className="py-3 px-4 text-center">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60">
