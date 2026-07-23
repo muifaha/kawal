@@ -62,10 +62,10 @@ export async function applyConditionalRemisiAction(
       return { error: `Siswa ${student.nama} memiliki 0 poin. Tidak memerlukan remisi.` };
     }
 
-    // 3. Hitung pemotongan poin (persentase dari poin saat ini, min 1)
+    // 3. Hitung pemotongan poin (persentase dari poin saat ini)
     const pointsToReduce = Math.max(
-      1,
-      Math.round(currentPoints * (masterRemisi.persentasePengurangan / 100))
+      0.1,
+      Math.round(currentPoints * (masterRemisi.persentasePengurangan / 100) * 100) / 100
     );
 
     // 3.5 Proses upload file bukti jika ada
@@ -171,7 +171,7 @@ export async function runAutomaticRemissionAction() {
 
       // Jika bersih dari pelanggaran selama 30 hari terakhir, berikan remisi 10%
       if (!hasRecentViolations) {
-        const pointsToReduce = Math.max(1, Math.round(currentPoints * 0.1));
+        const pointsToReduce = Math.max(0.1, Math.round(currentPoints * 0.1 * 100) / 100);
 
         transactions.push(
           prisma.transaksiRemisi.create({
@@ -277,7 +277,7 @@ export async function checkAndApplyAutomaticRemissions() {
 
       // Jika selisih hari >= 30 hari
       if (diffDays >= 30) {
-        const pointsToReduce = Math.max(1, Math.round(currentPoints * 0.1));
+        const pointsToReduce = Math.max(0.1, Math.round(currentPoints * 0.1 * 100) / 100);
 
         transactions.push(
           prisma.transaksiRemisi.create({

@@ -139,7 +139,7 @@ model DetailPelanggaran {
   kategoriId String
   kategori   KategoriPelanggaran @relation(fields: [kategoriId], references: [id])
   nama       String              // Contoh: "Tidak memakai dasi"
-  poin       Int                 // Contoh: 5
+  poin       Float               // Contoh: 5 atau 44.5
 
   laporan    LaporanPelanggaran[]
 }
@@ -182,7 +182,7 @@ model TransaksiRemisi {
   masterRemisiId String?
   masterRemisi   MasterRemisi? @relation(fields: [masterRemisiId], references: [id])
   
-  poinDikurangi  Int
+  poinDikurangi  Float
   tanggal        DateTime      @default(now())
   
   approverId     String?

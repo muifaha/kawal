@@ -490,7 +490,7 @@ export async function importPointsMigrationAction(rows: PointsMigrationImportRow
           throw new Error("Format baris data tidak lengkap. Nama, Kelas, dan Poin wajib diisi.");
         }
 
-        const parsedPoin = Math.max(1, Math.round(Number(poin)));
+        const parsedPoin = Math.max(0.1, Math.round(Number(poin) * 100) / 100);
         if (isNaN(parsedPoin)) {
           throw new Error(`Nilai poin "${poin}" untuk siswa "${nama}" tidak valid.`);
         }

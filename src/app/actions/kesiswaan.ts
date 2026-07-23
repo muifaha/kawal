@@ -246,7 +246,7 @@ export async function createViolationItemAction(formData: FormData) {
     const categoryName = formData.get("categoryName") as string;
     const categoryId = formData.get("categoryId") as string;
     const detailName = formData.get("detailName") as string;
-    const points = parseInt(formData.get("points") as string, 10);
+    const points = parseFloat(formData.get("points") as string);
 
     if (!detailName || isNaN(points)) {
       return { error: "Nama pelanggaran dan bobot poin wajib diisi secara valid." };
@@ -738,7 +738,7 @@ export async function updateViolationItemAction(detailId: string, formData: Form
     const categoryName = formData.get("categoryName") as string;
     const categoryId = formData.get("categoryId") as string;
     const detailName = formData.get("detailName") as string;
-    const points = parseInt(formData.get("points") as string, 10);
+    const points = parseFloat(formData.get("points") as string);
 
     if (!detailName || isNaN(points)) {
       return { error: "Nama pelanggaran dan bobot poin wajib diisi secara valid." };
