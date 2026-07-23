@@ -97,8 +97,8 @@ export default function ImportExcelModal({
           filename: "template_migrasi_poin.xlsx",
           headers: [
             ["Nama Lengkap", "Nama Kelas", "Poin Terakhir", "Tanggal Poin Terakhir Didapatkan"],
-            ["Eka Saputra", "XI RPL 2", "15", "16-07-2026"],
-            ["Farhan Maulana", "XI RPL 2", "25", "12/07/2026"],
+            ["Eka Saputra", "XI RPL 2", "44.5", "16-07-2026"],
+            ["Farhan Maulana", "XI RPL 2", "57,6", "12/07/2026"],
           ],
         };
     }
@@ -258,11 +258,15 @@ export default function ImportExcelModal({
       const detIdx = headers.indexOf("nama pelanggaran");
       const poinIdx = headers.indexOf("poin");
 
-      const mappedRows = cleanRows.map((r) => ({
-        kategoriNama: String(r[katIdx] || "").trim(),
-        pelanggaranNama: String(r[detIdx] || "").trim(),
-        poin: Number(r[poinIdx]),
-      }));
+      const mappedRows = cleanRows.map((r) => {
+        const rawPoin = r[poinIdx];
+        const parsedPoin = typeof rawPoin === "number" ? rawPoin : Number(String(rawPoin || "").replace(",", "."));
+        return {
+          kategoriNama: String(r[katIdx] || "").trim(),
+          pelanggaranNama: String(r[detIdx] || "").trim(),
+          poin: parsedPoin,
+        };
+      });
       return { mappedRows };
     }
 
@@ -306,12 +310,16 @@ export default function ImportExcelModal({
       if (tanggalIdx === -1) tanggalIdx = headers.indexOf("tanggal poin terakhir");
       if (tanggalIdx === -1) tanggalIdx = headers.indexOf("tanggal");
 
-      const mappedRows = cleanRows.map((r) => ({
-        nama: String(r[namaIdx] || "").trim(),
-        kelasNama: String(r[kelasIdx] || "").trim(),
-        poin: Number(r[poinIdx]),
-        tanggal: r[tanggalIdx],
-      }));
+      const mappedRows = cleanRows.map((r) => {
+        const rawPoin = r[poinIdx];
+        const parsedPoin = typeof rawPoin === "number" ? rawPoin : Number(String(rawPoin || "").replace(",", "."));
+        return {
+          nama: String(r[namaIdx] || "").trim(),
+          kelasNama: String(r[kelasIdx] || "").trim(),
+          poin: parsedPoin,
+          tanggal: r[tanggalIdx],
+        };
+      });
       return { mappedRows };
     }
 
