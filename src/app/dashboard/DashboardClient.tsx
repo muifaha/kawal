@@ -1589,23 +1589,26 @@ export default function DashboardClient({
                                     {summons.level === 3 ? "Ketiga" : summons.level === 2 ? "Kedua" : "Pertama"}
                                   </span>
                                   {/* Policy Action Tooltip */}
-                                  <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-3 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-300 z-30 font-medium leading-relaxed">
-                                    <p className="font-bold text-white mb-1">
+                                  <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2.5 hidden group-hover:block w-64 p-3.5 text-xs bg-slate-900 border border-slate-700 rounded-xl text-slate-200 z-50 font-medium leading-relaxed shadow-2xl">
+                                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 border-t border-l border-slate-700 rotate-45"></div>
+                                    <p className="font-bold text-white mb-1.5 relative z-10 text-left">
                                       Kebijakan Pemanggilan {summons.type === "ALFA" ? "Alfa" : "Poin"} {summons.level === 3 ? "Ketiga" : summons.level === 2 ? "Kedua" : "Pertama"}
                                     </p>
-                                    {summons.type === "ALFA" ? (
-                                      <>
-                                        {summons.level === 1 && <p>Ketidakhadiran alfa berlebih (Teguran I). Bimbingan konseling pertama & peringatan wali kelas.</p>}
-                                        {summons.level === 2 && <p>Ketidakhadiran alfa kritis (Teguran II). Pemanggilan orang tua ke sekolah & surat perjanjian kehadiran.</p>}
-                                        {summons.level === 3 && <p>Batas ketidakhadiran alfa maksimal (Teguran III). Konferensi kasus dengan kepala sekolah/komite & skorsing.</p>}
-                                      </>
-                                    ) : (
-                                      <>
-                                        {summons.level === 1 && <p>Batas awal pembinaan (Teguran I). Bimbingan konseling pertama & penerbitan surat binaan khusus.</p>}
-                                        {summons.level === 2 && <p>Batas pembinaan menengah (Teguran II). Pemanggilan orang tua wajib & penyusunan surat perjanjian tertulis.</p>}
-                                        {summons.level === 3 && <p>Batas pembinaan kritis (Teguran III). Pertemuan berkala komite sekolah, evaluasi status murid & skorsing.</p>}
-                                      </>
-                                    )}
+                                    <div className="relative z-10 text-left">
+                                      {summons.type === "ALFA" ? (
+                                        <>
+                                          {summons.level === 1 && <p>Ketidakhadiran alfa berlebih (Teguran I). Bimbingan konseling pertama & peringatan wali kelas.</p>}
+                                          {summons.level === 2 && <p>Ketidakhadiran alfa kritis (Teguran II). Pemanggilan orang tua ke sekolah & surat perjanjian kehadiran.</p>}
+                                          {summons.level === 3 && <p>Batas ketidakhadiran alfa maksimal (Teguran III). Konferensi kasus dengan kepala sekolah/komite & skorsing.</p>}
+                                        </>
+                                      ) : (
+                                        <>
+                                          {summons.level === 1 && <p>Batas awal pembinaan (Teguran I). Bimbingan konseling pertama & penerbitan surat binaan khusus.</p>}
+                                          {summons.level === 2 && <p>Batas pembinaan menengah (Teguran II). Pemanggilan orang tua wajib & penyusunan surat perjanjian tertulis.</p>}
+                                          {summons.level === 3 && <p>Batas pembinaan kritis (Teguran III). Pertemuan berkala komite sekolah, evaluasi status murid & skorsing.</p>}
+                                        </>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </td>

@@ -20,6 +20,8 @@ import {
   ShieldAlert,
   Pencil,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
@@ -375,6 +377,19 @@ export default function ViolationClient({ user, classes, categories, initialHist
     item.siswa.nis.includes(searchQuery)
   );
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const totalPages = Math.ceil(filteredHistory.length / pageSize) || 1;
+  const paginatedHistory = filteredHistory.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   const statusColors = {
     APPROVED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
     PENDING: "bg-amber-500/10 text-amber-400 border-amber-500/20",
@@ -672,14 +687,15 @@ export default function ViolationClient({ user, classes, categories, initialHist
                       </td>
                     </tr>
                   ) : (
-                    filteredHistory.map((item, idx) => {
+                    paginatedHistory.map((item, idx) => {
+                      const absoluteIndex = (currentPage - 1) * pageSize + idx + 1;
                       const isBKoWaka = user.role === "BK" || user.role === "WAKA";
                       const isRevealed = revealedReports[item.id] || false;
                       const shouldBlur = item.isCensored && (!isBKoWaka || !isRevealed);
 
                       return (
                         <tr key={item.id} className="text-xs hover:bg-slate-900/10 transition-colors">
-                          <td className="py-3 px-4 text-slate-500 font-medium">{idx + 1}</td>
+                          <td className="py-3 px-4 text-slate-500 font-medium">{absoluteIndex}</td>
                           <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
                             {new Date(item.tanggal).toLocaleDateString("id-ID", {
                               day: "numeric",
@@ -779,6 +795,54 @@ export default function ViolationClient({ user, classes, categories, initialHist
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {filteredHistory.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-900/60 text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                  <span>Tampilkan:</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="py-1 px-2 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer text-xs"
+                  >
+                    <option value={20}>20 Baris</option>
+                    <option value={50}>50 Baris</option>
+                    <option value={100}>100 Baris</option>
+                    <option value={500}>500 Baris</option>
+                  </select>
+                  <span>
+                    Menampilkan {(currentPage - 1) * pageSize + 1}-
+                    {Math.min(currentPage * pageSize, filteredHistory.length)} dari {filteredHistory.length} data
+                  </span>
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    >
+                      <ChevronLeft className="w-4 h-4 text-slate-300" />
+                    </button>
+                    <span className="px-2 font-semibold text-slate-300">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    >
+                      <ChevronRight className="w-4 h-4 text-slate-300" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
         </div>
       )}
 
