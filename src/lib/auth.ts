@@ -44,16 +44,16 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const session = verifyToken(token);
   if (!session) return null;
 
-  // Keamanan Tambahan: Pengecekan Single Active Device Session untuk SEKRETARIS
+  // Keamanan Tambahan: Pengecekan Maksimal 2 Perangkat Aktif untuk SEKRETARIS
   if (session.role === "SEKRETARIS" && session.sessionId) {
     try {
       const dbUser = await prisma.user.findUnique({
         where: { id: session.id },
-        select: { activeSessionId: true },
+        select: { activeSessions: true },
       });
 
-      if (dbUser?.activeSessionId && dbUser.activeSessionId !== session.sessionId) {
-        // Sesi telah digantikan oleh login di perangkat lain
+      if (dbUser?.activeSessions && !dbUser.activeSessions.includes(session.sessionId)) {
+        // Sesi telah di-logout atau dihapus dari daftar perangkat aktif
         return null;
       }
     } catch {

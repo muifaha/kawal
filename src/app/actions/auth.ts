@@ -30,10 +30,20 @@ export async function loginAction(prevState: any, formData: FormData) {
     let activeSessionId: string | undefined = undefined;
 
     if (user.role === "SEKRETARIS") {
+      // Pengecekan jumlah perangkat aktif (Maksimal 2 perangkat)
+      const currentSessions = user.activeSessions || [];
+      if (currentSessions.length >= 2) {
+        return {
+          error:
+            "Login ditolak. Akun Pengurus/Sekretaris Kelas ini sudah aktif di 2 perangkat sekaligus. Silakan logout terlebih dahulu di salah satu perangkat sebelum login di perangkat baru.",
+        };
+      }
+
       activeSessionId = crypto.randomUUID();
+      const updatedSessions = [...currentSessions, activeSessionId];
       await prisma.user.update({
         where: { id: user.id },
-        data: { activeSessionId },
+        data: { activeSessions: updatedSessions },
       });
     }
 
@@ -54,6 +64,26 @@ export async function loginAction(prevState: any, formData: FormData) {
 }
 
 export async function logoutAction() {
+  try {
+    const sessionUser = await getSessionUser();
+    if (sessionUser && sessionUser.role === "SEKRETARIS" && sessionUser.sessionId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: sessionUser.id },
+        select: { activeSessions: true },
+      });
+
+      if (dbUser?.activeSessions) {
+        const updatedSessions = dbUser.activeSessions.filter((id) => id !== sessionUser.sessionId);
+        await prisma.user.update({
+          where: { id: sessionUser.id },
+          data: { activeSessions: updatedSessions },
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Logout session cleanup error:", err);
+  }
+
   await clearSession();
   redirect("/login");
 }
