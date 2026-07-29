@@ -36,6 +36,7 @@ import {
 import { resolveSummonsAction } from "@/app/actions/kesiswaan";
 import { printSingleSummons, printBulkSummons } from "@/lib/printUtils";
 import { toggleCensorViolationAction } from "@/app/actions/violation";
+import { calculateAttendanceRate } from "@/lib/attendanceUtils";
 import * as XLSX from "xlsx";
 
 interface UserInfo {
@@ -471,8 +472,8 @@ export default function DashboardClient({
       let valB: any = b[sortField as keyof AttendanceRecapItem];
 
       if (sortField === "rate") {
-        valA = a.totalHari > 0 ? (a.H / a.totalHari) * 100 : 100;
-        valB = b.totalHari > 0 ? (b.H / b.totalHari) * 100 : 100;
+        valA = calculateAttendanceRate(a);
+        valB = calculateAttendanceRate(b);
       }
 
       if (valA === undefined) valA = "";
@@ -643,7 +644,7 @@ export default function DashboardClient({
 
     // Populate data
     dataToExport.forEach((item, index) => {
-      const rate = item.totalHari > 0 ? Math.round((item.H / item.totalHari) * 100) : 100;
+      const rate = calculateAttendanceRate(item);
       const poin = Math.max(0, Math.round((studentPoinMap[item.nis] || 0) * 100) / 100);
       const rowData = [
         index + 1,
@@ -702,18 +703,18 @@ export default function DashboardClient({
         }
 
         if (colNum === 11) {
-          if (rate < 85) {
+          if (rate < 90) {
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',
-              fgColor: { argb: 'FFFEE2E2' } // Soft Red
+              fgColor: { argb: 'FFFEE2E2' } // Soft Red (<90% Terancam Tidak Naik Kelas)
             };
             cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF991B1B' } };
-          } else if (rate >= 95) {
+          } else {
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',
-              fgColor: { argb: 'FFD1FAE5' } // Soft Green
+              fgColor: { argb: 'FFD1FAE5' } // Soft Green (>=90%)
             };
             cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF065F46' } };
           }
@@ -857,7 +858,7 @@ export default function DashboardClient({
       }
 
       const totalRecorded = totals.H + totals.S + totals.I + totals.A + totals.D;
-      const rate = totalRecorded > 0 ? Math.round((totals.H / totalRecorded) * 100) : 100;
+      const rate = calculateAttendanceRate(totals);
       const poin = Math.max(0, Math.round((studentPoinMap[item.nis] || 0) * 100) / 100);
 
       const rowData: any[] = [index + 1, item.nis, item.nama, item.kelasNama];
@@ -959,11 +960,11 @@ export default function DashboardClient({
 
         // Percentage column rate styles
         if (colNum === totalCols - 1) {
-          const rateVal = parseInt(String(cell.value).replace("%", ""), 10) || 100;
-          if (rateVal < 85) {
+          const rateVal = parseFloat(String(cell.value).replace("%", "")) || 100;
+          if (rateVal < 90) {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
             cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF991B1B' } };
-          } else if (rateVal >= 95) {
+          } else {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
             cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF065F46' } };
           }
@@ -2089,6 +2090,20 @@ export default function DashboardClient({
             </div>
           </div>
 
+          {/* Banner Ketentuan Persentase Kehadiran & Ambang Batas 90% */}
+          <div className="p-3.5 bg-slate-900/60 border border-slate-800 rounded-xl text-xs text-slate-300 space-y-1">
+            <div className="font-bold text-white flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span>Ketentuan Bobot Persentase Kehadiran & Ketidakhadiran</span>
+            </div>
+            <p className="text-slate-400 leading-relaxed">
+              Bobot Poin Ketidakhadiran: <strong className="text-rose-400">Alpa (A) = 1.0 poin</strong> | <strong className="text-sky-400">Izin (I) = 0.7 poin</strong> | <strong className="text-amber-400">Sakit (S) = 0.5 poin</strong> | <strong className="text-purple-400">Dispen (D) = 0 poin (Tidak mengurangi persentase)</strong>.
+            </p>
+            <p className="text-amber-300 font-medium">
+              * Perhatian: Siswa dengan persentase kehadiran di bawah <strong className="text-rose-400">90%</strong> terancam <strong className="text-rose-400">Tidak Naik Kelas / Mengundurkan Diri</strong>.
+            </p>
+          </div>
+
           {/* Render Cumulative Mode */}
           {absenViewMode === "cumulative" && (
             <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
@@ -2212,8 +2227,7 @@ export default function DashboardClient({
                   ) : (
                     paginatedAttendance.map((item, index) => {
                       const absoluteIndex = (absenCurrentPage - 1) * absenPageSize + index + 1;
-                      const rate =
-                        item.totalHari > 0 ? Math.round((item.H / item.totalHari) * 100) : 100;
+                      const rate = calculateAttendanceRate(item);
                       return (
                         <tr key={item.studentId} className="text-sm">
                           <td className="py-3.5 px-3 text-slate-500 font-medium text-center whitespace-nowrap">{absoluteIndex}</td>
@@ -2229,15 +2243,19 @@ export default function DashboardClient({
                           <td className="py-3.5 px-3 text-center text-purple-400 font-bold whitespace-nowrap">{item.D === 0 ? "-" : item.D}</td>
                           <td className="py-3.5 px-4 text-center whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
                                 rate >= 90
                                   ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                  : rate >= 80
-                                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                                  : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                  : "bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-sm shadow-rose-950"
                               }`}
+                              title={rate < 90 ? "Terancam Tidak Naik Kelas / Mengundurkan Diri (< 90%)" : "Kehadiran Aman (≥ 90%)"}
                             >
-                              {rate}% ({item.totalHari} Hari)
+                              {rate}%
+                              {rate < 90 && (
+                                <span className="text-[10px] font-black uppercase text-rose-400">
+                                  ⚠️ (Terancam)
+                                </span>
+                              )}
                             </span>
                           </td>
                         </tr>
@@ -2394,10 +2412,7 @@ export default function DashboardClient({
                                 {totals.D === 0 ? "-" : totals.D}
                               </td>
                               <td className="py-3 text-center w-20 min-w-[5rem] text-indigo-400 font-bold border-l border-slate-800">
-                                {(() => {
-                                  const totalDays = totals.H + totals.S + totals.I + totals.A + totals.D;
-                                  return totalDays > 0 ? Math.round((totals.H / totalDays) * 100) : 100;
-                                })()}%
+                                {calculateAttendanceRate(totals)}%
                               </td>
                             </tr>
                           );

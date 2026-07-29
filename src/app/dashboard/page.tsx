@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
 import { checkAndApplyAutomaticRemissions } from "@/app/actions/remisi";
+import { calculateAttendanceRate } from "@/lib/attendanceUtils";
 
 export const revalidate = 0; // Disable caching to ensure real-time statistics
 
@@ -170,24 +171,27 @@ export default async function DashboardPage() {
   } else if (isWeekendHoliday) {
     attendanceRate = "Hari Libur";
   } else {
-    const totalRecordedToday = await prisma.absensi.count({
+    const todayAbsensi = await prisma.absensi.groupBy({
+      by: ["status"],
       where: {
         tanggal: today,
         siswa: studentFilter,
       },
+      _count: { status: true },
     });
 
+    const countsToday = { H: 0, S: 0, I: 0, A: 0, D: 0 };
+    todayAbsensi.forEach((g) => {
+      if (g.status in countsToday) {
+        countsToday[g.status as keyof typeof countsToday] = g._count.status;
+      }
+    });
+
+    const totalRecordedToday = countsToday.H + countsToday.S + countsToday.I + countsToday.A + countsToday.D;
     if (totalRecordedToday === 0) {
       attendanceRate = "Belum Ada Absensi";
     } else {
-      const totalAbsenToday = await prisma.absensi.count({
-        where: {
-          tanggal: today,
-          status: { in: ["S", "I", "A", "D"] },
-          siswa: studentFilter,
-        },
-      });
-      attendanceRate = Math.round(((totalRecordedToday - totalAbsenToday) / totalRecordedToday) * 100);
+      attendanceRate = calculateAttendanceRate(countsToday);
     }
   }
 
