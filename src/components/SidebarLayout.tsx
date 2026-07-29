@@ -43,28 +43,8 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [schoolName, setSchoolName] = useState(() => cachedSettings?.schoolName || "KAWAL");
   const [schoolLogo, setSchoolLogo] = useState(() => cachedSettings?.schoolLogo || "");
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallModal, setShowInstallModal] = useState(false);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-  }, []);
-
-  const handleInstallApp = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") {
-        setDeferredPrompt(null);
-      }
-    } else {
-      setShowInstallModal(true);
-    }
+  const handleInstallApp = () => {
+    window.dispatchEvent(new CustomEvent("trigger-pwa-install"));
   };
 
   useEffect(() => {
@@ -468,59 +448,6 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
                   Keluar
                 </button>
               </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Panduan Install PWA */}
-      {showInstallModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                  <Smartphone className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-white">Panduan Install Aplikasi PWA</h3>
-              </div>
-              <button
-                onClick={() => setShowInstallModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-slate-300">
-              <p className="leading-relaxed">
-                Aplikasi KAWAL dapat dipasang langsung di layar utama HP / Laptop Anda tanpa perlu melalui App Store / Play Store.
-              </p>
-
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
-                <p className="font-bold text-emerald-400">📱 Pengguna Android / Google Chrome:</p>
-                <ol className="list-decimal list-inside space-y-1 text-slate-400 pl-1">
-                  <li>Klik titik tiga <strong>(⋮)</strong> di sudut kanan atas browser.</li>
-                  <li>Pilih <strong>"Tambahkan ke Layar Utama"</strong> atau <strong>"Install Aplikasi"</strong>.</li>
-                </ol>
-              </div>
-
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
-                <p className="font-bold text-sky-400">🍎 Pengguna iPhone / iPad (Safari):</p>
-                <ol className="list-decimal list-inside space-y-1 text-slate-400 pl-1">
-                  <li>Klik ikon Bagikan <strong>(Share / 📤)</strong> di bagian bawah Safari.</li>
-                  <li>Pilih <strong>"Tambahkan ke Layar Utama" (Add to Home Screen)</strong>.</li>
-                </ol>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <button
-                onClick={() => setShowInstallModal(false)}
-                className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl cursor-pointer transition-all"
-              >
-                Saya Mengerti
-              </button>
             </div>
           </div>
         </div>

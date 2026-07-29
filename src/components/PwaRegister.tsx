@@ -45,6 +45,27 @@ export default function PwaRegister() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleTriggerInstall = async () => {
+      setShowInstallBanner(true);
+      if (deferredPrompt) {
+        try {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === "accepted") {
+            setDeferredPrompt(null);
+            setShowInstallBanner(false);
+          }
+        } catch {}
+      }
+    };
+
+    window.addEventListener("trigger-pwa-install", handleTriggerInstall);
+    return () => {
+      window.removeEventListener("trigger-pwa-install", handleTriggerInstall);
+    };
+  }, [deferredPrompt]);
+
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
