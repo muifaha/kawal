@@ -703,20 +703,27 @@ export default function DashboardClient({
         }
 
         if (colNum === 11) {
-          if (rate < 90) {
-            cell.fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: 'FFFEE2E2' } // Soft Red (<90% Terancam Tidak Naik Kelas)
-            };
-            cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF991B1B' } };
-          } else {
+          if (rate >= 90) {
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',
               fgColor: { argb: 'FFD1FAE5' } // Soft Green (>=90%)
             };
             cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF065F46' } };
+          } else if (rate >= 80) {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFEF3C7' } // Soft Amber/Yellow (80-89.9%)
+            };
+            cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF92400E' } };
+          } else {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFEE2E2' } // Soft Red (<80%)
+            };
+            cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FF991B1B' } };
           }
         }
 
@@ -961,12 +968,15 @@ export default function DashboardClient({
         // Percentage column rate styles
         if (colNum === totalCols - 1) {
           const rateVal = parseFloat(String(cell.value).replace("%", "")) || 100;
-          if (rateVal < 90) {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
-            cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF991B1B' } };
-          } else {
+          if (rateVal >= 90) {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
             cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF065F46' } };
+          } else if (rateVal >= 80) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+            cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF92400E' } };
+          } else {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+            cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF991B1B' } };
           }
         }
 
@@ -2090,7 +2100,7 @@ export default function DashboardClient({
             </div>
           </div>
 
-          {/* Banner Ketentuan Persentase Kehadiran & Ambang Batas 90% */}
+          {/* Banner Ketentuan Persentase Kehadiran */}
           <div className="p-3.5 bg-slate-900/60 border border-slate-800 rounded-xl text-xs text-slate-300 space-y-1">
             <div className="font-bold text-white flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-emerald-400" />
@@ -2098,9 +2108,6 @@ export default function DashboardClient({
             </div>
             <p className="text-slate-400 leading-relaxed">
               Bobot Poin Ketidakhadiran: <strong className="text-rose-400">Alpa (A) = 1.0 poin</strong> | <strong className="text-sky-400">Izin (I) = 0.7 poin</strong> | <strong className="text-amber-400">Sakit (S) = 0.5 poin</strong> | <strong className="text-purple-400">Dispen (D) = 0 poin (Tidak mengurangi persentase)</strong>.
-            </p>
-            <p className="text-amber-300 font-medium">
-              * Perhatian: Siswa dengan persentase kehadiran di bawah <strong className="text-rose-400">90%</strong> terancam <strong className="text-rose-400">Tidak Naik Kelas / Mengundurkan Diri</strong>.
             </p>
           </div>
 
@@ -2243,19 +2250,15 @@ export default function DashboardClient({
                           <td className="py-3.5 px-3 text-center text-purple-400 font-bold whitespace-nowrap">{item.D === 0 ? "-" : item.D}</td>
                           <td className="py-3.5 px-4 text-center whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
                                 rate >= 90
                                   ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                  : "bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-sm shadow-rose-950"
+                                  : rate >= 80
+                                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                  : "bg-rose-500/10 text-rose-400 border-rose-500/20"
                               }`}
-                              title={rate < 90 ? "Terancam Tidak Naik Kelas / Mengundurkan Diri (< 90%)" : "Kehadiran Aman (≥ 90%)"}
                             >
                               {rate}%
-                              {rate < 90 && (
-                                <span className="text-[10px] font-black uppercase text-rose-400">
-                                  ⚠️ (Terancam)
-                                </span>
-                              )}
                             </span>
                           </td>
                         </tr>
