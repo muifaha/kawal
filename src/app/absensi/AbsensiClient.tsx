@@ -267,7 +267,6 @@ export default function AbsensiClient({
             onChange={(e) => setSelectedDate(e.target.value)}
             className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
           />
-          {userRole === "SEKRETARIS" && <span className="text-[10px] text-amber-400 font-medium mt-1 block">📌 Pengurus Kelas (Hari ini)</span>}
         </div>
         <div className="w-full md:flex-1 relative">
           <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Cari Nama / NIS Siswa</label>
