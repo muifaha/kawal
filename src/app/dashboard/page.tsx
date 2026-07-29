@@ -822,7 +822,7 @@ export default async function DashboardPage() {
       }))
       .sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
 
-    const notSubmittedClasses = classesWithAttendanceCounts
+    classesNotSubmittedToday = classesWithAttendanceCounts
       .filter((c) => c.siswaKelas.length === 0)
       .map((c) => ({
         id: c.id,
@@ -832,14 +832,12 @@ export default async function DashboardPage() {
       }))
       .sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
 
-    classesNotSubmittedToday = notSubmittedClasses;
-
     var attendanceCompleteness: any = {
       totalClasses: classesWithAttendanceCounts.length,
       submittedCount: submittedClasses.length,
-      notSubmittedCount: notSubmittedClasses.length,
+      notSubmittedCount: classesNotSubmittedToday.length,
       submittedClasses,
-      notSubmittedClasses,
+      notSubmittedClasses: classesNotSubmittedToday,
       todayDateFormatted: new Date().toLocaleDateString("id-ID", {
         weekday: "long",
         day: "numeric",
@@ -848,6 +846,127 @@ export default async function DashboardPage() {
         timeZone: "Asia/Jakarta",
       }),
     };
+  }
+
+  // 7. Get unsubmitted attendance dates from PAST effective learning days (prior to today)
+  const pastUnsubmittedAttendanceDates: Array<{
+    dateStr: string;
+    dateFormatted: string;
+    unsubmittedCount: number;
+    totalClasses: number;
+    classes: Array<{ id: string; nama: string; walasNama: string }>;
+  }> = [];
+
+  const pastCheckDaysLimit = 30;
+  const pastDatesToCheck: string[] = [];
+  const startDateObj = rangeMulai ? new Date(rangeMulai) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const nowWib = new Date();
+
+  const dbHolidaysAll = await prisma.hariLibur.findMany({ select: { tanggal: true } });
+  const holidayDateSet = new Set(dbHolidaysAll.map((h) => h.tanggal.toISOString().split("T")[0]));
+
+  let weeklyHolidaysList = [0, 6];
+  if (settings["weekly_holidays"]) {
+    try {
+      weeklyHolidaysList = JSON.parse(settings["weekly_holidays"]);
+    } catch {}
+  }
+
+  let checkIterDate = new Date(nowWib.getTime() - 24 * 60 * 60 * 1000);
+  let daysCheckedCount = 0;
+
+  while (checkIterDate >= startDateObj && daysCheckedCount < pastCheckDaysLimit) {
+    const dayOfWeek = checkIterDate.getDay();
+    const iterDateStr = checkIterDate.toLocaleDateString("sv-SE", { timeZone: "Asia/Jakarta" });
+    const isHoliday = weeklyHolidaysList.includes(dayOfWeek) || holidayDateSet.has(iterDateStr);
+
+    if (!isHoliday) {
+      pastDatesToCheck.push(iterDateStr);
+    }
+    daysCheckedCount++;
+    checkIterDate = new Date(checkIterDate.getTime() - 24 * 60 * 60 * 1000);
+  }
+
+  if (pastDatesToCheck.length > 0) {
+    let checkClassFilterPast: any = {
+      tahunAjaran: { isActive: true },
+    };
+
+    if (user.role === "BK") {
+      checkClassFilterPast.bkId = user.id;
+    } else if (user.role === "WALAS") {
+      checkClassFilterPast.walasId = user.id;
+    }
+
+    const allActiveClassesPast = await prisma.kelas.findMany({
+      where: checkClassFilterPast,
+      select: {
+        id: true,
+        nama: true,
+        walas: { select: { nama: true } },
+      },
+      orderBy: { nama: "asc" },
+    });
+
+    for (const dateStrItem of pastDatesToCheck) {
+      const dateObjItem = new Date(`${dateStrItem}T00:00:00.000Z`);
+
+      const recordedClasses = await prisma.absensi.findMany({
+        where: {
+          tanggal: dateObjItem,
+          siswa: {
+            riwayatKelas: {
+              some: {
+                tahunAjaran: { isActive: true },
+              },
+            },
+          },
+        },
+        select: {
+          siswa: {
+            select: {
+              riwayatKelas: {
+                where: { tahunAjaran: { isActive: true } },
+                select: { kelasId: true },
+              },
+            },
+          },
+        },
+      });
+
+      const recordedClassIds = new Set<string>();
+      recordedClasses.forEach((a) => {
+        a.siswa.riwayatKelas.forEach((rk) => {
+          if (rk.kelasId) recordedClassIds.add(rk.kelasId);
+        });
+      });
+
+      const missingClasses = allActiveClassesPast
+        .filter((c) => !recordedClassIds.has(c.id))
+        .map((c) => ({
+          id: c.id,
+          nama: c.nama,
+          walasNama: c.walas?.nama || "Belum Ditentukan",
+        }))
+        .sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: "base" }));
+
+      if (missingClasses.length > 0) {
+        const formattedDateLabel = new Date(`${dateStrItem}T00:00:00`).toLocaleDateString("id-ID", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+
+        pastUnsubmittedAttendanceDates.push({
+          dateStr: dateStrItem,
+          dateFormatted: formattedDateLabel,
+          unsubmittedCount: missingClasses.length,
+          totalClasses: allActiveClassesPast.length,
+          classes: missingClasses,
+        });
+      }
+    }
   }
 
   const dbPeriods = await prisma.jamPelajaran.findMany();
@@ -871,6 +990,7 @@ export default async function DashboardPage() {
       periods={periods}
       classes={classes.map((c) => ({ id: c.id, nama: c.nama }))}
       classesNotSubmittedToday={classesNotSubmittedToday}
+      pastUnsubmittedAttendanceDates={pastUnsubmittedAttendanceDates}
       attendanceCompleteness={attendanceCompleteness}
       stats={{
         totalSiswa,

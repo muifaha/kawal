@@ -229,6 +229,13 @@ interface DashboardClientProps {
   todaySchedules?: TodayScheduleItem[];
   periods?: PeriodItem[];
   classesNotSubmittedToday?: ClassNotSubmitted[];
+  pastUnsubmittedAttendanceDates?: Array<{
+    dateStr: string;
+    dateFormatted: string;
+    unsubmittedCount: number;
+    totalClasses: number;
+    classes: Array<{ id: string; nama: string; walasNama: string }>;
+  }>;
   attendanceCompleteness?: {
     totalClasses: number;
     submittedCount: number;
@@ -275,12 +282,14 @@ export default function DashboardClient({
   todaySchedules = [],
   periods = [],
   classesNotSubmittedToday = [],
+  pastUnsubmittedAttendanceDates = [],
   attendanceCompleteness,
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "absen_rekap" | "pelanggaran_rekap">("summary");
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedExportType, setSelectedExportType] = useState<"cumulative" | "monthly">("cumulative");
   const [isCompletenessOpen, setIsCompletenessOpen] = useState(false);
+  const [openPastDateStr, setOpenPastDateStr] = useState<string | null>(null);
 
   const getTimeStringDashboard = (day: number, start: number, end: number) => {
     const HARI_MAP_LOCAL: Record<number, string> = {
@@ -1407,6 +1416,87 @@ export default function DashboardClient({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Rangkuman Kelengkapan Absensi Tanggal-Tanggal Sebelumnya */}
+      {pastUnsubmittedAttendanceDates && pastUnsubmittedAttendanceDates.length > 0 && (
+        <div className="mb-8 p-4 bg-slate-900/40 border border-slate-800 rounded-2xl space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-amber-400" />
+              <h4 className="text-sm font-bold text-white">Kelengkapan Absensi Tanggal-Tanggal Sebelumnya</h4>
+            </div>
+            <span className="text-[11px] font-semibold text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full">
+              {pastUnsubmittedAttendanceDates.length} Tanggal Belum Lengkap
+            </span>
+          </div>
+
+          <div className="space-y-2 pt-1">
+            {pastUnsubmittedAttendanceDates.map((item) => {
+              const isOpen = openPastDateStr === item.dateStr;
+              return (
+                <div
+                  key={item.dateStr}
+                  className="border border-slate-800 rounded-xl bg-slate-950/60 overflow-hidden transition-all"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenPastDateStr(isOpen ? null : item.dateStr)}
+                    className="w-full p-3 flex items-center justify-between gap-3 text-left hover:bg-slate-900/80 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold shrink-0">
+                        !
+                      </span>
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-white block truncate">{item.dateFormatted}</span>
+                        <span className="text-[11px] text-amber-400 font-medium">
+                          {item.unsubmittedCount} dari {item.totalClasses} kelas belum mengisi absensi
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                        {isOpen ? "Sembunyikan Rincian" : "Tampilkan Rincian Kelas"}
+                      </span>
+                      <div className="p-1 rounded-md bg-slate-900 border border-slate-800 text-slate-400">
+                        {isOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      </div>
+                    </div>
+                  </button>
+
+                  {isOpen && (
+                    <div className="p-3 border-t border-slate-800/80 bg-slate-900/30 space-y-2 animate-in fade-in duration-200">
+                      <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider px-1">
+                        🔴 Kelas Belum Mengisi Absensi ({item.dateFormatted}):
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {item.classes.map((c) => (
+                          <div
+                            key={c.id}
+                            className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-2 text-xs"
+                          >
+                            <div className="min-w-0">
+                              <span className="font-bold text-white block truncate">{c.nama}</span>
+                              <span className="text-[10px] text-slate-400 block truncate">Walas: {c.walasNama}</span>
+                            </div>
+                            <Link
+                              href={`/absensi?classId=${c.id}&date=${item.dateStr}`}
+                              className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 font-bold hover:bg-amber-500/20 transition-all text-[10px] shrink-0"
+                            >
+                              Isi Absensi
+                            </Link>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

@@ -27,6 +27,7 @@ interface AbsensiClientProps {
   settings: Record<string, string>;
   holidays: HolidayItem[];
   initialClassId?: string;
+  initialDate?: string;
   userRole?: string;
 }
 
@@ -37,6 +38,7 @@ export default function AbsensiClient({
   settings,
   holidays,
   initialClassId = "",
+  initialDate = "",
   userRole = "BK",
 }: AbsensiClientProps) {
   const [selectedClassId, setSelectedClassId] = useState<string>(() => {
@@ -54,6 +56,7 @@ export default function AbsensiClient({
   }, [initialClassId, classes]);
 
   const [selectedDate, setSelectedDate] = useState<string>(() => {
+    if (initialDate && userRole !== "SEKRETARIS") return initialDate;
     const today = new Date();
     const offset = today.getTimezoneOffset();
     const localDate = new Date(today.getTime() - offset * 60 * 1000);
