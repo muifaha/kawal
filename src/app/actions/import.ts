@@ -56,8 +56,8 @@ export async function importUsersAction(rows: UserImportRow[]) {
 
       // Validasi Role
       const cleanRole = role.trim().toUpperCase();
-      if (!["WAKA", "BK", "WALAS", "GURU", "OSIS"].includes(cleanRole)) {
-        return { error: `Role "${role}" tidak valid. Gunakan salah satu dari: WAKA, BK, WALAS, GURU, OSIS.` };
+      if (!["WAKA", "BK", "WALAS", "GURU", "OSIS", "SEKRETARIS"].includes(cleanRole)) {
+        return { error: `Role "${role}" tidak valid. Gunakan salah satu dari: WAKA, BK, WALAS, GURU, OSIS, SEKRETARIS.` };
       }
 
       // Check duplicate username in db
@@ -133,7 +133,7 @@ export async function importClassesAction(rows: ClassImportRow[]) {
     const seenClasses = new Set<string>();
 
     for (const row of rows) {
-      const { nama, walasUsername, bkUsername } = row;
+      const { nama, walasUsername, bkUsername, sekretarisUsername } = row as any;
       if (!nama) {
         return { error: "Nama Kelas wajib diisi." };
       }
@@ -185,11 +185,24 @@ export async function importClassesAction(rows: ClassImportRow[]) {
         bkId = bkUser.id;
       }
 
+      let sekretarisId: string | null = null;
+      if (sekretarisUsername) {
+        const cleanSekretarisUsername = sekretarisUsername.trim();
+        const sekUser = await prisma.user.findFirst({
+          where: { username: cleanSekretarisUsername, role: "SEKRETARIS" },
+        });
+        if (!sekUser) {
+          return { error: `Sekretaris Kelas dengan username "${cleanSekretarisUsername}" tidak ditemukan atau bukan ber-role SEKRETARIS.` };
+        }
+        sekretarisId = sekUser.id;
+      }
+
       classesToCreate.push({
         nama: cleanName,
         tahunAjaranId: activeTA.id,
         walasId,
         bkId,
+        sekretarisId,
       });
     }
 

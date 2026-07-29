@@ -51,18 +51,19 @@ export default function ImportExcelModal({
         return {
           filename: "template_guru.xlsx",
           headers: [
-            ["NIP", "Username", "Password", "Nama Lengkap", "Role (WAKA/BK/WALAS/GURU/OSIS)", "No WhatsApp"],
+            ["NIP", "Username", "Password", "Nama Lengkap", "Role (WAKA/BK/WALAS/GURU/OSIS/SEKRETARIS)", "No WhatsApp"],
             ["198501012010121001", "budi_walas", "walas123", "Budi Harjo, S.Kom", "WALAS", "+628123456789"],
             ["199004052015012002", "ani_bk", "bk123", "Ani Lestari, S.Pd", "BK", "+628123456780"],
+            ["", "sekretaris_xrpl1", "sekretaris123", "Sekretaris X RPL 1", "SEKRETARIS", ""],
           ],
         };
       case "classes":
         return {
           filename: "template_kelas.xlsx",
           headers: [
-            ["Nama Kelas", "Username Wali Kelas (Optional)", "Username Guru BK (Optional)"],
-            ["XI RPL 3", "walas_rpl", "ani_bk"],
-            ["X RPL 1", "", ""],
+            ["Nama Kelas", "Username Wali Kelas (Optional)", "Username Guru BK (Optional)", "Username Sekretaris Kelas (Optional)"],
+            ["XI RPL 3", "walas_rpl", "ani_bk", "sekretaris_xirpl3"],
+            ["X RPL 1", "", "", ""],
           ],
         };
       case "students":
@@ -220,10 +221,15 @@ export default function ImportExcelModal({
       const altBkIdx = headers.indexOf("username guru bk");
       const finalBkIdx = bkIdx !== -1 ? bkIdx : altBkIdx;
 
+      const sekIdx = headers.indexOf("username sekretaris kelas (optional)");
+      const altSekIdx = headers.indexOf("username sekretaris kelas");
+      const finalSekIdx = sekIdx !== -1 ? sekIdx : altSekIdx;
+
       const mappedRows = cleanRows.map((r) => ({
         nama: String(r[namaIdx] || "").trim(),
         walasUsername: finalWalasIdx !== -1 ? String(r[finalWalasIdx] || "").trim() : undefined,
         bkUsername: finalBkIdx !== -1 ? String(r[finalBkIdx] || "").trim() : undefined,
+        sekretarisUsername: finalSekIdx !== -1 ? String(r[finalSekIdx] || "").trim() : undefined,
       }));
       return { mappedRows };
     }

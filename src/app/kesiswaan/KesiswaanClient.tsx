@@ -34,10 +34,12 @@ import {
   graduateClassStudentsAction,
   saveSettingsAction,
   saveWeeklyHolidaysAction,
+  resetUserSessionAction,
 } from "@/app/actions/kesiswaan";
 import ImportExcelModal from "@/components/ImportExcelModal";
 import {
   Users as UsersIcon,
+  RefreshCw,
   BookOpen,
   UserCheck,
   AlertOctagon,
@@ -378,11 +380,22 @@ export default function KesiswaanClient({
     });
   };
 
-  const handleDeleteUser = async (id: string, name: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus akun guru "${name}"?`)) return;
+  const handleDeleteUser = async (id: string, nama: string) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus akun "${nama}"?`)) return;
+
     setAlert(null);
     startTransition(async () => {
       const res = await deleteUserAction(id);
+      handleAlert(res);
+    });
+  };
+
+  const handleResetUserSession = async (userId: string, nama: string) => {
+    if (!confirm(`Apakah Anda yakin ingin mereset sesi login perangkat untuk ${nama}?\n\nSesi aktif akan dikosongkan sehingga akun dapat melakukan login di perangkat baru.`)) return;
+
+    setAlert(null);
+    startTransition(async () => {
+      const res = await resetUserSessionAction(userId);
       handleAlert(res);
     });
   };
@@ -904,6 +917,15 @@ export default function KesiswaanClient({
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
+                              {u.role === "SEKRETARIS" && (
+                                <button
+                                  onClick={() => handleResetUserSession(u.id, u.nama)}
+                                  className="p-1.5 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-all"
+                                  title="Reset Sesi Login Perangkat (Izinkan Login Perangkat Baru)"
+                                >
+                                  <RefreshCw className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleDeleteUser(u.id, u.nama)}
                                 className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
@@ -985,6 +1007,7 @@ export default function KesiswaanClient({
                   <th className="py-3.5 px-4">Nama Kelas</th>
                   <th className="py-3.5 px-4">Wali Kelas (Walas)</th>
                   <th className="py-3.5 px-4">Guru BK Penanggung Jawab</th>
+                  <th className="py-3.5 px-4">Pengurus / Sekretaris</th>
                   <th className="py-3.5 px-4">Tahun Pelajaran</th>
                   <th className="py-3.5 px-4 text-center w-36">Aksi</th>
                 </tr>
@@ -992,7 +1015,7 @@ export default function KesiswaanClient({
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
                 {initialClasses.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500">Belum ada data kelas.</td>
+                    <td colSpan={8} className="py-8 text-center text-slate-500">Belum ada data kelas.</td>
                   </tr>
                 ) : (
                   (() => {
@@ -1016,6 +1039,24 @@ export default function KesiswaanClient({
                           </td>
                           <td className="py-3 px-4 text-slate-300">
                             {c.bk?.nama || <span className="text-slate-500 italic">Belum ditugaskan</span>}
+                          </td>
+                          <td className="py-3 px-4 text-slate-300">
+                            {c.sekretaris?.nama ? (
+                              <div className="flex items-center gap-1.5">
+                                <span>{c.sekretaris.nama}</span>
+                                {c.sekretarisId && (
+                                  <button
+                                    onClick={() => handleResetUserSession(c.sekretarisId!, c.sekretaris!.nama)}
+                                    className="p-1 text-amber-400 hover:bg-amber-500/10 rounded transition-all"
+                                    title="Reset Sesi Login Perangkat Sekretaris"
+                                  >
+                                    <RefreshCw className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-500 italic">Belum ditugaskan</span>
+                            )}
                           </td>
                           <td className="py-3 px-4 text-emerald-400 font-semibold">{c.tahunAjaran.nama}</td>
                           <td className="py-3 px-4 text-center">

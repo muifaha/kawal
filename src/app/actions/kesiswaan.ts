@@ -537,6 +537,35 @@ export async function updateKelasAssignmentAction(
   }
 }
 
+/**
+ * Mereset sesi login perangkat aktif untuk pengguna (khusus Sekretaris Kelas atau peran lainnya)
+ */
+export async function resetUserSessionAction(userId: string) {
+  try {
+    await assertWaka();
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!targetUser) {
+      return { error: "Pengguna tidak ditemukan." };
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { activeSessions: [] },
+    });
+
+    revalidatePath("/kesiswaan");
+    revalidatePath("/absensi");
+    return { success: true, message: `Sesi login perangkat untuk akun *${targetUser.nama}* berhasil di-reset.` };
+  } catch (error: any) {
+    console.error("Reset user session error:", error);
+    return { error: error.message || "Gagal mereset sesi login." };
+  }
+}
+
 // ==========================================
 // 8. MANAJEMEN TAHUN PELAJARAN
 // ==========================================
