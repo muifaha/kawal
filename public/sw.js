@@ -1,12 +1,12 @@
-const CACHE_NAME = "kawal-pwa-v1";
+const CACHE_NAME = "kawal-pwa-v2";
 const STATIC_ASSETS = [
   "/",
   "/dashboard",
   "/absensi",
   "/manifest.json",
-  "/icons/icon-192x192.png",
-  "/icons/icon-512x512.png",
-  "/icons/apple-touch-icon.png"
+  "/icons/icon-192x192.png?v=2",
+  "/icons/icon-512x512.png?v=2",
+  "/icons/apple-touch-icon.png?v=2"
 ];
 
 // Install Event: Cache Static Assets
