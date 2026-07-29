@@ -231,15 +231,19 @@ export default function RekapAbsensiClient({
                   <th className="py-3 text-center w-9 min-w-[2.25rem] text-sky-400 border-l border-slate-800/40 font-bold">I</th>
                   <th className="py-3 text-center w-9 min-w-[2.25rem] text-rose-400 border-l border-slate-800/40 font-bold">A</th>
                   <th className="py-3 text-center w-9 min-w-[2.25rem] text-purple-400 border-l border-slate-800/40 font-bold">D</th>
-                  <th className="py-3 text-center w-12 min-w-[3rem] text-amber-300 border-l border-slate-800 font-bold">Poin</th>
-                  <th className="py-3 text-center w-16 min-w-[4rem] text-emerald-400 border-l border-slate-800 font-bold">Kehadiran</th>
+                  {userRole !== "SEKRETARIS" && (
+                    <>
+                      <th className="py-3 text-center w-12 min-w-[3rem] text-amber-300 border-l border-slate-800 font-bold">Poin</th>
+                      <th className="py-3 text-center w-16 min-w-[4rem] text-emerald-400 border-l border-slate-800 font-bold">Kehadiran</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-900/60 text-xs">
                 {matrixData.students.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={matrixData.daysInMonth + 9}
+                      colSpan={matrixData.daysInMonth + (userRole === "SEKRETARIS" ? 7 : 9)}
                       className="py-12 text-center text-slate-500"
                     >
                       Belum ada data siswa di kelas ini.
@@ -318,17 +322,21 @@ export default function RekapAbsensiClient({
                         <td className="py-2.5 text-center font-bold text-rose-400 border-l border-slate-800/40">{totalA}</td>
                         <td className="py-2.5 text-center font-bold text-purple-400 border-l border-slate-800/40">{totalD}</td>
 
-                        {/* Poin Pelanggaran */}
-                        <td className="py-2.5 text-center font-mono font-bold text-amber-300 border-l border-slate-800">
-                          {poinPelanggaran > 0 ? poinPelanggaran : "-"}
-                        </td>
+                        {userRole !== "SEKRETARIS" && (
+                          <>
+                            {/* Poin Pelanggaran */}
+                            <td className="py-2.5 text-center font-mono font-bold text-amber-300 border-l border-slate-800">
+                              {poinPelanggaran > 0 ? poinPelanggaran : "-"}
+                            </td>
 
-                        {/* Kehadiran Rate */}
-                        <td className="py-2.5 px-2 text-center border-l border-slate-800">
-                          <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] border ${rateColorClass}`}>
-                            {rate}%
-                          </span>
-                        </td>
+                            {/* Kehadiran Rate */}
+                            <td className="py-2.5 px-2 text-center border-l border-slate-800">
+                              <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] border ${rateColorClass}`}>
+                                {rate}%
+                              </span>
+                            </td>
+                          </>
+                        )}
                       </tr>
                     );
                   })
