@@ -110,6 +110,12 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       roles: ["BK", "SEKRETARIS"],
     },
     {
+      name: "Rekap Absensi",
+      href: "/rekap-absensi",
+      icon: ClipboardList,
+      roles: ["BK", "WALAS", "SEKRETARIS"],
+    },
+    {
       name: "Pelanggaran",
       icon: AlertTriangle,
       roles: ["BK", "WALAS", "GURU", "WAKA", "OSIS"],

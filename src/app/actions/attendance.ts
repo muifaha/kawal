@@ -227,3 +227,112 @@ export async function getAttendanceAction(classId: string, dateString: string) {
     return { error: "Gagal memuat data absensi sebelumnya." };
   }
 }
+
+/**
+ * Mendapatkan data matriks absensi bulanan siswa untuk suatu kelas
+ */
+export async function getMonthlyAttendanceMatrixAction(
+  classId: string,
+  month: number, // 0-indexed (0 = Jan, 11 = Dec)
+  year: number
+) {
+  const user = await getSessionUser();
+  if (!user) {
+    return { error: "Silakan login terlebih dahulu." };
+  }
+
+  const allowedRoles = ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS"];
+  if (!allowedRoles.includes(user.role)) {
+    return { error: "Akses ditolak." };
+  }
+
+  try {
+    const targetClass = await prisma.kelas.findUnique({
+      where: { id: classId },
+      include: {
+        siswaKelas: {
+          where: {
+            siswa: { status: "AKTIF" },
+          },
+          include: {
+            siswa: true,
+          },
+        },
+      },
+    });
+
+    if (!targetClass) {
+      return { error: "Kelas tidak ditemukan." };
+    }
+
+    if (user.role === "SEKRETARIS" && targetClass.sekretarisId !== user.id) {
+      return { error: "Akses ditolak. Anda tidak memiliki akses ke kelas ini." };
+    }
+
+    const students = targetClass.siswaKelas
+      .map((sk) => sk.siswa)
+      .sort((a, b) => a.nama.localeCompare(b.nama));
+
+    const studentIds = students.map((s) => s.id);
+
+    const startDate = new Date(Date.UTC(year, month, 1, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
+
+    const absensiList = await prisma.absensi.findMany({
+      where: {
+        siswaId: { in: studentIds },
+        tanggal: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      select: {
+        siswaId: true,
+        tanggal: true,
+        status: true,
+      },
+    });
+
+    const violations = await prisma.laporanPelanggaran.findMany({
+      where: {
+        siswaId: { in: studentIds },
+        status: "APPROVED",
+      },
+      select: {
+        siswaId: true,
+        detailPelanggaran: { select: { poin: true } },
+      },
+    });
+
+    const studentPoinMap: Record<string, number> = {};
+    violations.forEach((v) => {
+      studentPoinMap[v.siswaId] = (studentPoinMap[v.siswaId] || 0) + (v.detailPelanggaran?.poin || 0);
+    });
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const matrix: Record<string, Record<number, string>> = {};
+
+    absensiList.forEach((item) => {
+      const dObj = new Date(item.tanggal);
+      const dayNum = dObj.getUTCDate();
+      if (!matrix[item.siswaId]) {
+        matrix[item.siswaId] = {};
+      }
+      matrix[item.siswaId][dayNum] = item.status;
+    });
+
+    return {
+      success: true,
+      data: {
+        className: targetClass.nama,
+        students,
+        daysInMonth,
+        matrix,
+        studentPoinMap,
+      },
+    };
+  } catch (error: any) {
+    console.error("Get monthly attendance matrix error:", error);
+    return { error: "Gagal memuat matriks absensi." };
+  }
+}
