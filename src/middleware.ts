@@ -61,12 +61,17 @@ export function middleware(request: NextRequest) {
   // Proteksi Rute Berdasarkan Role
   const role = user.role;
 
-  // Halaman khusus Guru BK
-  const bkOnlyPaths = ["/absensi", "/approval", "/remisi"];
+  // Halaman Absensi Harian (Dapat diakses oleh BK, WAKA, WALAS, GURU, dan SEKRETARIS)
+  if (pathname.startsWith("/absensi") && !["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS"].includes(role)) {
+    return NextResponse.redirect(new URL("/dashboard?error=unauthorized", request.url));
+  }
+
+  // Halaman khusus Guru BK (Approval & Remisi Poin)
+  const bkOnlyPaths = ["/approval", "/remisi"];
   const isBkPath = bkOnlyPaths.some((path) => pathname.startsWith(path));
 
-  if (isBkPath && role !== "BK") {
-    // Jika bukan Guru BK, tolak akses dan arahkan kembali ke Dashboard
+  if (isBkPath && role !== "BK" && role !== "WAKA") {
+    // Jika bukan Guru BK / Waka, tolak akses dan arahkan kembali ke Dashboard
     return NextResponse.redirect(new URL("/dashboard?error=unauthorized", request.url));
   }
 
