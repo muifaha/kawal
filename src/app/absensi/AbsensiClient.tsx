@@ -315,10 +315,10 @@ export default function AbsensiClient({
               <table className="min-w-full divide-y divide-slate-900">
                 <thead className="bg-slate-900/50">
                   <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    <th className="py-3 px-3 w-10">No</th>
+                    <th className="py-3 px-1.5 sm:px-3 text-center w-7 sm:w-10 text-[11px] sm:text-xs">No</th>
                     <th className="py-3 px-3 w-20 hidden sm:table-cell">NIS</th>
-                    <th className="py-3 px-3">Nama Lengkap</th>
-                    <th className="py-3 pl-2 pr-3 text-center w-64">Aksi</th>
+                    <th className="py-3 px-2 sm:px-3">Nama Lengkap</th>
+                    <th className="py-3 px-1 sm:px-3 text-center w-auto sm:w-64">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-900/60">
@@ -327,16 +327,16 @@ export default function AbsensiClient({
                     const isFocused = focusedIndex === index;
                     return (
                       <tr key={student.id} onClick={() => !isReadOnly && setFocusedIndex(index)} className={`text-sm transition-all relative ${isReadOnly ? "cursor-not-allowed opacity-80" : "cursor-pointer"} ${isFocused ? "bg-slate-900/60 outline outline-emerald-500/40 outline-offset-[-1px] z-10" : ""} ${isFocused && status === "H" ? "" : rowColors[status]}`}>
-                        <td className="py-3 px-3 font-medium text-slate-400">{index + 1}</td>
-                        <td className="py-3 px-3 font-mono text-xs hidden sm:table-cell">{student.nis}</td>
-                        <td className="py-3 px-3 text-sm font-semibold">{student.nama}</td>
-                        <td className="py-3 pl-2 pr-3">
-                          <div className="flex justify-center gap-1.5">
+                        <td className="py-2.5 px-1.5 sm:px-3 text-center text-xs sm:text-sm font-medium text-slate-400">{index + 1}</td>
+                        <td className="py-2.5 px-3 font-mono text-xs hidden sm:table-cell">{student.nis}</td>
+                        <td className="py-2.5 px-2 sm:px-3 text-xs sm:text-sm font-semibold truncate max-w-[120px] sm:max-w-none">{student.nama}</td>
+                        <td className="py-2.5 px-1 sm:px-3">
+                          <div className="flex justify-center gap-1 sm:gap-1.5">
                             {(["H", "S", "I", "A", "D"] as const).map((s) => {
                               const active = { H: "bg-emerald-500 text-emerald-950 font-bold border-emerald-500", S: "bg-amber-500 text-amber-950 font-bold border-amber-500", I: "bg-sky-500 text-sky-950 font-bold border-sky-500", A: "bg-rose-500 text-white font-bold border-rose-500", D: "bg-purple-500 text-white font-bold border-purple-500" };
                               const inactive = { H: "bg-slate-950/60 hover:bg-emerald-500/20 text-slate-300", S: "bg-slate-950/60 hover:bg-amber-500/20 text-slate-300", I: "bg-slate-950/60 hover:bg-sky-500/20 text-slate-300", A: "bg-slate-950/60 hover:bg-rose-500/20 text-slate-300", D: "bg-slate-950/60 hover:bg-purple-500/20 text-slate-300" };
                               return (
-                                <button key={s} type="button" disabled={isReadOnly} onClick={(e) => { e.stopPropagation(); setStatus(student.id, s); setFocusedIndex(index); }} className={`w-10 h-9 rounded-xl text-sm border flex items-center justify-center transition-all ${status === s ? active[s] : inactive[s]} ${isReadOnly ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}>{s}</button>
+                                <button key={s} type="button" disabled={isReadOnly} onClick={(e) => { e.stopPropagation(); setStatus(student.id, s); setFocusedIndex(index); }} className={`w-7 h-7 sm:w-10 sm:h-9 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold border flex items-center justify-center transition-all shrink-0 ${status === s ? active[s] : inactive[s]} ${isReadOnly ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}>{s}</button>
                               );
                             })}
                           </div>
