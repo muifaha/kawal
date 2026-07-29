@@ -32,6 +32,10 @@ import {
   ArrowDown,
   History,
   X,
+  ChevronDown,
+  ChevronUp,
+  ClipboardCheck,
+  CheckCircle,
 } from "lucide-react";
 import { resolveSummonsAction } from "@/app/actions/kesiswaan";
 import { printSingleSummons, printBulkSummons } from "@/lib/printUtils";
@@ -225,6 +229,14 @@ interface DashboardClientProps {
   todaySchedules?: TodayScheduleItem[];
   periods?: PeriodItem[];
   classesNotSubmittedToday?: ClassNotSubmitted[];
+  attendanceCompleteness?: {
+    totalClasses: number;
+    submittedCount: number;
+    notSubmittedCount: number;
+    submittedClasses: Array<{ id: string; nama: string; walasNama: string; sekretarisNama?: string }>;
+    notSubmittedClasses: Array<{ id: string; nama: string; walasNama: string; sekretarisNama?: string }>;
+    todayDateFormatted: string;
+  };
 }
 
 const INDONESIAN_MONTHS = [
@@ -263,10 +275,12 @@ export default function DashboardClient({
   todaySchedules = [],
   periods = [],
   classesNotSubmittedToday = [],
+  attendanceCompleteness,
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "absen_rekap" | "pelanggaran_rekap">("summary");
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedExportType, setSelectedExportType] = useState<"cumulative" | "monthly">("cumulative");
+  const [isCompletenessOpen, setIsCompletenessOpen] = useState(false);
 
   const getTimeStringDashboard = (day: number, start: number, end: number) => {
     const HARI_MAP_LOCAL: Record<number, string> = {
@@ -1364,7 +1378,7 @@ export default function DashboardClient({
 
       {/* Alert Absensi Belum Diisi Hari Ini */}
       {classesNotSubmittedToday.length > 0 && (
-        <div className="mb-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-4 text-amber-300 animate-fade-in">
+        <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-4 text-amber-300 animate-fade-in">
           <AlertOctagon className="w-5 h-5 mt-0.5 shrink-0 text-amber-300" />
           <div className="space-y-1">
             <h4 className="text-sm font-bold text-amber-300">Pemberitahuan Absensi Hari Ini</h4>
@@ -1394,6 +1408,120 @@ export default function DashboardClient({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Rangkuman Kelengkapan Data Absensi (Dropdown Accordion) */}
+      {attendanceCompleteness && attendanceCompleteness.totalClasses > 0 && (
+        <div className="mb-8 border border-slate-800 rounded-2xl bg-slate-900/40 overflow-hidden transition-all">
+          <button
+            type="button"
+            onClick={() => setIsCompletenessOpen(!isCompletenessOpen)}
+            className="w-full p-4 flex items-center justify-between gap-4 text-left hover:bg-slate-900/60 transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`p-2.5 rounded-xl border shrink-0 ${
+                attendanceCompleteness.notSubmittedCount > 0
+                  ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                  : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+              }`}>
+                <ClipboardCheck className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-sm font-bold text-white">Kelengkapan Data Absensi</h4>
+                  <span className="text-xs text-slate-400">({attendanceCompleteness.todayDateFormatted})</span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5 font-medium">
+                  {attendanceCompleteness.notSubmittedCount > 0 ? (
+                    <>
+                      <span className="text-amber-400 font-bold">{attendanceCompleteness.notSubmittedCount} Kelas Belum Absensi</span>
+                      <span className="text-slate-500"> • </span>
+                      <span>{attendanceCompleteness.submittedCount} dari {attendanceCompleteness.totalClasses} Kelas Selesai</span>
+                    </>
+                  ) : (
+                    <span className="text-emerald-400 font-bold">🎉 Seluruh {attendanceCompleteness.totalClasses} Kelas Sudah Mengisi Absensi</span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs text-slate-400 font-semibold hidden sm:inline">
+                {isCompletenessOpen ? "Sembunyikan Rincian" : "Tampilkan Rincian Kelas"}
+              </span>
+              <div className="p-1.5 rounded-lg bg-slate-950/60 border border-slate-800 text-slate-400">
+                {isCompletenessOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
+            </div>
+          </button>
+
+          {isCompletenessOpen && (
+            <div className="p-4 border-t border-slate-800/80 bg-slate-950/40 space-y-4 animate-in fade-in duration-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Panel Kelas Belum Absensi */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-amber-400 uppercase tracking-wider px-1">
+                    <span>🔴 Belum Absensi ({attendanceCompleteness.notSubmittedCount} Kelas)</span>
+                  </div>
+                  {attendanceCompleteness.notSubmittedClasses.length === 0 ? (
+                    <div className="p-3 rounded-xl border border-dashed border-slate-800 text-slate-500 text-xs text-center">
+                      Tidak ada kelas yang belum absensi. Semua kelas sudah terisi!
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                      {attendanceCompleteness.notSubmittedClasses.map((c) => (
+                        <div
+                          key={c.id}
+                          className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-amber-500/40 transition-all text-xs"
+                        >
+                          <div>
+                            <span className="font-bold text-white">{c.nama}</span>
+                            <span className="text-[11px] text-slate-400 block">Walas: {c.walasNama}</span>
+                          </div>
+                          <Link
+                            href={`/absensi?classId=${c.id}`}
+                            className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 font-bold hover:bg-amber-500/20 transition-all text-[11px]"
+                          >
+                            Isi Absensi
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Panel Kelas Sudah Absensi */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-emerald-400 uppercase tracking-wider px-1">
+                    <span>🟢 Sudah Absensi ({attendanceCompleteness.submittedCount} Kelas)</span>
+                  </div>
+                  {attendanceCompleteness.submittedClasses.length === 0 ? (
+                    <div className="p-3 rounded-xl border border-dashed border-slate-800 text-slate-500 text-xs text-center">
+                      Belum ada kelas yang menginput absensi hari ini.
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                      {attendanceCompleteness.submittedClasses.map((c) => (
+                        <div
+                          key={c.id}
+                          className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 transition-all text-xs"
+                        >
+                          <div>
+                            <span className="font-bold text-white">{c.nama}</span>
+                            <span className="text-[11px] text-slate-400 block">Walas: {c.walasNama}</span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[10px] flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" /> Selesai
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

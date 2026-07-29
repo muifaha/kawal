@@ -789,6 +789,11 @@ export default async function DashboardPage() {
             nama: true,
           },
         },
+        sekretaris: {
+          select: {
+            nama: true,
+          },
+        },
         siswaKelas: {
           where: {
             siswa: {
@@ -807,14 +812,42 @@ export default async function DashboardPage() {
       },
     });
 
-    classesNotSubmittedToday = classesWithAttendanceCounts
+    const submittedClasses = classesWithAttendanceCounts
+      .filter((c) => c.siswaKelas.length > 0)
+      .map((c) => ({
+        id: c.id,
+        nama: c.nama,
+        walasNama: c.walas?.nama || "Belum Ditentukan",
+        sekretarisNama: c.sekretaris?.nama || "-",
+      }))
+      .sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
+
+    const notSubmittedClasses = classesWithAttendanceCounts
       .filter((c) => c.siswaKelas.length === 0)
       .map((c) => ({
         id: c.id,
         nama: c.nama,
         walasNama: c.walas?.nama || "Belum Ditentukan",
-      }));
-    classesNotSubmittedToday.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
+        sekretarisNama: c.sekretaris?.nama || "-",
+      }))
+      .sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
+
+    classesNotSubmittedToday = notSubmittedClasses;
+
+    var attendanceCompleteness: any = {
+      totalClasses: classesWithAttendanceCounts.length,
+      submittedCount: submittedClasses.length,
+      notSubmittedCount: notSubmittedClasses.length,
+      submittedClasses,
+      notSubmittedClasses,
+      todayDateFormatted: new Date().toLocaleDateString("id-ID", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Asia/Jakarta",
+      }),
+    };
   }
 
   const dbPeriods = await prisma.jamPelajaran.findMany();
@@ -838,6 +871,7 @@ export default async function DashboardPage() {
       periods={periods}
       classes={classes.map((c) => ({ id: c.id, nama: c.nama }))}
       classesNotSubmittedToday={classesNotSubmittedToday}
+      attendanceCompleteness={attendanceCompleteness}
       stats={{
         totalSiswa,
         attendanceRate,
