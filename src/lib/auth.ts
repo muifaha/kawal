@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { cache } from "react";
 
 const SECRET = process.env.JWT_SECRET || "kawal-super-secret-key-12345!";
 const COOKIE_NAME = "kawal_session";
@@ -34,9 +35,9 @@ export function verifyToken(token: string): SessionUser | null {
 
 /**
  * Mengambil informasi pengguna yang sedang login berdasarkan cookie sesi.
- * Dapat dipanggil di Server Components, Server Actions, dan Route Handlers.
+ * Memakai React cache agar per-request tidak mengulang-ulang query database.
  */
-export async function getSessionUser(): Promise<SessionUser | null> {
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
@@ -62,7 +63,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   }
 
   return session;
-}
+});
 
 /**
  * Menyimpan sesi pengguna ke dalam cookie.

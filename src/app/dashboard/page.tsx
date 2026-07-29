@@ -14,20 +14,9 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Pemicu remisi otomatis di background ( rolling 20 hari clean period )
-  await checkAndApplyAutomaticRemissions();
-
   const activeTA = await prisma.tahunAjaran.findFirst({
     where: { isActive: true },
   });
-
-  const rangeMulai = activeTA
-    ? (activeTA.semesterAktif === "GANJIL" ? activeTA.ganjilMulai : activeTA.genapMulai)
-    : null;
-  const rangeSelesai = activeTA
-    ? (activeTA.semesterAktif === "GANJIL" ? activeTA.ganjilSelesai : activeTA.genapSelesai)
-    : null;
-
 
   // Ambil settings di awal
   const settingsList = await prisma.appSetting.findMany();
@@ -35,6 +24,76 @@ export default async function DashboardPage() {
   settingsList.forEach((s) => {
     settings[s.key] = s.value;
   });
+
+  // FAST PATH UNTUK SEKRETARIS KELAS (Super Cepat & Ringan)
+  if (user.role === "SEKRETARIS") {
+    const todayStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
+    const targetDate = new Date(`${todayStr}T00:00:00.000Z`);
+
+    const assignedClass = await prisma.kelas.findFirst({
+      where: {
+        sekretarisId: user.id,
+        tahunAjaran: { isActive: true },
+      },
+      select: {
+        id: true,
+        nama: true,
+        siswaKelas: {
+          where: {
+            siswa: {
+              status: "AKTIF",
+              absensi: {
+                some: { tanggal: targetDate },
+              },
+            },
+          },
+          select: { id: true },
+        },
+      },
+    });
+
+    const isSubmittedToday = (assignedClass?.siswaKelas.length || 0) > 0;
+    const classesNotSubmittedToday = (!isSubmittedToday && assignedClass)
+      ? [{ id: assignedClass.id, nama: assignedClass.nama, walasNama: "-" }]
+      : [];
+
+    return (
+      <DashboardClient
+        user={user}
+        activeTA={activeTA}
+        classes={assignedClass ? [{ id: assignedClass.id, nama: assignedClass.nama }] : []}
+        classesNotSubmittedToday={classesNotSubmittedToday}
+        stats={{ totalSiswa: 0, attendanceRate: 100, violationsMonthCount: 0, threatStudentsCount: 0 }}
+        studentRankings={[]}
+        attendanceRecap={[]}
+        violationRecap={[]}
+        dailyAttendance={[]}
+        holidays={[]}
+        topAbsentClasses={[]}
+        topAlphaStudents={[]}
+        topViolationClasses={[]}
+        summonsList={[]}
+        thresholds={{ threshold1: 10, threshold2: 25, threshold3: 50 }}
+        settings={settings}
+      />
+    );
+  }
+
+  // Pemicu remisi otomatis di background ( rolling 20 hari clean period ) untuk BK/Waka
+  await checkAndApplyAutomaticRemissions();
+
+  const rangeMulai = activeTA
+    ? (activeTA.semesterAktif === "GANJIL" ? activeTA.ganjilMulai : activeTA.genapMulai)
+    : null;
+  const rangeSelesai = activeTA
+    ? (activeTA.semesterAktif === "GANJIL" ? activeTA.ganjilSelesai : activeTA.genapSelesai)
+    : null;
 
   // 2. Filter data berdasarkan Role Walas (di tahun ajaran aktif)
   let studentFilter: any = {
@@ -908,38 +967,43 @@ export default async function DashboardPage() {
       orderBy: { nama: "asc" },
     });
 
-    for (const dateStrItem of pastDatesToCheck) {
-      const dateObjItem = new Date(`${dateStrItem}T00:00:00.000Z`);
-
-      const recordedClasses = await prisma.absensi.findMany({
-        where: {
-          tanggal: dateObjItem,
-          siswa: {
+    const dateObjList = pastDatesToCheck.map((d) => new Date(`${d}T00:00:00.000Z`));
+    const allRecordedAbsensiBatch = await prisma.absensi.findMany({
+      where: {
+        tanggal: { in: dateObjList },
+        siswa: {
+          riwayatKelas: {
+            some: {
+              tahunAjaran: { isActive: true },
+            },
+          },
+        },
+      },
+      select: {
+        tanggal: true,
+        siswa: {
+          select: {
             riwayatKelas: {
-              some: {
-                tahunAjaran: { isActive: true },
-              },
+              where: { tahunAjaran: { isActive: true } },
+              select: { kelasId: true },
             },
           },
         },
-        select: {
-          siswa: {
-            select: {
-              riwayatKelas: {
-                where: { tahunAjaran: { isActive: true } },
-                select: { kelasId: true },
-              },
-            },
-          },
-        },
-      });
+      },
+    });
 
-      const recordedClassIds = new Set<string>();
-      recordedClasses.forEach((a) => {
-        a.siswa.riwayatKelas.forEach((rk) => {
-          if (rk.kelasId) recordedClassIds.add(rk.kelasId);
-        });
+    const dateToClassMap = new Map<string, Set<string>>();
+    allRecordedAbsensiBatch.forEach((a) => {
+      const dStr = a.tanggal.toISOString().split("T")[0];
+      if (!dateToClassMap.has(dStr)) dateToClassMap.set(dStr, new Set());
+      const set = dateToClassMap.get(dStr)!;
+      a.siswa.riwayatKelas.forEach((rk) => {
+        if (rk.kelasId) set.add(rk.kelasId);
       });
+    });
+
+    for (const dateStrItem of pastDatesToCheck) {
+      const recordedClassIds = dateToClassMap.get(dateStrItem) || new Set<string>();
 
       const missingClasses = allActiveClassesPast
         .filter((c) => !recordedClassIds.has(c.id))
