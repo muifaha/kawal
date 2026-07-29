@@ -30,7 +30,8 @@ export default async function KesiswaanPage() {
     },
     include: {
       walas: true,
-      bk: true, // Tambahkan include Guru BK
+      bk: true,
+      sekretaris: true,
       tahunAjaran: true,
     },
     orderBy: { nama: "asc" },

@@ -481,7 +481,8 @@ export async function updateKelasAssignmentAction(
   kelasId: string,
   walasId: string | null,
   bkId: string | null,
-  nama?: string
+  nama?: string,
+  sekretarisId?: string | null
 ) {
   try {
     await assertWaka();
@@ -503,12 +504,26 @@ export async function updateKelasAssignmentAction(
       }
     }
 
+    // Jika sekretarisId diubah, pastikan tidak melanggar constraint unique
+    if (sekretarisId) {
+      const existingSek = await prisma.kelas.findFirst({
+        where: {
+          sekretarisId,
+          NOT: { id: kelasId },
+        },
+      });
+      if (existingSek) {
+        return { error: "Akun Pengurus Kelas ini sudah ditugaskan di kelas lain." };
+      }
+    }
+
     await prisma.kelas.update({
       where: { id: kelasId },
       data: {
         nama: nama || undefined,
         walasId: walasId || null,
         bkId: bkId || null,
+        sekretarisId: sekretarisId === undefined ? undefined : (sekretarisId || null),
       },
     });
 

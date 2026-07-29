@@ -18,19 +18,29 @@ export default async function AbsensiPage({
     redirect("/login");
   }
 
-  // Hanya Guru BK yang diizinkan mengakses halaman ini
-  if (user.role !== "BK") {
+  const allowedRoles = ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS"];
+  if (!user || !allowedRoles.includes(user.role)) {
     redirect("/dashboard?error=unauthorized");
   }
 
-  // Ambil kelas aktif di tahun ajaran berjalan yang ditugaskan ke Guru BK ini beserta daftar siswanya
-  const dbClasses = await prisma.kelas.findMany({
-    where: {
-      tahunAjaran: {
-        isActive: true,
-      },
-      bkId: user.id,
+  // Filter kelas berdasarkan peran user
+  const classWhereFilter: any = {
+    tahunAjaran: {
+      isActive: true,
     },
+  };
+
+  if (user.role === "SEKRETARIS") {
+    classWhereFilter.sekretarisId = user.id;
+  } else if (user.role === "BK") {
+    classWhereFilter.bkId = user.id;
+  } else if (user.role === "WALAS") {
+    classWhereFilter.walasId = user.id;
+  }
+
+  // Ambil kelas aktif di tahun ajaran berjalan yang ditugaskan ke user beserta daftar siswanya
+  const dbClasses = await prisma.kelas.findMany({
+    where: classWhereFilter,
     include: {
       siswaKelas: {
         where: {
@@ -54,6 +64,7 @@ export default async function AbsensiPage({
     tahunAjaranId: c.tahunAjaranId,
     walasId: c.walasId,
     bkId: c.bkId,
+    sekretarisId: c.sekretarisId,
     siswa: c.siswaKelas.map((sk) => sk.siswa).sort((a, b) => a.nama.localeCompare(b.nama)),
   }));
   classes.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
@@ -81,7 +92,7 @@ export default async function AbsensiPage({
         </p>
       </div>
 
-      <AbsensiClient classes={classes} settings={settings} holidays={holidays} initialClassId={classId || ""} />
+      <AbsensiClient classes={classes} settings={settings} holidays={holidays} initialClassId={classId || ""} userRole={user.role} />
     </SidebarLayout>
   );
 }

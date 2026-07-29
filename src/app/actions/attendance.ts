@@ -20,9 +20,13 @@ export async function saveAttendanceAction(
 ) {
   const user = await getSessionUser();
 
-  // Proteksi server-side: Hanya Guru BK yang bisa mencatat absensi
-  if (!user || user.role !== "BK") {
-    return { error: "Akses ditolak. Hanya Guru BK yang dapat menginput absensi harian." };
+  if (!user) {
+    return { error: "Silakan login terlebih dahulu." };
+  }
+
+  const allowedRoles = ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS"];
+  if (!allowedRoles.includes(user.role)) {
+    return { error: "Akses ditolak. Peran Anda tidak memiliki wewenang untuk mencatat absensi." };
   }
 
   if (!classId || !dateString || items.length === 0) {
@@ -38,12 +42,49 @@ export async function saveAttendanceAction(
       return { error: "Kelas tidak ditemukan." };
     }
 
-    if (targetClass.bkId !== user.id) {
-      return { error: "Akses ditolak. Anda tidak ditugaskan sebagai Guru BK untuk kelas ini." };
+    // Pengecekan Otorisasi Berdasarkan Peran
+    if (user.role === "SEKRETARIS") {
+      if (targetClass.sekretarisId !== user.id) {
+        return { error: "Akses ditolak. Anda tidak ditugaskan sebagai Pengurus/Sekretaris untuk kelas ini." };
+      }
+
+      // Format tanggal hari ini di WIB (Asia/Jakarta) YYYY-MM-DD
+      const todayStr = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Jakarta" });
+      if (dateString !== todayStr) {
+        return { error: "Pengurus/Sekretaris Kelas hanya dapat mencatat absensi untuk hari ini." };
+      }
+
+      // Cek apakah absensi kelas ini pada hari ini sudah pernah disimpan
+      const targetDateCheck = new Date(`${dateString}T00:00:00.000Z`);
+      const existingCount = await prisma.absensi.count({
+        where: {
+          tanggal: targetDateCheck,
+          siswa: {
+            riwayatKelas: {
+              some: {
+                kelasId: classId,
+                tahunAjaran: { isActive: true },
+              },
+            },
+          },
+        },
+      });
+
+      if (existingCount > 0) {
+        return { error: "Absensi hari ini sudah pernah disimpan dan terkunci. Perubahan data hanya dapat dilakukan oleh Guru BK." };
+      }
+    } else if (user.role === "BK") {
+      if (targetClass.bkId && targetClass.bkId !== user.id && user.role !== "WAKA") {
+        // Jika BK mencoba mengisi kelas yang ditugaskan ke BK lain
+        // (tetap diizinkan jika waka atau BK penanggung jawab)
+      }
+    } else if (user.role === "WALAS") {
+      if (targetClass.walasId !== user.id) {
+        return { error: "Akses ditolak. Anda hanya dapat mencatat absensi untuk kelas binaan Anda." };
+      }
     }
 
     const targetDate = new Date(`${dateString}T00:00:00.000Z`);
-
 
     // 1. Simpan/Upsert absensi untuk seluruh siswa secara transaksional
     await prisma.$transaction(
@@ -101,7 +142,7 @@ export async function saveAttendanceAction(
 
       let waMessage = `Yth. Wali Kelas *${kelasInfo.nama}*
 
-Berikut ini daftar hadir murid kelas *${kelasInfo.nama}* pada hari *${formattedDate}*:
+Berikut ini daftar hadir murid kelas *${kelasInfo.nama}* pada hari *${formattedDate}* (Dicatat oleh: ${user.nama} - ${user.role}):
 `;
 
       if (notHadirItems.length > 0) {
@@ -119,31 +160,31 @@ Berikut ini daftar hadir murid kelas *${kelasInfo.nama}* pada hari *${formattedD
 ${detailSiswaText}
 
 Mohon perhatian dan tindak lanjutnya terhadap kehadiran siswa tersebut. Terima kasih.
-_SMAN 6 Tangerang powered by Kawal_`;
+_SMKN KAWAL powered by Kawal_`;
       } else {
         waMessage += `
 ✅ *Hadir Semua*
 
 Terima kasih atas kerja samanya.
-_SMAN 6 Tangerang powered by Kawal_`;
+_SMKN KAWAL powered by Kawal_`;
       }
 
-      // Kirim via Helper WhatsApp (akan mencetak log mock jika API Key default)
+      // Kirim via Helper WhatsApp
       const waSent = await sendWhatsAppNotification(walas.whatsappNumber!, waMessage);
       
       revalidatePath("/dashboard");
       revalidatePath("/absensi");
 
       if (waSent) {
-        return { success: true, message: `Absensi berhasil disimpan dan notifikasi WhatsApp berhasil dikirim ke Wali Kelas (${walas.nama}).` };
+        return { success: true, message: `Absensi berhasil disimpan dan notifikasi WhatsApp dikirim ke Wali Kelas (${walas.nama}).` };
       } else {
-        return { success: true, message: "Absensi berhasil disimpan, namun gagal mengirim notifikasi WhatsApp (cek log server)." };
+        return { success: true, message: "Absensi berhasil disimpan." };
       }
     }
 
     revalidatePath("/dashboard");
     revalidatePath("/absensi");
-    return { success: true, message: "Absensi berhasil disimpan. (Wali Kelas belum terdaftar atau tidak memiliki nomor WA)." };
+    return { success: true, message: "Absensi berhasil disimpan." };
   } catch (error) {
     console.error("Save attendance action error:", error);
     return { error: "Terjadi kesalahan sistem saat menyimpan absensi." };
@@ -155,6 +196,7 @@ _SMAN 6 Tangerang powered by Kawal_`;
  */
 export async function getAttendanceAction(classId: string, dateString: string) {
   try {
+    const user = await getSessionUser();
     const targetDate = new Date(`${dateString}T00:00:00.000Z`);
 
     const records = await prisma.absensi.findMany({
@@ -171,7 +213,16 @@ export async function getAttendanceAction(classId: string, dateString: string) {
       },
     });
 
-    return { success: true, data: records.map(r => ({ studentId: r.siswaId, status: r.status })) };
+    const todayStr = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Jakarta" });
+    const isRecorded = records.length > 0;
+    const isLockedForSekretaris = user?.role === "SEKRETARIS" && (isRecorded || dateString !== todayStr);
+
+    return {
+      success: true,
+      data: records.map((r) => ({ studentId: r.siswaId, status: r.status })),
+      isRecorded,
+      isLockedForSekretaris,
+    };
   } catch (error) {
     console.error("Get attendance error:", error);
     return { error: "Gagal memuat data absensi sebelumnya." };

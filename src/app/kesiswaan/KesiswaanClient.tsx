@@ -104,6 +104,8 @@ interface KelasType {
   walas: { nama: string } | null;
   bkId: string | null;
   bk: { nama: string } | null;
+  sekretarisId?: string | null;
+  sekretaris?: { nama: string } | null;
   tahunAjaran: { nama: string };
 }
 
@@ -183,6 +185,7 @@ export default function KesiswaanClient({
   const [editingKelasId, setEditingKelasId] = useState<string>("");
   const [editWalasId, setEditWalasId] = useState<string>("");
   const [editBkId, setEditBkId] = useState<string>("");
+  const [editSekretarisId, setEditSekretarisId] = useState<string>("");
   const [editKelasNama, setEditKelasNama] = useState<string>("");
   
   // Excel Import States
@@ -616,13 +619,14 @@ export default function KesiswaanClient({
     setEditingKelasId(c.id);
     setEditWalasId(c.walasId || "");
     setEditBkId(c.bkId || "");
+    setEditSekretarisId(c.sekretarisId || "");
     setEditKelasNama(c.nama);
   };
 
   const handleSaveAssignment = async (kelasId: string) => {
     setAlert(null);
     startTransition(async () => {
-      const res = await updateKelasAssignmentAction(kelasId, editWalasId || null, editBkId || null, editKelasNama);
+      const res = await updateKelasAssignmentAction(kelasId, editWalasId || null, editBkId || null, editKelasNama, editSekretarisId || null);
       handleAlert(res);
       if (res.success) {
         setEditingKelasId("");
@@ -676,9 +680,10 @@ export default function KesiswaanClient({
     setIsImportModalOpen(true);
   };
 
-  // Filter Guru Walas dan BK untuk dropdown
+  // Filter Guru Walas, BK, dan Sekretaris untuk dropdown
   const walasUsers = useMemo(() => initialUsers.filter((u) => u.role === "WALAS"), [initialUsers]);
   const bkUsers = useMemo(() => initialUsers.filter((u) => u.role === "BK"), [initialUsers]);
+  const sekretarisUsers = useMemo(() => initialUsers.filter((u) => u.role === "SEKRETARIS"), [initialUsers]);
 
   const tabClass = (tab: TabType) =>
     `flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-xl border transition-all ${
@@ -2009,6 +2014,7 @@ export default function KesiswaanClient({
                   <option value="BK">Guru BK (Super Admin/Approver)</option>
                   <option value="WAKA">Waka Kesiswaan (Master Admin)</option>
                   <option value="OSIS">Pengurus OSIS (Lapor Poin Upacara)</option>
+                  <option value="SEKRETARIS">Pengurus / Sekretaris Kelas (Absensi Kelas)</option>
                 </select>
               </div>
               <div>
@@ -2057,6 +2063,15 @@ export default function KesiswaanClient({
                   <option value="">-- Tanpa Guru BK --</option>
                   {bkUsers.map((b) => (
                     <option key={b.id} value={b.id}>{b.nama}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Pengurus / Sekretaris Kelas</label>
+                <select name="sekretarisId" value={editSekretarisId} onChange={(e) => setEditSekretarisId(e.target.value)} className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs">
+                  <option value="">-- Tanpa Sekretaris Kelas --</option>
+                  {sekretarisUsers.map((s) => (
+                    <option key={s.id} value={s.id}>{s.nama}</option>
                   ))}
                 </select>
               </div>
