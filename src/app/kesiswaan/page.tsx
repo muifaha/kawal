@@ -72,8 +72,11 @@ export default async function KesiswaanPage() {
       : { id: "", nama: "Belum Ditentukan" },
   }));
 
-  // 4. Ambil data Kategori & Detail Pelanggaran
+  // 4. Ambil data Kategori & Detail Pelanggaran (Kecuali Kategori sistem MIGRASI)
   const violationCategories = await prisma.kategoriPelanggaran.findMany({
+    where: {
+      NOT: { nama: "MIGRASI" },
+    },
     include: {
       details: {
         orderBy: { nama: "asc" },

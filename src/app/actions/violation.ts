@@ -133,6 +133,9 @@ export async function reportViolationAction(
 export async function getViolationOptions() {
   try {
     const categories = await prisma.kategoriPelanggaran.findMany({
+      where: {
+        NOT: { nama: "MIGRASI" },
+      },
       include: {
         details: {
           orderBy: {

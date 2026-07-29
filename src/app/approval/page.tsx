@@ -18,8 +18,11 @@ export default async function ApprovalPage() {
     redirect("/dashboard?error=unauthorized");
   }
 
-  // Ambil Kategori Pelanggaran (Parent & Child)
+  // Ambil Kategori Pelanggaran (Parent & Child, Kecuali Kategori sistem MIGRASI)
   const categories = await prisma.kategoriPelanggaran.findMany({
+    where: {
+      NOT: { nama: "MIGRASI" },
+    },
     include: {
       details: {
         orderBy: {
