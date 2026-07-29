@@ -74,9 +74,8 @@ export async function saveAttendanceAction(
         return { error: "Absensi hari ini sudah pernah disimpan dan terkunci. Perubahan data hanya dapat dilakukan oleh Guru BK." };
       }
     } else if (user.role === "BK") {
-      if (targetClass.bkId && targetClass.bkId !== user.id && user.role !== "WAKA") {
-        // Jika BK mencoba mengisi kelas yang ditugaskan ke BK lain
-        // (tetap diizinkan jika waka atau BK penanggung jawab)
+      if (targetClass.bkId && targetClass.bkId !== user.id) {
+        // Guru BK diizinkan mengampu atau memperbarui absensi kelas yang relevan
       }
     } else if (user.role === "WALAS") {
       if (targetClass.walasId !== user.id) {
