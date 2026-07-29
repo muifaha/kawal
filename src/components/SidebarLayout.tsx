@@ -101,13 +101,13 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       name: "Dashboard",
       href: "/dashboard",
       icon: LayoutDashboard,
-      roles: ["WAKA", "BK", "WALAS", "GURU", "OSIS"],
+      roles: ["WAKA", "BK", "WALAS", "GURU", "OSIS", "SEKRETARIS"],
     },
     {
       name: "Absensi Harian",
       href: "/absensi",
       icon: CalendarCheck,
-      roles: ["BK"],
+      roles: ["BK", "SEKRETARIS"],
     },
     {
       name: "Pelanggaran",

@@ -1344,6 +1344,72 @@ export default function DashboardClient({
     );
   };
 
+  if (user.role === "SEKRETARIS") {
+    const todayFormattedStr = new Date().toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "Asia/Jakarta",
+    });
+
+    const isClassSubmitted = classesNotSubmittedToday.length === 0;
+
+    return (
+      <SidebarLayout user={user}>
+        <div className="max-w-2xl mx-auto space-y-6 pt-4">
+          {/* Welcome Header */}
+          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-3 text-center relative overflow-hidden">
+            <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto text-emerald-400">
+              <CalendarCheck className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                Selamat Datang, {user.nama}
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                Pengurus / Sekretaris Kelas • {todayFormattedStr}
+              </p>
+            </div>
+          </div>
+
+          {/* Main Action Card */}
+          <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+            <div className="space-y-2 text-center">
+              <h2 className="text-lg sm:text-xl font-bold text-white">
+                Pencatatan Absensi Kehadiran Siswa
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-md mx-auto">
+                Silakan lakukan pendataan absensi siswa kelas Anda khusus untuk hari ini ({todayFormattedStr}).
+              </p>
+            </div>
+
+            {isClassSubmitted ? (
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-center space-y-2">
+                <div className="text-emerald-400 font-bold text-sm flex items-center justify-center gap-2">
+                  <span>🔒 Absensi Hari Ini Telah Disimpan & Terkunci</span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Data kehadiran siswa untuk hari ini telah berhasil tersimpan. Jika terdapat perubahan data, silakan hubungi Guru BK.
+                </p>
+              </div>
+            ) : (
+              <div className="pt-2">
+                <Link
+                  href="/absensi"
+                  className="w-full py-4 px-6 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-base rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-emerald-500/10 active:scale-[0.99] transition-all cursor-pointer text-center justify-center"
+                >
+                  <CalendarCheck className="w-5 h-5 shrink-0" />
+                  <span>Catat Absensi Hari Ini</span>
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
+
   return (
     <SidebarLayout user={user}>
       {/* Welcome Header */}
