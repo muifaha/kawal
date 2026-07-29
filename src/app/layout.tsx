@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   title: "Kawal - Sistem Monitoring Sekolah",
   description: "Sistem monitoring sekolah, absensi harian, dan pencatatan poin pelanggaran siswa, dikelola oleh BK, Wali Kelas, dan Guru Piket.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon-192x192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -39,6 +43,7 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#020617" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <link rel="icon" href="/icons/icon-192x192.png" type="image/png" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <script
           dangerouslySetInnerHTML={{
