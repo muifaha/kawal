@@ -38,6 +38,7 @@ model User {
   nama            String
   role            Role
   whatsappNumber  String?  // Untuk Wali Kelas menerima notifikasi
+  activeSessionId String?  // ID Sesi Aktif untuk membatasi login 1 perangkat (Single Device Session)
 
   // Relasi jika user adalah Walas kelas tertentu
   kelasWalas      Kelas?   @relation("WalasRelation")

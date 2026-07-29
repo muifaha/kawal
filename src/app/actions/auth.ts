@@ -27,11 +27,22 @@ export async function loginAction(prevState: any, formData: FormData) {
       return { error: "Username atau Password salah." };
     }
 
+    let activeSessionId: string | undefined = undefined;
+
+    if (user.role === "SEKRETARIS") {
+      activeSessionId = crypto.randomUUID();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { activeSessionId },
+      });
+    }
+
     await setSession({
       id: user.id,
       username: user.username,
       role: user.role,
       nama: user.nama,
+      sessionId: activeSessionId,
     });
   } catch (error) {
     console.error("Login action error:", error);

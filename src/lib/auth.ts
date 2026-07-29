@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 const SECRET = process.env.JWT_SECRET || "kawal-super-secret-key-12345!";
 const COOKIE_NAME = "kawal_session";
@@ -10,6 +11,7 @@ export interface SessionUser {
   username: string;
   role: Role;
   nama: string;
+  sessionId?: string;
 }
 
 /**
@@ -38,7 +40,28 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
-  return verifyToken(token);
+
+  const session = verifyToken(token);
+  if (!session) return null;
+
+  // Keamanan Tambahan: Pengecekan Single Active Device Session untuk SEKRETARIS
+  if (session.role === "SEKRETARIS" && session.sessionId) {
+    try {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.id },
+        select: { activeSessionId: true },
+      });
+
+      if (dbUser?.activeSessionId && dbUser.activeSessionId !== session.sessionId) {
+        // Sesi telah digantikan oleh login di perangkat lain
+        return null;
+      }
+    } catch {
+      // Abaikan jika error DB sementara
+    }
+  }
+
+  return session;
 }
 
 /**
