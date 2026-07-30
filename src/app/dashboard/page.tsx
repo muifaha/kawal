@@ -85,6 +85,122 @@ export default async function DashboardPage() {
     );
   }
 
+  // FAST PATH UNTUK GURU PIKET (Super Cepat & Fokus Ringkasan Tidak Hadir Hari Ini)
+  if (user.role === "PIKET") {
+    const todayStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
+    const targetDate = new Date(`${todayStr}T00:00:00.000Z`);
+
+    const allClasses = await prisma.kelas.findMany({
+      where: { tahunAjaran: { isActive: true } },
+      select: {
+        id: true,
+        nama: true,
+        walas: { select: { nama: true } },
+      },
+      orderBy: { nama: "asc" },
+    });
+
+    const todayAbsentRecords = await prisma.absensi.findMany({
+      where: {
+        tanggal: targetDate,
+        status: { in: ["S", "I", "A", "D"] },
+        siswa: {
+          riwayatKelas: {
+            some: { tahunAjaran: { isActive: true } },
+          },
+        },
+      },
+      include: {
+        siswa: {
+          include: {
+            riwayatKelas: {
+              where: { tahunAjaran: { isActive: true } },
+              include: { kelas: true },
+            },
+          },
+        },
+      },
+      orderBy: {
+        siswa: { nama: "asc" },
+      },
+    });
+
+    const piketAbsentStudents = todayAbsentRecords.map((r) => {
+      const activeClass = r.siswa.riwayatKelas[0]?.kelas;
+      return {
+        id: r.id,
+        siswaId: r.siswa.id,
+        nis: r.siswa.nis,
+        nama: r.siswa.nama,
+        kelasId: activeClass?.id || "",
+        kelasNama: activeClass?.nama || "Tanpa Kelas",
+        status: r.status as "S" | "I" | "A" | "D",
+        catatan: "-",
+        noWhatsappOrtu: "",
+      };
+    });
+
+    const recordedAbsensi = await prisma.absensi.findMany({
+      where: {
+        tanggal: targetDate,
+        siswa: {
+          riwayatKelas: {
+            some: { tahunAjaran: { isActive: true } },
+          },
+        },
+      },
+      select: {
+        siswa: {
+          select: {
+            riwayatKelas: {
+              where: { tahunAjaran: { isActive: true } },
+              select: { kelasId: true },
+            },
+          },
+        },
+      },
+    });
+
+    const recordedClassIds = new Set<string>();
+    recordedAbsensi.forEach((a) => {
+      a.siswa.riwayatKelas.forEach((rk) => {
+        if (rk.kelasId) recordedClassIds.add(rk.kelasId);
+      });
+    });
+
+    const classesNotSubmittedToday = allClasses
+      .filter((c) => !recordedClassIds.has(c.id))
+      .map((c) => ({ id: c.id, nama: c.nama, walasNama: c.walas?.nama || "-" }));
+
+    return (
+      <DashboardClient
+        user={user}
+        activeTA={activeTA}
+        classes={allClasses.map((c) => ({ id: c.id, nama: c.nama }))}
+        classesNotSubmittedToday={classesNotSubmittedToday}
+        piketAbsentStudents={piketAbsentStudents}
+        stats={{ totalSiswa: 0, attendanceRate: 100, violationsMonthCount: 0, threatStudentsCount: 0 }}
+        studentRankings={[]}
+        attendanceRecap={[]}
+        violationRecap={[]}
+        dailyAttendance={[]}
+        holidays={[]}
+        topAbsentClasses={[]}
+        topAlphaStudents={[]}
+        topViolationClasses={[]}
+        summonsList={[]}
+        thresholds={{ threshold1: 10, threshold2: 25, threshold3: 50 }}
+        settings={settings}
+      />
+    );
+  }
+
   // Pemicu remisi otomatis di background ( rolling 20 hari clean period ) untuk BK/Waka
   await checkAndApplyAutomaticRemissions();
 

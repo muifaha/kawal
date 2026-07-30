@@ -244,6 +244,17 @@ interface DashboardClientProps {
     notSubmittedClasses: Array<{ id: string; nama: string; walasNama: string; sekretarisNama?: string }>;
     todayDateFormatted: string;
   };
+  piketAbsentStudents?: Array<{
+    id: string;
+    siswaId: string;
+    nis: string;
+    nama: string;
+    kelasId: string;
+    kelasNama: string;
+    status: "S" | "I" | "A" | "D";
+    catatan: string;
+    noWhatsappOrtu: string;
+  }>;
 }
 
 const INDONESIAN_MONTHS = [
@@ -284,12 +295,18 @@ export default function DashboardClient({
   classesNotSubmittedToday = [],
   pastUnsubmittedAttendanceDates = [],
   attendanceCompleteness,
+  piketAbsentStudents = [],
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "absen_rekap" | "pelanggaran_rekap">("summary");
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedExportType, setSelectedExportType] = useState<"cumulative" | "monthly">("cumulative");
   const [isCompletenessOpen, setIsCompletenessOpen] = useState(false);
   const [openPastDateStr, setOpenPastDateStr] = useState<string | null>(null);
+
+  // States for Guru Piket Dashboard View
+  const [piketClassFilter, setPiketClassFilter] = useState("");
+  const [piketStatusFilter, setPiketStatusFilter] = useState("");
+  const [piketSearchQuery, setPiketSearchQuery] = useState("");
 
   const getTimeStringDashboard = (day: number, start: number, end: number) => {
     const HARI_MAP_LOCAL: Record<number, string> = {
@@ -1405,6 +1422,260 @@ export default function DashboardClient({
               </div>
             )}
           </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
+
+  if (user.role === "PIKET") {
+    const todayFormattedStr = new Date().toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "Asia/Jakarta",
+    });
+
+    const piketList = piketAbsentStudents || [];
+
+    const totalS = piketList.filter((s) => s.status === "S").length;
+    const totalI = piketList.filter((s) => s.status === "I").length;
+    const totalA = piketList.filter((s) => s.status === "A").length;
+    const totalD = piketList.filter((s) => s.status === "D").length;
+    const totalAbsent = piketList.length;
+
+    const filteredPiketList = piketList.filter((item) => {
+      const matchClass = !piketClassFilter || item.kelasId === piketClassFilter || item.kelasNama === piketClassFilter;
+      const matchStatus = !piketStatusFilter || item.status === piketStatusFilter;
+      const matchSearch =
+        !piketSearchQuery ||
+        item.nama.toLowerCase().includes(piketSearchQuery.toLowerCase()) ||
+        item.nis.includes(piketSearchQuery);
+      return matchClass && matchStatus && matchSearch;
+    });
+
+    const groupedByClass: Record<string, typeof piketList> = {};
+    filteredPiketList.forEach((item) => {
+      if (!groupedByClass[item.kelasNama]) {
+        groupedByClass[item.kelasNama] = [];
+      }
+      groupedByClass[item.kelasNama].push(item);
+    });
+
+    const statusBadge: Record<string, { label: string; style: string }> = {
+      S: { label: "Sakit", style: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+      I: { label: "Izin", style: "bg-sky-500/10 text-sky-400 border-sky-500/20" },
+      A: { label: "Alpha", style: "bg-rose-500/10 text-rose-400 border-rose-500/20" },
+      D: { label: "Dispensasi", style: "bg-purple-500/10 text-purple-400 border-purple-500/20" },
+    };
+
+    return (
+      <SidebarLayout user={user}>
+        <div className="space-y-6">
+          {/* Welcome Header */}
+          <div className="md:flex md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                Selamat Datang, {user.nama}
+              </h1>
+              <p className="mt-1 text-sm text-slate-400 flex flex-wrap items-center gap-2">
+                <span className="text-emerald-400 font-bold">Guru Piket</span>
+                <span className="text-slate-600">•</span>
+                <span>Monitoring Kehadiran Siswa Hari Ini ({todayFormattedStr})</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Alert Kelas Belum Absensi */}
+          {classesNotSubmittedToday.length > 0 && (
+            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3 text-amber-300">
+              <AlertOctagon className="w-5 h-5 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold">Pemberitahuan Absensi Hari Ini</h4>
+                <p className="text-xs leading-relaxed">
+                  Terdapat <strong className="text-white">{classesNotSubmittedToday.length} kelas</strong> yang belum menginput absensi harian hari ini.
+                </p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {classesNotSubmittedToday.map((c) => (
+                    <span
+                      key={c.id}
+                      className="px-2 py-0.5 bg-slate-950 border border-amber-500/30 rounded-md text-[10px] font-bold text-amber-300"
+                    >
+                      {c.nama}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* KPI Summary Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-4 sm:p-5 bg-amber-500/5 border border-amber-500/20 rounded-2xl space-y-1">
+              <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Sakit (S)</p>
+              <p className="text-2xl sm:text-3xl font-bold text-amber-300">{totalS}</p>
+              <p className="text-[10px] text-slate-400">Siswa dengan surat/keterangan sakit</p>
+            </div>
+
+            <div className="p-4 sm:p-5 bg-sky-500/5 border border-sky-500/20 rounded-2xl space-y-1">
+              <p className="text-xs font-semibold text-sky-400 uppercase tracking-wider">Izin (I)</p>
+              <p className="text-2xl sm:text-3xl font-bold text-sky-300">{totalI}</p>
+              <p className="text-[10px] text-slate-400">Siswa berizin</p>
+            </div>
+
+            <div className="p-4 sm:p-5 bg-rose-500/5 border border-rose-500/20 rounded-2xl space-y-1">
+              <p className="text-xs font-semibold text-rose-400 uppercase tracking-wider">Alpha (A)</p>
+              <p className="text-2xl sm:text-3xl font-bold text-rose-300">{totalA}</p>
+              <p className="text-[10px] text-slate-400">Siswa tanpa keterangan</p>
+            </div>
+
+            <div className="p-4 sm:p-5 bg-purple-500/5 border border-purple-500/20 rounded-2xl space-y-1">
+              <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider">Dispensasi (D)</p>
+              <p className="text-2xl sm:text-3xl font-bold text-purple-300">{totalD}</p>
+              <p className="text-[10px] text-slate-400">Siswa dengan dispensasi tugas</p>
+            </div>
+          </div>
+
+          {/* Header Filter & Search */}
+          <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <UserX className="w-5 h-5 text-rose-400" />
+                  <span>Daftar Siswa Tidak Hadir Hari Ini ({totalAbsent} Siswa)</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Rincian siswa sakit, izin, alpha, dan dispensasi di seluruh kelas untuk hari ini.
+                </p>
+              </div>
+            </div>
+
+            {/* Filter controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Filter Kelas */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Filter Kelas
+                </label>
+                <select
+                  value={piketClassFilter}
+                  onChange={(e) => setPiketClassFilter(e.target.value)}
+                  className="w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="">-- Semua Kelas --</option>
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nama}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter Status */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Filter Status
+                </label>
+                <select
+                  value={piketStatusFilter}
+                  onChange={(e) => setPiketStatusFilter(e.target.value)}
+                  className="w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="">-- Semua Status --</option>
+                  <option value="S">Sakit (S)</option>
+                  <option value="I">Izin (I)</option>
+                  <option value="A">Alpha (A)</option>
+                  <option value="D">Dispensasi (D)</option>
+                </select>
+              </div>
+
+              {/* Cari Nama/NIS */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Cari Nama / NIS
+                </label>
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Ketik nama atau NIS..."
+                    value={piketSearchQuery}
+                    onChange={(e) => setPiketSearchQuery(e.target.value)}
+                    className="w-full py-2 pl-9 pr-3 border border-slate-800 rounded-xl bg-slate-950 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* List grouped by Class */}
+          {Object.keys(groupedByClass).length === 0 ? (
+            <div className="text-center py-16 border border-dashed border-slate-800 rounded-2xl bg-slate-950/20 space-y-2">
+              <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto opacity-80" />
+              <h4 className="text-sm font-semibold text-white">Tidak Ada Siswa Tidak Hadir</h4>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                {piketClassFilter || piketStatusFilter || piketSearchQuery
+                  ? "Tidak ada data siswa yang cocok dengan filter pencarian Anda."
+                  : "Tidak ada siswa yang tercatat Sakit, Izin, Alpha, atau Dispensasi untuk hari ini."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(groupedByClass).map(([kelasNama, studentList]) => (
+                <div
+                  key={kelasNama}
+                  className="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                      <span>Kelas {kelasNama}</span>
+                    </h4>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-[11px] font-bold text-slate-300">
+                      {studentList.length} Siswa Tidak Hadir
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs divide-y divide-slate-800/60">
+                      <thead>
+                        <tr className="text-slate-400 font-semibold uppercase text-[10px]">
+                          <th className="py-2 px-2 w-10">No</th>
+                          <th className="py-2 px-2 w-24">NIS</th>
+                          <th className="py-2 px-3">Nama Siswa</th>
+                          <th className="py-2 px-3 w-28 text-center">Status</th>
+                          <th className="py-2 px-3">Catatan / Alasan</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/40">
+                        {studentList.map((st, i) => {
+                          const badge = statusBadge[st.status] || {
+                            label: st.status,
+                            style: "bg-slate-800 text-white",
+                          };
+                          return (
+                            <tr key={st.id} className="hover:bg-slate-950/40 transition-colors">
+                              <td className="py-2.5 px-2 font-medium text-slate-500">{i + 1}</td>
+                              <td className="py-2.5 px-2 font-mono text-slate-400">{st.nis}</td>
+                              <td className="py-2.5 px-3 font-bold text-white">{st.nama}</td>
+                              <td className="py-2.5 px-3 text-center">
+                                <span
+                                  className={`px-2.5 py-1 rounded-lg font-bold text-[10px] border inline-block ${badge.style}`}
+                                >
+                                  {badge.label}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-400 italic">{st.catatan}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </SidebarLayout>
     );

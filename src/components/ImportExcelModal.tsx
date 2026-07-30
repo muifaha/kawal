@@ -176,7 +176,7 @@ export default function ImportExcelModal({
       const required = ["username", "nama lengkap"];
       const missing = required.filter((r) => !headers.includes(r));
       if (roleIdx === -1) {
-        missing.push("Role (WAKA/BK/WALAS/GURU/OSIS/SEKRETARIS)");
+        missing.push("Role (WAKA/BK/WALAS/GURU/OSIS/SEKRETARIS/PIKET)");
       }
       if (missing.length > 0) {
         return { error: `Header Excel tidak sesuai. Kolom wajib yang kurang: ${missing.join(", ")}` };

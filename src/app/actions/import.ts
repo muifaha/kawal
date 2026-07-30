@@ -55,9 +55,12 @@ export async function importUsersAction(rows: UserImportRow[]) {
       if (cleanNip) seenNips.add(cleanNip);
 
       // Validasi Role
-      const cleanRole = role.trim().toUpperCase();
-      if (!["WAKA", "BK", "WALAS", "GURU", "OSIS", "SEKRETARIS"].includes(cleanRole)) {
-        return { error: `Role "${role}" tidak valid. Gunakan salah satu dari: WAKA, BK, WALAS, GURU, OSIS, SEKRETARIS.` };
+      let cleanRole = role.trim().toUpperCase();
+      if (cleanRole === "GURU PIKET" || cleanRole === "GURU_PIKET") {
+        cleanRole = "PIKET";
+      }
+      if (!["WAKA", "BK", "WALAS", "GURU", "OSIS", "SEKRETARIS", "PIKET"].includes(cleanRole)) {
+        return { error: `Role "${role}" tidak valid. Gunakan salah satu dari: WAKA, BK, WALAS, GURU, OSIS, SEKRETARIS, PIKET.` };
       }
 
       // Check duplicate username in db

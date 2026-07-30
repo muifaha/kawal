@@ -61,8 +61,8 @@ export function middleware(request: NextRequest) {
   // Proteksi Rute Berdasarkan Role
   const role = user.role;
 
-  // Halaman Absensi Harian & Rekap (Dapat diakses oleh BK, WAKA, WALAS, GURU, dan SEKRETARIS)
-  if ((pathname.startsWith("/absensi") || pathname.startsWith("/rekap-absensi")) && !["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS"].includes(role)) {
+  // Halaman Absensi Harian & Rekap (Dapat diakses oleh BK, WAKA, WALAS, GURU, SEKRETARIS, dan PIKET)
+  if ((pathname.startsWith("/absensi") || pathname.startsWith("/rekap-absensi")) && !["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS", "PIKET"].includes(role)) {
     return NextResponse.redirect(new URL("/dashboard?error=unauthorized", request.url));
   }
 

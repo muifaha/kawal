@@ -106,29 +106,29 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       name: "Dashboard",
       href: "/dashboard",
       icon: LayoutDashboard,
-      roles: ["WAKA", "BK", "WALAS", "GURU", "OSIS", "SEKRETARIS"],
+      roles: ["WAKA", "BK", "WALAS", "GURU", "OSIS", "SEKRETARIS", "PIKET"],
     },
     {
       name: "Absensi Harian",
       href: "/absensi",
       icon: CalendarCheck,
-      roles: ["BK", "SEKRETARIS"],
+      roles: ["BK", "SEKRETARIS", "PIKET"],
     },
     {
       name: "Rekap Absensi",
       href: "/rekap-absensi",
       icon: ClipboardList,
-      roles: ["BK", "WALAS", "SEKRETARIS"],
+      roles: ["BK", "WALAS", "SEKRETARIS", "PIKET"],
     },
     {
       name: "Pelanggaran",
       icon: AlertTriangle,
-      roles: ["BK", "WALAS", "GURU", "WAKA", "OSIS"],
+      roles: ["BK", "WALAS", "GURU", "WAKA", "OSIS", "PIKET"],
       children: [
         {
           name: "Tambah Pelanggaran",
           href: "/pelanggaran",
-          roles: ["BK", "WALAS", "GURU", "OSIS"],
+          roles: ["BK", "WALAS", "GURU", "OSIS", "PIKET"],
         },
         {
           name: "Persetujuan Pelanggaran",
