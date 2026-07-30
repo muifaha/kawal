@@ -85,19 +85,15 @@ export default function RekapAbsensiClient({
       return { isHoliday: true, name: holidayMatch.keterangan };
     }
 
-    const d = new Date(`${dateStr}T00:00:00.000Z`);
-    const dayOfWeek = d.getUTCDay();
+    const dayOfWeek = new Date(`${dateStr}T00:00:00+07:00`).getDay();
+    const isSabtuLibur = settings?.libur_sabtu === "true";
+    const isMingguLibur = settings?.libur_minggu !== "false";
 
-    let weeklyHolidays = [0, 6];
-    if (settings["weekly_holidays"]) {
-      try {
-        weeklyHolidays = JSON.parse(settings["weekly_holidays"]);
-      } catch {}
+    if (dayOfWeek === 6 && isSabtuLibur) {
+      return { isHoliday: true, name: "Libur Akhir Pekan (Sabtu)" };
     }
-
-    if (weeklyHolidays.includes(dayOfWeek)) {
-      const dayName = dayOfWeek === 0 ? "Minggu" : "Sabtu";
-      return { isHoliday: true, name: `Libur Akhir Pekan (${dayName})` };
+    if (dayOfWeek === 0 && isMingguLibur) {
+      return { isHoliday: true, name: "Libur Akhir Pekan (Minggu)" };
     }
 
     return { isHoliday: false, name: "" };

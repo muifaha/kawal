@@ -924,20 +924,19 @@ export default async function DashboardPage() {
   const dbHolidaysAll = await prisma.hariLibur.findMany({ select: { tanggal: true } });
   const holidayDateSet = new Set(dbHolidaysAll.map((h) => h.tanggal.toISOString().split("T")[0]));
 
-  let weeklyHolidaysList = [0, 6];
-  if (settings["weekly_holidays"]) {
-    try {
-      weeklyHolidaysList = JSON.parse(settings["weekly_holidays"]);
-    } catch {}
-  }
+  const isSabtuLibur = settings["libur_sabtu"] === "true";
+  const isMingguLibur = settings["libur_minggu"] !== "false";
 
   let checkIterDate = new Date(nowWib.getTime() - 24 * 60 * 60 * 1000);
   let daysCheckedCount = 0;
 
   while (checkIterDate >= startDateObj && daysCheckedCount < pastCheckDaysLimit) {
-    const dayOfWeek = checkIterDate.getDay();
     const iterDateStr = checkIterDate.toLocaleDateString("sv-SE", { timeZone: "Asia/Jakarta" });
-    const isHoliday = weeklyHolidaysList.includes(dayOfWeek) || holidayDateSet.has(iterDateStr);
+    const dayOfWeek = new Date(`${iterDateStr}T00:00:00+07:00`).getDay();
+
+    const isWeekendHoliday = (dayOfWeek === 6 && isSabtuLibur) || (dayOfWeek === 0 && isMingguLibur);
+    const isNationalHoliday = holidayDateSet.has(iterDateStr);
+    const isHoliday = isWeekendHoliday || isNationalHoliday;
 
     if (!isHoliday) {
       pastDatesToCheck.push(iterDateStr);
