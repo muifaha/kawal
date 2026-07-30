@@ -329,7 +329,7 @@ export default function AbsensiClient({
                       <tr key={student.id} onClick={() => !isReadOnly && setFocusedIndex(index)} className={`text-sm transition-all relative ${isReadOnly ? "cursor-not-allowed opacity-80" : "cursor-pointer"} ${isFocused ? "bg-slate-900/60 outline outline-emerald-500/40 outline-offset-[-1px] z-10" : ""} ${isFocused && status === "H" ? "" : rowColors[status]}`}>
                         <td className="py-2.5 px-1.5 sm:px-3 text-center text-xs sm:text-sm font-medium text-slate-400">{index + 1}</td>
                         <td className="py-2.5 px-3 font-mono text-xs hidden sm:table-cell">{student.nis}</td>
-                        <td className="py-2.5 px-2 sm:px-3 text-xs sm:text-sm font-semibold truncate max-w-[120px] sm:max-w-none">{student.nama}</td>
+                        <td className="py-2.5 px-2 sm:px-3 text-xs sm:text-sm font-semibold whitespace-normal break-words leading-tight">{student.nama}</td>
                         <td className="py-2.5 px-1 sm:px-3">
                           <div className="flex justify-center gap-1 sm:gap-1.5">
                             {(["H", "S", "I", "A", "D"] as const).map((s) => {
