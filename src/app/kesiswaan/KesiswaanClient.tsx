@@ -2050,7 +2050,8 @@ export default function KesiswaanClient({
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Akses Sistem (Role)</label>
                 <select required name="role" defaultValue={editingUser?.role || "GURU"} className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs">
-                  <option value="GURU">Guru Piket / Guru Umum</option>
+                  <option value="GURU">Guru Mata Pelajaran / Guru Umum</option>
+                  <option value="PIKET">Guru Piket (Monitoring Ketidakhadiran Siswa)</option>
                   <option value="WALAS">Wali Kelas (Walas)</option>
                   <option value="BK">Guru BK (Super Admin/Approver)</option>
                   <option value="WAKA">Waka Kesiswaan (Master Admin)</option>
