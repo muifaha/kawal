@@ -937,8 +937,8 @@ export default async function DashboardPage() {
   
   const targetDate = new Date(`${todayStr}T00:00:00.000Z`);
 
-  const todayDayOfWeek = new Date().getDay();
-  const isWeekend = todayDayOfWeek === 0 || todayDayOfWeek === 6;
+  const todayDayOfWeek = new Date(`${todayStr}T12:00:00Z`).getUTCDay();
+  const isWeekend = (todayDayOfWeek === 6 && settings["libur_sabtu"] === "true") || (todayDayOfWeek === 0 && settings["libur_minggu"] !== "false");
   const isHolidayToday = await prisma.hariLibur.findUnique({
     where: { tanggal: targetDate },
   });
@@ -1048,7 +1048,7 @@ export default async function DashboardPage() {
 
   while (checkIterDate >= startDateObj && daysCheckedCount < pastCheckDaysLimit) {
     const iterDateStr = checkIterDate.toLocaleDateString("sv-SE", { timeZone: "Asia/Jakarta" });
-    const dayOfWeek = new Date(`${iterDateStr}T00:00:00+07:00`).getDay();
+    const dayOfWeek = new Date(`${iterDateStr}T12:00:00Z`).getUTCDay();
 
     const isWeekendHoliday = (dayOfWeek === 6 && isSabtuLibur) || (dayOfWeek === 0 && isMingguLibur);
     const isNationalHoliday = holidayDateSet.has(iterDateStr);

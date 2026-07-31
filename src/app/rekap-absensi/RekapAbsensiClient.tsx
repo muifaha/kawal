@@ -85,7 +85,7 @@ export default function RekapAbsensiClient({
       return { isHoliday: true, name: holidayMatch.keterangan };
     }
 
-    const dayOfWeek = new Date(`${dateStr}T00:00:00+07:00`).getDay();
+    const dayOfWeek = new Date(`${dateStr}T12:00:00Z`).getUTCDay();
     const isSabtuLibur = settings?.libur_sabtu === "true";
     const isMingguLibur = settings?.libur_minggu !== "false";
 

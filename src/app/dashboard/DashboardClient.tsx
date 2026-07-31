@@ -340,8 +340,7 @@ export default function DashboardClient({
     if (holidayMap.has(dateStr)) {
       return { isHoliday: true, name: holidayMap.get(dateStr)! };
     }
-    const dateObj = new Date(dateStr);
-    const day = dateObj.getDay(); // 0 = Minggu, 6 = Sabtu
+    const day = new Date(`${dateStr}T12:00:00Z`).getUTCDay(); // 0 = Minggu, 6 = Sabtu
     if (day === 6 && settings?.libur_sabtu === "true") {
       return { isHoliday: true, name: "Sabtu (Libur Akhir Pekan)" };
     }
