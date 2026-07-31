@@ -7,8 +7,9 @@ export async function sendWhatsAppNotification(to: string, message: string): Pro
   const apiKey = process.env.WA_API_KEY;
   const apiUrl = process.env.WA_SENDER_URL || "https://api.fonnte.com/send";
 
-  // Bersihkan format nomor telepon (menghilangkan spasi, strip, dll)
-  const cleanedPhone = to.replace(/[^0-9+]/g, "");
+  // Bersihkan format nomor telepon atau pertahankan ID Grup WhatsApp (@g.us)
+  const isGroup = to.trim().endsWith("@g.us");
+  const cleanedPhone = isGroup ? to.trim() : to.replace(/[^0-9+]/g, "");
 
   console.log(`\n=================== [WA OUTBOX] ===================`);
   console.log(`Kepada : ${cleanedPhone}`);

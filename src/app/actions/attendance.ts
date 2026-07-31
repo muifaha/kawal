@@ -336,3 +336,175 @@ export async function getMonthlyAttendanceMatrixAction(
     return { error: "Gagal memuat matriks absensi." };
   }
 }
+
+/**
+ * Mengirimkan rekapitulasi harian absensi seluruh kelas ke Grup WA Sekolah (120363411290554371@g.us).
+ * Hanya dapat dipanggil oleh WAKA / BK.
+ */
+export async function sendDailyAttendanceToWAGroupAction() {
+  const user = await getSessionUser();
+
+  if (!user || !["WAKA", "BK"].includes(user.role)) {
+    return { error: "Akses ditolak. Hanya Waka Kesiswaan atau Guru BK yang dapat mengirim rekap ke Grup WA." };
+  }
+
+  try {
+    const todayStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
+    const targetDate = new Date(`${todayStr}T00:00:00.000Z`);
+
+    const dateFormattedStr = new Date().toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "Asia/Jakarta",
+    });
+
+    const settingsList = await prisma.appSetting.findMany();
+    const settings: Record<string, string> = {};
+    settingsList.forEach((s) => {
+      settings[s.key] = s.value;
+    });
+
+    const schoolName = settings.school_name || settings.schoolName || "SMK KAWAL";
+
+    // 1. Ambil semua kelas aktif
+    const dbClasses = await prisma.kelas.findMany({
+      where: { tahunAjaran: { isActive: true } },
+      include: {
+        siswaKelas: {
+          where: { siswa: { status: "AKTIF" } },
+          include: { siswa: true },
+        },
+      },
+    });
+
+    // Ranking urutan kelas: X -> XI -> XII
+    const getGradeRank = (className: string) => {
+      const upper = className.toUpperCase().trim();
+      if (upper.startsWith("XII") || upper.startsWith("12")) return 3;
+      if (upper.startsWith("XI") || upper.startsWith("11")) return 2;
+      if (upper.startsWith("X") || upper.startsWith("10")) return 1;
+      return 4;
+    };
+
+    dbClasses.sort((a, b) => {
+      const rankA = getGradeRank(a.nama);
+      const rankB = getGradeRank(b.nama);
+      if (rankA !== rankB) return rankA - rankB;
+      return a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: "base" });
+    });
+
+    // 2. Ambil seluruh absensi hari ini
+    const todayAbsensi = await prisma.absensi.findMany({
+      where: {
+        tanggal: targetDate,
+        siswa: {
+          riwayatKelas: {
+            some: { tahunAjaran: { isActive: true } },
+          },
+        },
+      },
+      include: {
+        siswa: {
+          include: {
+            riwayatKelas: {
+              where: { tahunAjaran: { isActive: true } },
+              include: { kelas: true },
+            },
+          },
+        },
+      },
+    });
+
+    const absensiMap: Record<string, { status: string }> = {};
+    todayAbsensi.forEach((a) => {
+      absensiMap[a.siswaId] = { status: a.status };
+    });
+
+    let totalSiswaSemua = 0;
+    let totalS = 0;
+    let totalI = 0;
+    let totalA = 0;
+    let totalD = 0;
+
+    const statusLabel: Record<string, string> = {
+      S: "Sakit",
+      I: "Izin",
+      A: "Alpha",
+      D: "Dispensasi",
+    };
+
+    const classDetailsText: string[] = [];
+
+    dbClasses.forEach((kelasItem) => {
+      const activeStudents = kelasItem.siswaKelas.map((sk) => sk.siswa);
+      totalSiswaSemua += activeStudents.length;
+
+      const notPresentList: Array<{ nama: string; status: string }> = [];
+
+      activeStudents.forEach((st) => {
+        const record = absensiMap[st.id];
+        if (record && ["S", "I", "A", "D"].includes(record.status)) {
+          notPresentList.push({ nama: st.nama, status: record.status });
+          if (record.status === "S") totalS++;
+          if (record.status === "I") totalI++;
+          if (record.status === "A") totalA++;
+          if (record.status === "D") totalD++;
+        }
+      });
+
+      if (notPresentList.length === 0) {
+        classDetailsText.push(`*Kelas ${kelasItem.nama}*: ✅ Nihil (Hadir Semua)`);
+      } else {
+        const studentLines = notPresentList
+          .map((st) => `  • ${st.nama} - (${statusLabel[st.status] || st.status})`)
+          .join("\n");
+        classDetailsText.push(`*Kelas ${kelasItem.nama}* (${notPresentList.length} Siswa Tidak Hadir):\n${studentLines}`);
+      }
+    });
+
+    const totalTidakHadir = totalS + totalI + totalA + totalD;
+    const totalHadir = totalSiswaSemua - totalTidakHadir;
+    const percentage = totalSiswaSemua > 0 ? ((totalHadir / totalSiswaSemua) * 100).toFixed(1) : "100";
+
+    const waGroupTarget = "120363411290554371@g.us";
+
+    const messageText =
+      `📊 *REKAPITULASI ABSENSI HARIAN SEKOLAH*\n` +
+      `🏫 *${schoolName}*\n` +
+      `📅 *${dateFormattedStr}*\n\n` +
+      `📈 *RINGKASAN KEHADIRAN SEKOLAH:*\n` +
+      `• Total Siswa : ${totalSiswaSemua} Siswa\n` +
+      `• Hadir (H) : ${totalHadir} Siswa\n` +
+      `• Sakit (S) : ${totalS} Siswa\n` +
+      `• Izin (I) : ${totalI} Siswa\n` +
+      `• Alpha (A) : ${totalA} Siswa\n` +
+      `• Dispensasi (D) : ${totalD} Siswa\n` +
+      `• *Persentase Kehadiran*: *${percentage}%*\n\n` +
+      `📋 *RINCIAN KETIDAKHADIRAN PER KELAS (Urut X, XI, XII):*\n` +
+      `-----------------------------------------\n\n` +
+      classDetailsText.join("\n\n") +
+      `\n\n_Pesan ini dikirim otomatis oleh Sistem KAWAL._`;
+
+    const success = await sendWhatsAppNotification(waGroupTarget, messageText);
+
+    if (!success) {
+      return { error: "Gagal mengirimkan pesan ke Grup WhatsApp Sekolah. Pastikan WA Gateway aktif." };
+    }
+
+    return {
+      success: true,
+      message: `Berhasil mengirimkan rekap absensi hari ini ke Grup WA Sekolah (120363411290554371@g.us).`,
+    };
+  } catch (error: any) {
+    console.error("Send daily attendance to WA group error:", error);
+    return { error: error.message || "Gagal mengirim rekap absensi ke grup WA." };
+  }
+}

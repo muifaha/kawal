@@ -36,6 +36,7 @@ import {
   saveWeeklyHolidaysAction,
   resetUserSessionAction,
 } from "@/app/actions/kesiswaan";
+import { sendDailyAttendanceToWAGroupAction } from "@/app/actions/attendance";
 import ImportExcelModal from "@/components/ImportExcelModal";
 import {
   Users as UsersIcon,
@@ -57,6 +58,7 @@ import {
   GraduationCap,
   Sliders,
   Building,
+  Share2,
 } from "lucide-react";
 
 interface UserType {
@@ -779,8 +781,45 @@ export default function KesiswaanClient({
     );
   };
 
+  const [isSendingWaGroup, setIsSendingWaGroup] = useState(false);
+
+  const handleSendWaGroup = async () => {
+    if (!confirm("Apakah Anda yakin ingin mengirimkan Rekapitulasi Absensi Hari Ini ke Grup WA Sekolah (120363411290554371@g.us)?")) {
+      return;
+    }
+    setIsSendingWaGroup(true);
+    try {
+      const res = await sendDailyAttendanceToWAGroupAction();
+      if (res.error) {
+        showToast(res.error, "error");
+      } else {
+        showToast(res.message || "Berhasil dikirim ke Grup WA!", "success");
+      }
+    } catch (err: any) {
+      showToast(err.message || "Gagal mengirim ke grup WA", "error");
+    } finally {
+      setIsSendingWaGroup(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Top Banner Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/40 border border-slate-900 rounded-2xl p-4 sm:p-5">
+        <div>
+          <h2 className="text-xl font-bold text-white tracking-tight">Manajemen Kesiswaan</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Kelola data pengguna, kelas, siswa, jenis pelanggaran & remisi, serta pengaturan sekolah.</p>
+        </div>
+        <button
+          onClick={handleSendWaGroup}
+          disabled={isSendingWaGroup}
+          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl active:scale-95 transition-all disabled:opacity-50 cursor-pointer shadow-lg shadow-emerald-500/10 shrink-0"
+          title="Kirimkan rekapitulasi kehadiran siswa hari ini ke Grup WA Sekolah (120363411290554371@g.us)"
+        >
+          <Share2 className="w-4 h-4 text-slate-950" />
+          <span>{isSendingWaGroup ? "Mengirim ke WA..." : "Kirim Rekap Absensi ke Grup WA"}</span>
+        </button>
+      </div>
 
       {/* Tabs Switcher */}
       <div className="flex flex-wrap gap-2 border-b border-slate-900 pb-3">

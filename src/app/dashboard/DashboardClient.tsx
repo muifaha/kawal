@@ -36,8 +36,10 @@ import {
   ChevronUp,
   ClipboardCheck,
   CheckCircle,
+  Share2,
 } from "lucide-react";
 import { resolveSummonsAction } from "@/app/actions/kesiswaan";
+import { sendDailyAttendanceToWAGroupAction } from "@/app/actions/attendance";
 import { printSingleSummons, printBulkSummons } from "@/lib/printUtils";
 import { toggleCensorViolationAction } from "@/app/actions/violation";
 import { calculateAttendanceRate } from "@/lib/attendanceUtils";
@@ -307,6 +309,27 @@ export default function DashboardClient({
   const [piketClassFilter, setPiketClassFilter] = useState("");
   const [piketStatusFilter, setPiketStatusFilter] = useState("");
   const [piketSearchQuery, setPiketSearchQuery] = useState("");
+
+  const [isSendingWaGroup, setIsSendingWaGroup] = useState(false);
+
+  const handleSendWaGroup = async () => {
+    if (!confirm("Apakah Anda yakin ingin mengirimkan Rekapitulasi Absensi Hari Ini ke Grup WA Sekolah (120363411290554371@g.us)?")) {
+      return;
+    }
+    setIsSendingWaGroup(true);
+    try {
+      const res = await sendDailyAttendanceToWAGroupAction();
+      if (res.error) {
+        alert(`Gagal: ${res.error}`);
+      } else {
+        alert(`✅ ${res.message}`);
+      }
+    } catch (err: any) {
+      alert(`Error: ${err.message || "Gagal mengirim ke grup WA"}`);
+    } finally {
+      setIsSendingWaGroup(false);
+    }
+  };
 
   const getTimeStringDashboard = (day: number, start: number, end: number) => {
     const HARI_MAP_LOCAL: Record<number, string> = {
@@ -1727,6 +1750,20 @@ export default function DashboardClient({
             )}
           </p>
         </div>
+
+        {(user.role === "WAKA" || user.role === "BK") && (
+          <div className="mt-4 md:mt-0 shrink-0">
+            <button
+              onClick={handleSendWaGroup}
+              disabled={isSendingWaGroup}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl active:scale-95 transition-all disabled:opacity-50 cursor-pointer shadow-lg shadow-emerald-500/10"
+              title="Kirimkan rekapitulasi kehadiran siswa hari ini ke Grup WA Sekolah (120363411290554371@g.us)"
+            >
+              <Share2 className="w-4 h-4 text-slate-950" />
+              <span>{isSendingWaGroup ? "Mengirim ke WA..." : "Kirim Rekap ke Grup WA"}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Alert Absensi Belum Diisi Hari Ini */}
