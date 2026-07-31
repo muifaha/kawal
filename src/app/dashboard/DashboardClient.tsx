@@ -1489,19 +1489,27 @@ export default function DashboardClient({
           {classesNotSubmittedToday.length > 0 && (
             <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3 text-amber-300">
               <AlertOctagon className="w-5 h-5 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <h4 className="text-sm font-bold">Pemberitahuan Absensi Hari Ini</h4>
-                <p className="text-xs leading-relaxed">
-                  Terdapat <strong className="text-white">{classesNotSubmittedToday.length} kelas</strong> yang belum menginput absensi harian hari ini.
+              <div className="space-y-2 flex-1">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold">Pemberitahuan Absensi Belum Diisi</h4>
+                  <span className="text-xs text-amber-400 font-bold">
+                    {classesNotSubmittedToday.length} Kelas Belum Mengisi
+                  </span>
+                </div>
+                <p className="text-xs leading-relaxed text-slate-300">
+                  Guru Piket dapat langsung mengisi absensi untuk kelas-kelas yang belum diisi. Klik nama kelas di bawah untuk langsung menginput absensi:
                 </p>
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {classesNotSubmittedToday.map((c) => (
-                    <span
+                    <Link
                       key={c.id}
-                      className="px-2 py-0.5 bg-slate-950 border border-amber-500/30 rounded-md text-[10px] font-bold text-amber-300"
+                      href={`/absensi?classId=${c.id}`}
+                      className="px-3 py-1.5 bg-slate-950 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1.5 transition-all cursor-pointer"
                     >
-                      {c.nama}
-                    </span>
+                      <CalendarCheck className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{c.nama}</span>
+                      <span className="text-[10px] bg-amber-500/20 px-1.5 py-0.5 rounded text-amber-200">Catat</span>
+                    </Link>
                   ))}
                 </div>
               </div>
