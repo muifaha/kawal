@@ -355,6 +355,51 @@ export default function AbsensiClient({
                 <div className="p-2 border rounded-lg bg-rose-500/5 border-rose-500/20 text-rose-400"><p className="text-lg font-bold">{summary.A}</p> Alpha</div>
                 <div className="p-2 border rounded-lg bg-purple-500/5 border-purple-500/20 text-purple-400"><p className="text-lg font-bold">{summary.D}</p> Disp</div>
               </div>
+
+              {/* Daftar Siswa Tidak Hadir */}
+              <div className="pt-3 border-t border-slate-800 space-y-2">
+                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Daftar Siswa Tidak Hadir ({students.filter((s) => (attendanceMap[s.id] || "H") !== "H").length})
+                </h4>
+                {students.filter((s) => (attendanceMap[s.id] || "H") !== "H").length === 0 ? (
+                  <p className="text-xs text-slate-500 italic py-2 text-center">✅ Nihil (Hadir Semua)</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                    {students
+                      .filter((s) => (attendanceMap[s.id] || "H") !== "H")
+                      .map((s) => {
+                        const st = attendanceMap[s.id] || "H";
+                        const badgeStyle: Record<string, string> = {
+                          S: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+                          I: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+                          A: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+                          D: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+                        };
+                        const statusLabel: Record<string, string> = {
+                          S: "Sakit",
+                          I: "Izin",
+                          A: "Alpha",
+                          D: "Dispensasi",
+                        };
+                        return (
+                          <div
+                            key={s.id}
+                            className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800/80 text-xs"
+                          >
+                            <span className="font-semibold text-white truncate max-w-[130px] sm:max-w-[160px]">{s.nama}</span>
+                            <span
+                              className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border ${
+                                badgeStyle[st] || "bg-slate-800 text-white"
+                              }`}
+                            >
+                              {statusLabel[st] || st}
+                            </span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
