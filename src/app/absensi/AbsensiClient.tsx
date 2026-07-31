@@ -407,33 +407,118 @@ export default function AbsensiClient({
 
       {showConfirmModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-6 animate-in fade-in zoom-in-95">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-5 animate-in fade-in zoom-in-95">
+            {/* Header */}
             <div className="flex items-start justify-between border-b border-slate-800 pb-4">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2"><CheckCircle className="w-5 h-5 text-emerald-400" /> Konfirmasi Absensi</h3>
-                <p className="text-xs text-slate-400 mt-1">Kelas <strong className="text-white">{selectedClass?.nama}</strong></p>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-emerald-400" /> Konfirmasi Absensi Kelas
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Kelas <strong className="text-white">{selectedClass?.nama}</strong> • Total {students.length} Siswa
+                </p>
               </div>
-              <button type="button" onClick={() => setShowConfirmModal(false)} className="text-slate-500 hover:text-white p-1 rounded-lg"><X className="w-5 h-5" /></button>
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="text-slate-500 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
+
+            {/* Summary Cards */}
+            <div className="space-y-1.5">
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Ringkasan Rekapitulasi Kehadiran
+              </label>
+              <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                <div className="p-2 border rounded-xl bg-amber-500/10 border-amber-500/20 text-amber-400">
+                  <p className="text-lg font-bold">{summary.S}</p>
+                  <span className="text-[10px] font-semibold">Sakit</span>
+                </div>
+                <div className="p-2 border rounded-xl bg-sky-500/10 border-sky-500/20 text-sky-400">
+                  <p className="text-lg font-bold">{summary.I}</p>
+                  <span className="text-[10px] font-semibold">Izin</span>
+                </div>
+                <div className="p-2 border rounded-xl bg-rose-500/10 border-rose-500/20 text-rose-400">
+                  <p className="text-lg font-bold">{summary.A}</p>
+                  <span className="text-[10px] font-semibold">Alpha</span>
+                </div>
+                <div className="p-2 border rounded-xl bg-purple-500/10 border-purple-500/20 text-purple-400">
+                  <p className="text-lg font-bold">{summary.D}</p>
+                  <span className="text-[10px] font-semibold">Dispensasi</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Daftar Siswa Tidak Hadir */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Daftar Tidak Hadir</label>
-              <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
-                {students.filter((s) => (attendanceMap[s.id] || "H") !== "H").map((s, idx) => (
-                  <div key={s.id} className="flex items-center justify-between p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs">
-                    <span className="font-semibold text-white">{s.nama}</span>
-                    <span className="px-2 py-0.5 rounded-lg font-bold text-[10px] border bg-slate-900">{attendanceMap[s.id]}</span>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Daftar Siswa Tidak Hadir ({students.filter((s) => (attendanceMap[s.id] || "H") !== "H").length})
+                </label>
               </div>
+
+              {students.filter((s) => (attendanceMap[s.id] || "H") !== "H").length === 0 ? (
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center text-xs font-semibold text-emerald-400">
+                  ✅ Nihil (Seluruh siswa tercatat Hadir)
+                </div>
+              ) : (
+                <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
+                  {students
+                    .filter((s) => (attendanceMap[s.id] || "H") !== "H")
+                    .map((s) => {
+                      const statusKey = attendanceMap[s.id] || "H";
+                      const statusMapObj: Record<string, { label: string; style: string }> = {
+                        S: { label: "Sakit", style: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
+                        I: { label: "Izin", style: "bg-sky-500/10 text-sky-400 border-sky-500/30" },
+                        A: { label: "Alpha", style: "bg-rose-500/10 text-rose-400 border-rose-500/30" },
+                        D: { label: "Dispensasi", style: "bg-purple-500/10 text-purple-400 border-purple-500/30" },
+                      };
+                      const currentBadge = statusMapObj[statusKey] || {
+                        label: statusKey,
+                        style: "bg-slate-800 text-white border-slate-700",
+                      };
+
+                      return (
+                        <div
+                          key={s.id}
+                          className="flex items-center justify-between p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs"
+                        >
+                          <span className="font-semibold text-white">{s.nama}</span>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-lg font-bold text-[11px] border ${currentBadge.style}`}
+                          >
+                            {currentBadge.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
             </div>
+
             {userRole === "SEKRETARIS" && (
               <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
                 <p className="font-bold mb-1">Perhatian:</p> Setelah konfirmasi, data akan <strong>TERKUNCI</strong> dan tidak dapat diubah kembali.
               </div>
             )}
+
             <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-800">
-              <button onClick={() => setShowConfirmModal(false)} className="px-4 py-2 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300">Batal</button>
-              <button onClick={handleConfirmAndSave} disabled={isSaving} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 rounded-xl flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="px-4 py-2 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-all cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAndSave}
+                disabled={isSaving}
+                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-xs font-bold text-slate-950 rounded-xl flex items-center gap-2 transition-all cursor-pointer"
+              >
                 {isSaving ? "Menyimpan..." : "Konfirmasi & Simpan Final"}
               </button>
             </div>
