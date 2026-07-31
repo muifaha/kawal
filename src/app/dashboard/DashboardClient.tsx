@@ -37,6 +37,7 @@ import {
   ClipboardCheck,
   CheckCircle,
   Share2,
+  Pencil,
 } from "lucide-react";
 import { resolveSummonsAction } from "@/app/actions/kesiswaan";
 import { sendDailyAttendanceToWAGroupAction } from "@/app/actions/attendance";
@@ -257,6 +258,18 @@ interface DashboardClientProps {
     catatan: string;
     noWhatsappOrtu: string;
   }>;
+  sekretarisWeeklyAbsent?: Array<{
+    dateStr: string;
+    dayName: string;
+    dateFormatted: string;
+    absentStudents: Array<{
+      id: string;
+      siswaId: string;
+      nis: string;
+      nama: string;
+      status: "S" | "I" | "A" | "D";
+    }>;
+  }>;
 }
 
 const INDONESIAN_MONTHS = [
@@ -298,6 +311,7 @@ export default function DashboardClient({
   pastUnsubmittedAttendanceDates = [],
   attendanceCompleteness,
   piketAbsentStudents = [],
+  sekretarisWeeklyAbsent = [],
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "absen_rekap" | "pelanggaran_rekap">("summary");
   const [showExportModal, setShowExportModal] = useState(false);
@@ -1396,7 +1410,7 @@ export default function DashboardClient({
 
     return (
       <SidebarLayout user={user}>
-        <div className="max-w-2xl mx-auto space-y-6 pt-4">
+        <div className="max-w-3xl mx-auto space-y-6 pt-4">
           {/* Welcome Header */}
           <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-3 text-center relative overflow-hidden">
             <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto text-emerald-400">
@@ -1413,24 +1427,37 @@ export default function DashboardClient({
           </div>
 
           {/* Main Action Card */}
-          <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+          <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-5">
             <div className="space-y-2 text-center">
               <h2 className="text-lg sm:text-xl font-bold text-white">
                 Pencatatan Absensi Kehadiran Siswa
               </h2>
               <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-md mx-auto">
-                Silakan lakukan pendataan absensi siswa kelas Anda khusus untuk hari ini ({todayFormattedStr}).
+                Silakan lakukan pendataan atau pembaharuan absensi siswa kelas Anda khusus untuk hari ini ({todayFormattedStr}).
               </p>
             </div>
 
             {isClassSubmitted ? (
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-center space-y-2">
-                <div className="text-emerald-400 font-bold text-sm flex items-center justify-center gap-2">
-                  <span>🔒 Absensi Hari Ini Telah Disimpan & Terkunci</span>
+              <div className="space-y-4">
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-center space-y-1">
+                  <div className="text-emerald-400 font-bold text-sm flex items-center justify-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    <span>Absensi Hari Ini Telah Disimpan</span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Data kehadiran hari ini tersimpan. Anda diizinkan mengubah/memperbaharui data khusus untuk hari ini.
+                  </p>
                 </div>
-                <p className="text-xs text-slate-400">
-                  Data kehadiran siswa untuk hari ini telah berhasil tersimpan. Jika terdapat perubahan data, silakan hubungi Guru BK.
-                </p>
+
+                <div>
+                  <Link
+                    href="/absensi"
+                    className="w-full py-3.5 px-6 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-bold text-sm rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer text-center"
+                  >
+                    <Pencil className="w-4 h-4 text-emerald-400" />
+                    <span>Ubah / Perbaharui Absensi Hari Ini</span>
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="pt-2">
@@ -1443,6 +1470,70 @@ export default function DashboardClient({
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* Rekap Ketidakhadiran 1 Minggu Terakhir (Senin - Jumat) */}
+          <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-5">
+            <div className="space-y-1">
+              <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <UserX className="w-5 h-5 text-amber-400" />
+                <span>Daftar Ketidakhadiran Kelas (1 Minggu Terakhir)</span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Rincian nama siswa kelas Anda yang tidak hadir (Sakit, Izin, Alpha, Dispensasi) pada hari Senin s/d Jumat minggu ini.
+              </p>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              {sekretarisWeeklyAbsent?.map((dayItem) => (
+                <div
+                  key={dayItem.dateStr}
+                  className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-2xl space-y-2.5"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-800/60 pb-2">
+                    <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span>{dayItem.dayName}, {dayItem.dateFormatted}</span>
+                    </span>
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      {dayItem.absentStudents.length > 0
+                        ? `${dayItem.absentStudents.length} Siswa Tidak Hadir`
+                        : "✅ Nihil (Hadir Semua)"}
+                    </span>
+                  </div>
+
+                  {dayItem.absentStudents.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic py-1">Semua siswa kelas tercatat Hadir.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {dayItem.absentStudents.map((st) => {
+                        const statusBadgeMap: Record<string, { label: string; style: string }> = {
+                          S: { label: "Sakit", style: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+                          I: { label: "Izin", style: "bg-sky-500/10 text-sky-400 border-sky-500/20" },
+                          A: { label: "Alpha", style: "bg-rose-500/10 text-rose-400 border-rose-500/20" },
+                          D: { label: "Dispensasi", style: "bg-purple-500/10 text-purple-400 border-purple-500/20" },
+                        };
+                        const badge = statusBadgeMap[st.status] || {
+                          label: st.status,
+                          style: "bg-slate-800 text-white",
+                        };
+                        return (
+                          <div
+                            key={st.id}
+                            className="p-2.5 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between text-xs"
+                          >
+                            <span className="font-semibold text-white">{st.nama}</span>
+                            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border ${badge.style}`}>
+                              {badge.label}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </SidebarLayout>

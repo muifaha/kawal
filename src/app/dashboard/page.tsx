@@ -63,12 +63,69 @@ export default async function DashboardPage() {
       ? [{ id: assignedClass.id, nama: assignedClass.nama, walasNama: "-" }]
       : [];
 
+    // Calculate Monday to Friday dates of current week in Asia/Jakarta
+    const now = new Date();
+    const todayDayOfWeek = new Date().getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const mondayOffset = todayDayOfWeek === 0 ? -6 : (todayDayOfWeek === 6 ? -5 : 1 - todayDayOfWeek);
+    const mondayObj = new Date(now.getTime() + mondayOffset * 24 * 60 * 60 * 1000);
+
+    const weekDays: Array<{ dateStr: string; dateFormatted: string; dayName: string }> = [];
+    const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(mondayObj.getTime() + i * 24 * 60 * 60 * 1000);
+      const dateStr = d.toLocaleDateString("sv-SE", { timeZone: "Asia/Jakarta" });
+      const dayName = dayNames[new Date(`${dateStr}T12:00:00Z`).getUTCDay()];
+      const dateFormatted = d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" });
+      weekDays.push({ dateStr, dateFormatted, dayName });
+    }
+
+    const dateObjList = weekDays.map((w) => new Date(`${w.dateStr}T00:00:00.000Z`));
+    const weekAttendanceRecords = assignedClass ? await prisma.absensi.findMany({
+      where: {
+        tanggal: { in: dateObjList },
+        status: { in: ["S", "I", "A", "D"] },
+        siswa: {
+          riwayatKelas: {
+            some: {
+              kelasId: assignedClass.id,
+              tahunAjaran: { isActive: true },
+            },
+          },
+        },
+      },
+      include: {
+        siswa: { select: { id: true, nis: true, nama: true } },
+      },
+      orderBy: { siswa: { nama: "asc" } },
+    }) : [];
+
+    const sekretarisWeeklyAbsent = weekDays.map((w) => {
+      const targetTime = new Date(`${w.dateStr}T00:00:00.000Z`).getTime();
+      const recordsForDay = weekAttendanceRecords.filter(
+        (r) => new Date(r.tanggal).getTime() === targetTime
+      );
+      return {
+        dateStr: w.dateStr,
+        dayName: w.dayName,
+        dateFormatted: w.dateFormatted,
+        absentStudents: recordsForDay.map((r) => ({
+          id: r.id,
+          siswaId: r.siswa.id,
+          nis: r.siswa.nis,
+          nama: r.siswa.nama,
+          status: r.status as "S" | "I" | "A" | "D",
+        })),
+      };
+    });
+
     return (
       <DashboardClient
         user={user}
         activeTA={activeTA}
         classes={assignedClass ? [{ id: assignedClass.id, nama: assignedClass.nama }] : []}
         classesNotSubmittedToday={classesNotSubmittedToday}
+        sekretarisWeeklyAbsent={sekretarisWeeklyAbsent}
         stats={{ totalSiswa: 0, attendanceRate: 100, violationsMonthCount: 0, threatStudentsCount: 0 }}
         studentRankings={[]}
         attendanceRecap={[]}

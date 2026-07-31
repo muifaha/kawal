@@ -51,27 +51,7 @@ export async function saveAttendanceAction(
       // Format tanggal hari ini di WIB (Asia/Jakarta) YYYY-MM-DD
       const todayStr = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Jakarta" });
       if (dateString !== todayStr) {
-        return { error: "Pengurus/Sekretaris Kelas hanya dapat mencatat absensi untuk hari ini." };
-      }
-
-      // Cek apakah absensi kelas ini pada hari ini sudah pernah disimpan
-      const targetDateCheck = new Date(`${dateString}T00:00:00.000Z`);
-      const existingCount = await prisma.absensi.count({
-        where: {
-          tanggal: targetDateCheck,
-          siswa: {
-            riwayatKelas: {
-              some: {
-                kelasId: classId,
-                tahunAjaran: { isActive: true },
-              },
-            },
-          },
-        },
-      });
-
-      if (existingCount > 0) {
-        return { error: "Absensi hari ini sudah pernah disimpan dan terkunci. Perubahan data hanya dapat dilakukan oleh Guru BK." };
+        return { error: "Pengurus/Sekretaris Kelas hanya dapat mencatat atau mengubah absensi untuk HARI INI." };
       }
     } else if (user.role === "BK") {
       if (targetClass.bkId && targetClass.bkId !== user.id) {
@@ -214,7 +194,7 @@ export async function getAttendanceAction(classId: string, dateString: string) {
 
     const todayStr = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Jakarta" });
     const isRecorded = records.length > 0;
-    const isLockedForSekretaris = user?.role === "SEKRETARIS" && (isRecorded || dateString !== todayStr);
+    const isLockedForSekretaris = user?.role === "SEKRETARIS" && dateString !== todayStr;
 
     return {
       success: true,
