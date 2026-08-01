@@ -160,7 +160,21 @@ export default async function DashboardPage() {
         nama: true,
         walas: { select: { nama: true } },
       },
-      orderBy: { nama: "asc" },
+    });
+
+    const getGradeRank = (className: string) => {
+      const upper = className.toUpperCase().trim();
+      if (upper.startsWith("XII") || upper.startsWith("12")) return 3;
+      if (upper.startsWith("XI") || upper.startsWith("11")) return 2;
+      if (upper.startsWith("X") || upper.startsWith("10")) return 1;
+      return 4;
+    };
+
+    allClasses.sort((a, b) => {
+      const rankA = getGradeRank(a.nama);
+      const rankB = getGradeRank(b.nama);
+      if (rankA !== rankB) return rankA - rankB;
+      return a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: "base" });
     });
 
     const todayAbsentRecords = await prisma.absensi.findMany({

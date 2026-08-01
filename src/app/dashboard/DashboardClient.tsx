@@ -1611,19 +1611,17 @@ export default function DashboardClient({
                   </span>
                 </div>
                 <p className="text-xs leading-relaxed text-slate-300">
-                  Guru Piket dapat langsung mengisi absensi untuk kelas-kelas yang belum diisi. Klik nama kelas di bawah untuk langsung menginput absensi:
+                  Berikut daftar kelas yang belum menginput absensi kehadiran untuk hari ini:
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {classesNotSubmittedToday.map((c) => (
-                    <Link
+                    <span
                       key={c.id}
-                      href={`/absensi?classId=${c.id}`}
-                      className="px-3 py-1.5 bg-slate-950 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1.5 transition-all cursor-pointer"
+                      className="px-3 py-1 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-300 flex items-center gap-1.5"
                     >
-                      <CalendarCheck className="w-3.5 h-3.5 text-amber-400" />
+                      <Clock className="w-3.5 h-3.5 text-amber-400" />
                       <span>{c.nama}</span>
-                      <span className="text-[10px] bg-amber-500/20 px-1.5 py-0.5 rounded text-amber-200">Catat</span>
-                    </Link>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -1742,11 +1740,27 @@ export default function DashboardClient({
             </div>
           ) : (
             <div className="space-y-4">
-              {Object.entries(groupedByClass).map(([kelasNama, studentList]) => (
-                <div
-                  key={kelasNama}
-                  className="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3"
-                >
+              {(() => {
+                const getGradeRank = (className: string) => {
+                  const upper = className.toUpperCase().trim();
+                  if (upper.startsWith("XII") || upper.startsWith("12")) return 3;
+                  if (upper.startsWith("XI") || upper.startsWith("11")) return 2;
+                  if (upper.startsWith("X") || upper.startsWith("10")) return 1;
+                  return 4;
+                };
+
+                const sortedEntries = Object.entries(groupedByClass).sort(([namaA], [namaB]) => {
+                  const rankA = getGradeRank(namaA);
+                  const rankB = getGradeRank(namaB);
+                  if (rankA !== rankB) return rankA - rankB;
+                  return namaA.localeCompare(namaB, undefined, { numeric: true, sensitivity: "base" });
+                });
+
+                return sortedEntries.map(([kelasNama, studentList]) => (
+                  <div
+                    key={kelasNama}
+                    className="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3"
+                  >
                   <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
                     <h4 className="text-sm font-bold text-white flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
@@ -1794,7 +1808,8 @@ export default function DashboardClient({
                     </table>
                   </div>
                 </div>
-              ))}
+              ));
+            })()}
             </div>
           )}
         </div>
