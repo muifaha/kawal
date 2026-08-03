@@ -30,21 +30,28 @@ export async function loginAction(prevState: any, formData: FormData) {
     let activeSessionId: string | undefined = undefined;
 
     if (user.role === "SEKRETARIS") {
-      // Pengecekan jumlah perangkat aktif (Maksimal 2 perangkat)
-      const currentSessions = user.activeSessions || [];
-      if (currentSessions.length >= 2) {
-        return {
-          error:
-            "Login ditolak. Akun Pengurus/Sekretaris Kelas ini sudah aktif di 2 perangkat sekaligus. Silakan logout terlebih dahulu di salah satu perangkat sebelum login di perangkat baru.",
-        };
-      }
-
-      activeSessionId = crypto.randomUUID();
-      const updatedSessions = [...currentSessions, activeSessionId];
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { activeSessions: updatedSessions },
+      const limitSetting = await prisma.appSetting.findUnique({
+        where: { key: "limit_sekretaris_login" },
       });
+      const isLimitEnabled = limitSetting ? limitSetting.value !== "false" : true;
+
+      if (isLimitEnabled) {
+        // Pengecekan jumlah perangkat aktif (Maksimal 2 perangkat)
+        const currentSessions = user.activeSessions || [];
+        if (currentSessions.length >= 2) {
+          return {
+            error:
+              "Login ditolak. Akun Pengurus/Sekretaris Kelas ini sudah aktif di 2 perangkat sekaligus. Silakan logout terlebih dahulu di salah satu perangkat sebelum login di perangkat baru.",
+          };
+        }
+
+        activeSessionId = crypto.randomUUID();
+        const updatedSessions = [...currentSessions, activeSessionId];
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { activeSessions: updatedSessions },
+        });
+      }
     }
 
     await setSession({

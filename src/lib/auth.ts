@@ -48,14 +48,21 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   // Keamanan Tambahan: Pengecekan Maksimal 2 Perangkat Aktif untuk SEKRETARIS
   if (session.role === "SEKRETARIS" && session.sessionId) {
     try {
-      const dbUser = await prisma.user.findUnique({
-        where: { id: session.id },
-        select: { activeSessions: true },
+      const limitSetting = await prisma.appSetting.findUnique({
+        where: { key: "limit_sekretaris_login" },
       });
+      const isLimitEnabled = limitSetting ? limitSetting.value !== "false" : true;
 
-      if (dbUser?.activeSessions && !dbUser.activeSessions.includes(session.sessionId)) {
-        // Sesi telah di-logout atau dihapus dari daftar perangkat aktif
-        return null;
+      if (isLimitEnabled) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: session.id },
+          select: { activeSessions: true },
+        });
+
+        if (dbUser?.activeSessions && !dbUser.activeSessions.includes(session.sessionId)) {
+          // Sesi telah di-logout atau dihapus dari daftar perangkat aktif
+          return null;
+        }
       }
     } catch {
       // Abaikan jika error DB sementara

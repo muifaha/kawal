@@ -1110,6 +1110,17 @@ export async function saveSettingsAction(formData: FormData) {
       );
     }
 
+    const limitSekretarisLogin = formData.get("limit_sekretaris_login") as string;
+    if (limitSekretarisLogin !== null) {
+      updates.push(
+        prisma.appSetting.upsert({
+          where: { key: "limit_sekretaris_login" },
+          update: { value: limitSekretarisLogin },
+          create: { key: "limit_sekretaris_login", value: limitSekretarisLogin },
+        })
+      );
+    }
+
     if (wakaName !== null) {
       updates.push(
         prisma.appSetting.upsert({

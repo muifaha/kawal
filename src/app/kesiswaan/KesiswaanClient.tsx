@@ -1911,7 +1911,32 @@ export default function KesiswaanClient({
               </div>
             </div>
 
-            
+            <div className="border-t border-slate-800/80 pt-6">
+              <h4 className="text-sm font-bold text-white mb-2">Pengaturan Keamanan Login Sekretaris Kelas</h4>
+              <p className="text-xs text-slate-400 mb-4">
+                Tentukan apakah login akun Pengurus / Sekretaris Kelas dibatasi maksimal 2 perangkat aktif secara bersamaan.
+              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div className="space-y-0.5">
+                  <label htmlFor="limit_sekretaris_login" className="text-xs font-bold text-white block">
+                    Batasi Login Sekretaris (Maksimal 2 Perangkat)
+                  </label>
+                  <span className="text-[11px] text-slate-400 block">
+                    Jika dinonaktifkan (Tidak Aktif), akun Sekretaris dapat login di banyak perangkat tanpa batasan 2 perangkat.
+                  </span>
+                </div>
+                <select
+                  id="limit_sekretaris_login"
+                  name="limit_sekretaris_login"
+                  defaultValue={settings.limit_sekretaris_login !== "false" ? "true" : "false"}
+                  className="py-2 px-3 border border-slate-800 rounded-xl bg-slate-900 text-white font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shrink-0"
+                >
+                  <option value="true">Aktif (Maksimal 2 Perangkat)</option>
+                  <option value="false">Tidak Aktif (Bebas Login)</option>
+                </select>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={isPending}
