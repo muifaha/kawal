@@ -337,36 +337,43 @@ export default function ViolationClient({ user, classes, categories, initialHist
     setAlert(null);
 
     startTransition(async () => {
-      const studentIds = selectedStudents.map((s) => s.id);
-      
-      let filesFormData: FormData | undefined;
-      if (selectedFiles.length > 0) {
-        filesFormData = new FormData();
-        selectedFiles.forEach((file) => {
-          filesFormData!.append("files", file);
-        });
-      }
+      try {
+        const studentIds = selectedStudents.map((s) => s.id);
 
-      const res = await reportViolationAction(studentIds, selectedViolation.id, notes, filesFormData);
-      if (res.error) {
-        setAlert({ type: "error", message: res.error });
-      } else if (res.success) {
-        setAlert({ type: "success", message: res.message || "Laporan berhasil diajukan." });
-        
-        // Prepend new reports to history state to automatically update logs tab
-        if (res.newReports) {
-          setHistory((prev) => [...res.newReports, ...prev]);
+        let buktiBase64: string[] = [];
+        if (selectedFiles.length > 0) {
+          for (const file of selectedFiles) {
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = (err) => reject(err);
+              reader.readAsDataURL(file);
+            });
+            buktiBase64.push(base64);
+          }
         }
 
-        // Reset Form
-        setSelectedStudents([]);
-        setSelectedViolation(null);
-        setViolationSearch("");
-        setStudentSearch("");
-        setNotes("");
-        setSelectedFiles([]);
-        
-        setTimeout(() => setAlert(null), 5000);
+        const res = await reportViolationAction(studentIds, selectedViolation.id, notes, buktiBase64);
+        if (res.error) {
+          setAlert({ type: "error", message: res.error });
+        } else if (res.success) {
+          setAlert({ type: "success", message: res.message || "Laporan berhasil diajukan dan terkirim." });
+
+          // Prepend new reports to history state to automatically update logs tab
+          if (res.newReports) {
+            setHistory((prev) => [...(res.newReports as any), ...prev]);
+          }
+
+          // Reset Form
+          setSelectedStudents([]);
+          setSelectedViolation(null);
+          setViolationSearch("");
+          setStudentSearch("");
+          setNotes("");
+          setSelectedFiles([]);
+        }
+      } catch (err: any) {
+        setAlert({ type: "error", message: `Gagal mengirim laporan: ${err.message || "Terjadi kesalahan sistem."}` });
       }
     });
   };
@@ -445,6 +452,28 @@ export default function ViolationClient({ user, classes, categories, initialHist
               <AlertTriangle className="w-5 h-5 text-amber-400" />
               Input Laporan Pelanggaran
             </h2>
+
+            {alert && (
+              <div
+                className={`p-4 rounded-xl text-xs font-semibold flex items-start gap-3 border transition-all ${
+                  alert.type === "success"
+                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+                    : "bg-rose-500/10 border-rose-500/20 text-rose-300"
+                }`}
+              >
+                {alert.type === "success" ? (
+                  <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1 space-y-0.5">
+                  <p className="font-bold text-sm">
+                    {alert.type === "success" ? "Laporan Berhasil Terkirim" : "Gagal Mengirim Laporan"}
+                  </p>
+                  <p className="opacity-90 leading-relaxed">{alert.message}</p>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
             {/* Pilih Siswa (Multi-selection Tagging) */}

@@ -16,7 +16,7 @@ export async function reportViolationAction(
   studentIds: string[],
   violationDetailId: string,
   notes?: string,
-  filesFormData?: FormData
+  buktiBase64?: string[]
 ) {
   const user = await getSessionUser();
   if (!user) {
@@ -45,24 +45,26 @@ export async function reportViolationAction(
       }
     }
 
-    // 1. Proses upload file bukti jika ada
+    // 1. Proses upload file bukti jika ada (Base64 data URL)
     let uploadedBukti: string[] = [];
-    if (filesFormData) {
-      const files = filesFormData.getAll("files") as File[];
-      for (const file of files) {
-        if (file && file.size > 0) {
-          const bytes = await file.arrayBuffer();
-          const buffer = Buffer.from(bytes);
-          const filename = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
-          
-          const uploadDir = path.join(process.cwd(), "public", "uploads");
-          if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
+    if (buktiBase64 && buktiBase64.length > 0) {
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      for (let i = 0; i < buktiBase64.length; i++) {
+        const b64Data = buktiBase64[i];
+        if (b64Data && typeof b64Data === "string") {
+          const match = b64Data.match(/^data:(image\/\w+);base64,(.+)$/);
+          if (match) {
+            const ext = match[1].split("/")[1] || "jpeg";
+            const buffer = Buffer.from(match[2], "base64");
+            const filename = `${Date.now()}_${i}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+            const fullPath = path.join(uploadDir, filename);
+            fs.writeFileSync(fullPath, buffer);
+            uploadedBukti.push(`/uploads/${filename}`);
           }
-          
-          const fullPath = path.join(uploadDir, filename);
-          fs.writeFileSync(fullPath, buffer);
-          uploadedBukti.push(`/uploads/${filename}`);
         }
       }
     }
