@@ -221,10 +221,56 @@ export default function KesiswaanClient({
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
-  // Memoized Paginated Data
+  // User (Guru & Staf) Filter & Sorting States
+  const [userFilterRole, setUserFilterRole] = useState<string>("");
+  const [userSortBy, setUserSortBy] = useState<"nama_asc" | "nama_desc" | "role_asc" | "username_asc">("nama_asc");
+  const [userSearchQuery, setUserSearchQuery] = useState<string>("");
+
+  // Memoized Filtered & Sorted Users
+  const filteredAndSortedUsers = useMemo(() => {
+    let list = [...initialUsers];
+
+    if (userFilterRole) {
+      list = list.filter((u) => u.role === userFilterRole);
+    }
+
+    if (userSearchQuery.trim()) {
+      const q = userSearchQuery.trim().toLowerCase();
+      list = list.filter(
+        (u) =>
+          u.nama.toLowerCase().includes(q) ||
+          u.username.toLowerCase().includes(q) ||
+          (u.nip && u.nip.toLowerCase().includes(q)) ||
+          (u.whatsappNumber && u.whatsappNumber.includes(q))
+      );
+    }
+
+    list.sort((a, b) => {
+      if (userSortBy === "nama_asc") {
+        return a.nama.localeCompare(b.nama, "id", { numeric: true });
+      }
+      if (userSortBy === "nama_desc") {
+        return b.nama.localeCompare(a.nama, "id", { numeric: true });
+      }
+      if (userSortBy === "role_asc") {
+        const roleComp = a.role.localeCompare(b.role, "id", { numeric: true });
+        if (roleComp !== 0) return roleComp;
+        return a.nama.localeCompare(b.nama, "id", { numeric: true });
+      }
+      if (userSortBy === "username_asc") {
+        return a.username.localeCompare(b.username, "id", { numeric: true });
+      }
+      return 0;
+    });
+
+    return list;
+  }, [initialUsers, userFilterRole, userSearchQuery, userSortBy]);
+
   const paginatedUsers = useMemo(() => {
-    return pageSize === 99999 ? initialUsers : initialUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  }, [initialUsers, currentPage, pageSize]);
+    return pageSize === 99999
+      ? filteredAndSortedUsers
+      : filteredAndSortedUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [filteredAndSortedUsers, currentPage, pageSize]);
 
   const paginatedClasses = useMemo(() => {
     return pageSize === 99999 ? initialClasses : initialClasses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -940,6 +986,73 @@ export default function KesiswaanClient({
             </div>
           </div>
 
+          {/* Bar Filter & Pencarian Pengguna (Guru & Staf) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950/60 p-4 rounded-xl border border-slate-900">
+            {/* Cari Nama / NIP / Username */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                Cari Nama / NIP / Username
+              </label>
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Ketik nama, NIP, atau username..."
+                  value={userSearchQuery}
+                  onChange={(e) => {
+                    setUserSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            {/* Filter Per Role */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                Filter Per Role
+              </label>
+              <select
+                value={userFilterRole}
+                onChange={(e) => {
+                  setUserFilterRole(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full py-2 px-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer font-semibold"
+              >
+                <option value="">-- Semua Role ({initialUsers.length} Akun) --</option>
+                <option value="WAKA">Waka Kesiswaan (WAKA)</option>
+                <option value="BK">Guru BK (BK)</option>
+                <option value="WALAS">Wali Kelas (WALAS)</option>
+                <option value="GURU">Guru Pengajar (GURU)</option>
+                <option value="PIKET">Guru Piket (PIKET)</option>
+                <option value="OSIS">Pengurus OSIS (OSIS)</option>
+                <option value="SEKRETARIS">Sekretaris Kelas (SEKRETARIS)</option>
+              </select>
+            </div>
+
+            {/* Urutan (Sorting) */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                Urutkan Berdasarkan
+              </label>
+              <select
+                value={userSortBy}
+                onChange={(e) => {
+                  setUserSortBy(e.target.value as any);
+                  setCurrentPage(1);
+                }}
+                className="w-full py-2 px-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer font-semibold"
+              >
+                <option value="nama_asc">Nama Lengkap (A - Z)</option>
+                <option value="nama_desc">Nama Lengkap (Z - A)</option>
+                <option value="role_asc">Role / Jabatan</option>
+                <option value="username_asc">Username (A - Z)</option>
+              </select>
+            </div>
+          </div>
+
           <div className="overflow-x-auto border border-slate-800 rounded-xl">
             <table className="min-w-full divide-y divide-slate-900">
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
@@ -962,9 +1075,11 @@ export default function KesiswaanClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
-                {initialUsers.length === 0 ? (
+                {filteredAndSortedUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-500">Belum ada data guru/staff.</td>
+                    <td colSpan={8} className="py-8 text-center text-slate-500">
+                      {initialUsers.length === 0 ? "Belum ada data guru/staff." : "Tidak ada pengguna yang sesuai dengan filter/pencarian."}
+                    </td>
                   </tr>
                 ) : (
                   (() => {
@@ -978,7 +1093,7 @@ export default function KesiswaanClient({
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => handleSelectUser(u.id)}
-                              className="rounded border-slate-800 bg-slate-950 text-emerald-450 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
+                              className="rounded border-slate-800 bg-slate-950 text-emerald-455 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer"
                             />
                           </td>
                           <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
@@ -1029,7 +1144,7 @@ export default function KesiswaanClient({
               </tbody>
             </table>
           </div>
-          {renderPagination(initialUsers.length)}
+          {renderPagination(filteredAndSortedUsers.length)}
         </div>
       )}
 
