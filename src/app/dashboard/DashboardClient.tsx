@@ -270,6 +270,7 @@ interface DashboardClientProps {
       status: "S" | "I" | "A" | "D";
     }>;
   }>;
+  classes100PercentPresent?: Array<{ id: string; nama: string; walasNama: string }>;
 }
 
 const INDONESIAN_MONTHS = [
@@ -312,6 +313,7 @@ export default function DashboardClient({
   attendanceCompleteness,
   piketAbsentStudents = [],
   sekretarisWeeklyAbsent = [],
+  classes100PercentPresent = [],
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "absen_rekap" | "pelanggaran_rekap">("summary");
   const [showExportModal, setShowExportModal] = useState(false);
@@ -1599,34 +1601,64 @@ export default function DashboardClient({
             </div>
           </div>
 
-          {/* Alert Kelas Belum Absensi */}
-          {classesNotSubmittedToday.length > 0 && (
-            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3 text-amber-300">
-              <AlertOctagon className="w-5 h-5 shrink-0 mt-0.5" />
-              <div className="space-y-2 flex-1">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold">Pemberitahuan Absensi Belum Diisi</h4>
-                  <span className="text-xs text-amber-400 font-bold">
-                    {classesNotSubmittedToday.length} Kelas Belum Mengisi
-                  </span>
+          {/* Status Pengisian Absensi Per Kelas Hari Ini */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Box 1: Kelas Belum Mengisi Absensi */}
+            <div className="p-5 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between border-b border-amber-500/20 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-400" />
+                  <h4 className="text-sm font-bold text-amber-300">Kelas Belum Mengisi Absensi</h4>
                 </div>
-                <p className="text-xs leading-relaxed text-slate-300">
-                  Berikut daftar kelas yang belum menginput absensi kehadiran untuk hari ini:
-                </p>
-                <div className="flex flex-wrap gap-2 pt-1">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold">
+                  {classesNotSubmittedToday.length} Kelas
+                </span>
+              </div>
+              {classesNotSubmittedToday.length === 0 ? (
+                <p className="text-xs text-slate-300 italic">✅ Seluruh kelas telah mengisi absensi hari ini.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2 max-h-44 overflow-y-auto pr-1">
                   {classesNotSubmittedToday.map((c) => (
                     <span
                       key={c.id}
-                      className="px-3 py-1 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-300 flex items-center gap-1.5"
+                      className="px-3 py-1.5 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-300 flex items-center gap-1.5"
                     >
-                      <Clock className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                       <span>{c.nama}</span>
                     </span>
                   ))}
                 </div>
-              </div>
+              )}
             </div>
-          )}
+
+            {/* Box 2: Kelas Hadir Semua (100% Present / Nihil) */}
+            <div className="p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-emerald-400" />
+                  <h4 className="text-sm font-bold text-emerald-300">Kelas Hadir Semua (Nihil)</h4>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold">
+                  {classes100PercentPresent.length} Kelas
+                </span>
+              </div>
+              {classes100PercentPresent.length === 0 ? (
+                <p className="text-xs text-slate-300 italic">Belum ada kelas yang tercatat 100% hadir hari ini.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2 max-h-44 overflow-y-auto pr-1">
+                  {classes100PercentPresent.map((c) => (
+                    <span
+                      key={c.id}
+                      className="px-3 py-1.5 bg-slate-950 border border-emerald-500/30 rounded-xl text-xs font-bold text-emerald-300 flex items-center gap-1.5"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      <span>{c.nama}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* KPI Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -1761,55 +1793,53 @@ export default function DashboardClient({
                     key={kelasNama}
                     className="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3"
                   >
-                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                      <span>Kelas {kelasNama}</span>
-                    </h4>
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-[11px] font-bold text-slate-300">
-                      {studentList.length} Siswa Tidak Hadir
-                    </span>
-                  </div>
+                    <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                        <span>Kelas {kelasNama}</span>
+                      </h4>
+                      <span className="px-2.5 py-0.5 rounded-full bg-slate-950 border border-slate-800 text-[11px] font-bold text-slate-300">
+                        {studentList.length} Siswa Tidak Hadir
+                      </span>
+                    </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs divide-y divide-slate-800/60">
-                      <thead>
-                        <tr className="text-slate-400 font-semibold uppercase text-[10px]">
-                          <th className="py-2 px-2 w-10">No</th>
-                          <th className="py-2 px-2 w-24">NIS</th>
-                          <th className="py-2 px-3">Nama Siswa</th>
-                          <th className="py-2 px-3 w-28 text-center">Status</th>
-                          <th className="py-2 px-3">Catatan / Alasan</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/40">
-                        {studentList.map((st, i) => {
-                          const badge = statusBadge[st.status] || {
-                            label: st.status,
-                            style: "bg-slate-800 text-white",
-                          };
-                          return (
-                            <tr key={st.id} className="hover:bg-slate-950/40 transition-colors">
-                              <td className="py-2.5 px-2 font-medium text-slate-500">{i + 1}</td>
-                              <td className="py-2.5 px-2 font-mono text-slate-400">{st.nis}</td>
-                              <td className="py-2.5 px-3 font-bold text-white">{st.nama}</td>
-                              <td className="py-2.5 px-3 text-center">
-                                <span
-                                  className={`px-2.5 py-1 rounded-lg font-bold text-[10px] border inline-block ${badge.style}`}
-                                >
-                                  {badge.label}
-                                </span>
-                              </td>
-                              <td className="py-2.5 px-3 text-slate-400 italic">{st.catatan}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs divide-y divide-slate-800/60">
+                        <thead>
+                          <tr className="text-slate-400 font-semibold uppercase text-[10px]">
+                            <th className="py-2 px-2 w-10">No</th>
+                            <th className="py-2 px-2 w-28">NIS</th>
+                            <th className="py-2 px-3">Nama Siswa</th>
+                            <th className="py-2 px-3 w-32 text-center">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/40">
+                          {studentList.map((st, i) => {
+                            const badge = statusBadge[st.status] || {
+                              label: st.status,
+                              style: "bg-slate-800 text-white",
+                            };
+                            return (
+                              <tr key={st.id} className="hover:bg-slate-950/40 transition-colors">
+                                <td className="py-2.5 px-2 font-medium text-slate-500">{i + 1}</td>
+                                <td className="py-2.5 px-2 font-mono text-slate-400">{st.nis}</td>
+                                <td className="py-2.5 px-3 font-bold text-white">{st.nama}</td>
+                                <td className="py-2.5 px-3 text-center">
+                                  <span
+                                    className={`px-2.5 py-1 rounded-lg font-bold text-[10px] border inline-block ${badge.style}`}
+                                  >
+                                    {badge.label}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              ));
-            })()}
+                ));
+              })()}
             </div>
           )}
         </div>

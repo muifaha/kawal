@@ -245,8 +245,14 @@ export default async function DashboardPage() {
       });
     });
 
+    const classIdsWithAbsents = new Set(piketAbsentStudents.map((s) => s.kelasId));
+
     const classesNotSubmittedToday = allClasses
       .filter((c) => !recordedClassIds.has(c.id))
+      .map((c) => ({ id: c.id, nama: c.nama, walasNama: c.walas?.nama || "-" }));
+
+    const classes100PercentPresent = allClasses
+      .filter((c) => recordedClassIds.has(c.id) && !classIdsWithAbsents.has(c.id))
       .map((c) => ({ id: c.id, nama: c.nama, walasNama: c.walas?.nama || "-" }));
 
     return (
@@ -255,6 +261,7 @@ export default async function DashboardPage() {
         activeTA={activeTA}
         classes={allClasses.map((c) => ({ id: c.id, nama: c.nama }))}
         classesNotSubmittedToday={classesNotSubmittedToday}
+        classes100PercentPresent={classes100PercentPresent}
         piketAbsentStudents={piketAbsentStudents}
         stats={{ totalSiswa: 0, attendanceRate: 100, violationsMonthCount: 0, threatStudentsCount: 0 }}
         studentRankings={[]}
