@@ -59,6 +59,7 @@ import {
   Sliders,
   Building,
   Share2,
+  Search,
 } from "lucide-react";
 
 interface UserType {
@@ -229,9 +230,55 @@ export default function KesiswaanClient({
     return pageSize === 99999 ? initialClasses : initialClasses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   }, [initialClasses, currentPage, pageSize]);
 
+  // Student Filter & Sorting States
+  const [studentFilterClassId, setStudentFilterClassId] = useState<string>("");
+  const [studentSortBy, setStudentSortBy] = useState<"nama_asc" | "nama_desc" | "kelas_asc" | "nis_asc" | "nis_desc">("nama_asc");
+  const [studentSearchQuery, setStudentSearchQuery] = useState<string>("");
+
+  // Memoized Filtered & Sorted Students
+  const filteredAndSortedStudents = useMemo(() => {
+    let list = [...initialStudents];
+
+    if (studentFilterClassId) {
+      list = list.filter((s) => s.kelasId === studentFilterClassId);
+    }
+
+    if (studentSearchQuery.trim()) {
+      const q = studentSearchQuery.trim().toLowerCase();
+      list = list.filter(
+        (s) => s.nama.toLowerCase().includes(q) || s.nis.toLowerCase().includes(q)
+      );
+    }
+
+    list.sort((a, b) => {
+      if (studentSortBy === "nama_asc") {
+        return a.nama.localeCompare(b.nama, "id", { numeric: true });
+      }
+      if (studentSortBy === "nama_desc") {
+        return b.nama.localeCompare(a.nama, "id", { numeric: true });
+      }
+      if (studentSortBy === "kelas_asc") {
+        const classComp = (a.kelas?.nama || "").localeCompare(b.kelas?.nama || "", "id", { numeric: true });
+        if (classComp !== 0) return classComp;
+        return a.nama.localeCompare(b.nama, "id", { numeric: true });
+      }
+      if (studentSortBy === "nis_asc") {
+        return a.nis.localeCompare(b.nis, "id", { numeric: true });
+      }
+      if (studentSortBy === "nis_desc") {
+        return b.nis.localeCompare(a.nis, "id", { numeric: true });
+      }
+      return 0;
+    });
+
+    return list;
+  }, [initialStudents, studentFilterClassId, studentSearchQuery, studentSortBy]);
+
   const paginatedStudents = useMemo(() => {
-    return pageSize === 99999 ? initialStudents : initialStudents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  }, [initialStudents, currentPage, pageSize]);
+    return pageSize === 99999
+      ? filteredAndSortedStudents
+      : filteredAndSortedStudents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [filteredAndSortedStudents, currentPage, pageSize]);
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
@@ -1184,6 +1231,75 @@ export default function KesiswaanClient({
             </div>
           </div>
 
+          {/* Bar Filter & Pencarian Siswa */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950/60 p-4 rounded-xl border border-slate-900">
+            {/* Cari Nama / NIS */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                Cari Nama / NIS Siswa
+              </label>
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Ketik nama atau NIS..."
+                  value={studentSearchQuery}
+                  onChange={(e) => {
+                    setStudentSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            {/* Filter Per Kelas */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                Filter Per Kelas
+              </label>
+              <select
+                value={studentFilterClassId}
+                onChange={(e) => {
+                  setStudentFilterClassId(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full py-2 px-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer font-semibold"
+              >
+                <option value="">-- Semua Kelas ({initialStudents.length} Siswa) --</option>
+                {initialClasses.map((c) => {
+                  const studentCount = initialStudents.filter((s) => s.kelasId === c.id).length;
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {c.nama} ({studentCount} siswa)
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            {/* Urutan (Sorting) */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                Urutkan Berdasarkan
+              </label>
+              <select
+                value={studentSortBy}
+                onChange={(e) => {
+                  setStudentSortBy(e.target.value as any);
+                  setCurrentPage(1);
+                }}
+                className="w-full py-2 px-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer font-semibold"
+              >
+                <option value="nama_asc">Nama Siswa (A - Z)</option>
+                <option value="nama_desc">Nama Siswa (Z - A)</option>
+                <option value="kelas_asc">Nama Kelas (Tingkat & Abjad)</option>
+                <option value="nis_asc">NIS Siswa (Urut Naik)</option>
+                <option value="nis_desc">NIS Siswa (Urut Turun)</option>
+              </select>
+            </div>
+          </div>
+
           <div className="overflow-x-auto border border-slate-800 rounded-xl">
             <table className="min-w-full divide-y divide-slate-900">
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
@@ -1204,9 +1320,11 @@ export default function KesiswaanClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
-                {initialStudents.length === 0 ? (
+                {filteredAndSortedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-500">Belum ada data siswa.</td>
+                    <td colSpan={6} className="py-8 text-center text-slate-500">
+                      {initialStudents.length === 0 ? "Belum ada data siswa." : "Tidak ada siswa yang sesuai dengan filter/pencarian."}
+                    </td>
                   </tr>
                 ) : (
                   (() => {
@@ -1226,7 +1344,7 @@ export default function KesiswaanClient({
                           <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
                           <td className="py-3 px-4 font-semibold text-white">{s.nama}</td>
                           <td className="py-3 px-4 font-mono text-slate-400">{s.nis}</td>
-                          <td className="py-3 px-4 text-emerald-400 font-semibold">{s.kelas.nama}</td>
+                          <td className="py-3 px-4 text-emerald-400 font-semibold">{s.kelas?.nama || "-"}</td>
                           <td className="py-3 px-4 text-center">
                             <div className="flex items-center justify-center gap-1.5">
                               <button
@@ -1256,7 +1374,7 @@ export default function KesiswaanClient({
               </tbody>
             </table>
           </div>
-          {renderPagination(initialStudents.length)}
+          {renderPagination(filteredAndSortedStudents.length)}
         </div>
       )}
 
