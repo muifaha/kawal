@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { saveAttendanceAction, getAttendanceAction } from "@/app/actions/attendance";
-import { AlertCircle, CalendarCheck, CheckCircle, Keyboard, Lock, Save, Search, X } from "lucide-react";
+import { AlertCircle, CalendarCheck, CheckCircle, Keyboard, Lock, Pencil, Save, Search, X } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
 interface Siswa {
@@ -69,6 +69,7 @@ export default function AbsensiClient({
   const { showToast } = useToast();
   const [hasExistingRecords, setHasExistingRecords] = useState(false);
   const [isLockedForSekretaris, setIsLockedForSekretaris] = useState(false);
+  const [isEditUnlocked, setIsEditUnlocked] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const checkIfHoliday = useCallback((dateStr: string) => {
@@ -108,6 +109,7 @@ export default function AbsensiClient({
       setFocusedIndex(null);
       setHasExistingRecords(false);
       setIsLockedForSekretaris(false);
+      setIsEditUnlocked(false);
       return;
     }
 
@@ -124,6 +126,7 @@ export default function AbsensiClient({
         setIsLockedForSekretaris(!!res.isLockedForSekretaris);
         if (res.data && res.data.length > 0) {
           setHasExistingRecords(true);
+          setIsEditUnlocked(false); // Default to locked mode when records already exist
           const existingMap: Record<string, StatusType> = { ...defaultMap };
           res.data.forEach((record) => {
             existingMap[record.studentId] = record.status as StatusType;
@@ -131,25 +134,27 @@ export default function AbsensiClient({
           setAttendanceMap(existingMap);
         } else {
           setHasExistingRecords(false);
+          setIsEditUnlocked(true); // Unlocked by default for fresh un-submitted entry
         }
       } else {
         setHasExistingRecords(false);
         setIsLockedForSekretaris(false);
+        setIsEditUnlocked(true);
       }
     }
 
     loadExistingAttendance();
   }, [selectedClassId, selectedDate, students]);
 
+  const isReadOnly = isLockedForSekretaris || (hasExistingRecords && !isEditUnlocked);
+
   const setStatus = useCallback((studentId: string, status: StatusType) => {
-    if (isLockedForSekretaris) return;
+    if (isReadOnly) return;
     setAttendanceMap((prev) => ({
       ...prev,
       [studentId]: status,
     }));
-  }, [isLockedForSekretaris]);
-
-  const isReadOnly = isLockedForSekretaris;
+  }, [isReadOnly]);
 
   useEffect(() => {
     if (focusedIndex === null || filteredStudents.length === 0 || isReadOnly) return;
@@ -206,6 +211,7 @@ export default function AbsensiClient({
     } else if (res.success) {
       showToast(res.message || "Absensi berhasil disimpan!", "success");
       setHasExistingRecords(true);
+      setIsEditUnlocked(false);
       setShowConfirmModal(false);
       if (userRole === "SEKRETARIS") {
         setIsLockedForSekretaris(true);
@@ -284,7 +290,7 @@ export default function AbsensiClient({
         </div>
       </div>
 
-      {isLockedForSekretaris && (
+      {isLockedForSekretaris ? (
         <div className="p-4 rounded-xl text-sm border flex items-start gap-3 bg-amber-500/10 border-amber-500/20 text-amber-300 animate-fade-in">
           <Lock className="w-5 h-5 shrink-0 text-amber-400 mt-0.5" />
           <div className="space-y-1">
@@ -294,7 +300,30 @@ export default function AbsensiClient({
             </p>
           </div>
         </div>
-      )}
+      ) : hasExistingRecords && !isEditUnlocked ? (
+        <div className="p-4 rounded-xl text-sm border flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-500/10 border-emerald-500/20 text-emerald-300 animate-fade-in">
+          <div className="flex items-start gap-3">
+            <Lock className="w-5 h-5 shrink-0 text-emerald-400 mt-0.5" />
+            <div className="space-y-0.5">
+              <h4 className="font-bold text-emerald-300">Data Absensi Tanggal Ini Tersimpan (Mode Terkunci)</h4>
+              <p className="text-xs text-emerald-300/80 leading-relaxed">
+                Formulir terkunci untuk mencegah perubahan yang tidak disengaja. Klik tombol <strong>"Perbaharui Kehadiran"</strong> untuk membuka formulir.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setIsEditUnlocked(true);
+              showToast("Mode edit dibuka. Silakan lakukan perbaharuan kehadiran.", "info");
+            }}
+            className="px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0 shadow-sm"
+          >
+            <Pencil className="w-4 h-4" />
+            <span>Perbaharui Kehadiran</span>
+          </button>
+        </div>
+      ) : null}
 
       {holidayInfo.isHoliday ? (
         <div className="bg-slate-900/40 border border-amber-500/20 rounded-xl p-6 text-center space-y-4 max-w-xl mx-auto my-10 animate-fade-in">
@@ -528,13 +557,27 @@ export default function AbsensiClient({
 
       {selectedClassId && students.length > 0 && (
         <div className="fixed bottom-0 left-0 md:left-64 right-0 bg-slate-900/80 backdrop-blur-xl border-t border-slate-800/80 p-4 flex items-center justify-end z-30">
-          {isReadOnly ? (
+          {isLockedForSekretaris ? (
             <div className="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-800 text-slate-400 px-6 py-2.5 rounded-xl text-sm font-semibold border border-slate-700">
               <Lock className="w-4 h-4" /> <span>Absensi Hari Ini Terkunci</span>
             </div>
+          ) : hasExistingRecords && !isEditUnlocked ? (
+            <button
+              onClick={() => {
+                setIsEditUnlocked(true);
+                showToast("Mode edit dibuka. Silakan lakukan perbaharuan kehadiran.", "info");
+              }}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-950 px-6 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-98 cursor-pointer shadow-lg shadow-emerald-400/10"
+            >
+              <Pencil className="w-4 h-4" /> <span>Perbaharui Kehadiran</span>
+            </button>
           ) : (
-            <button onClick={handleOpenConfirmModal} disabled={isSaving} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-950 px-6 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-98 cursor-pointer">
-              <Save className="w-4 h-4" /> <span>{hasExistingRecords ? "Perbaharui Kehadiran" : "Simpan Kehadiran"}</span>
+            <button
+              onClick={handleOpenConfirmModal}
+              disabled={isSaving}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-950 px-6 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-98 cursor-pointer shadow-lg shadow-emerald-400/10"
+            >
+              <Save className="w-4 h-4" /> <span>{hasExistingRecords ? "Simpan Perubahan Kehadiran" : "Simpan Kehadiran"}</span>
             </button>
           )}
         </div>
