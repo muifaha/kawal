@@ -60,6 +60,9 @@ import {
   Building,
   Share2,
   Search,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 
 interface UserType {
@@ -221,10 +224,20 @@ export default function KesiswaanClient({
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
-  // User (Guru & Staf) Filter & Sorting States
+  // User (Guru & Staf) Filter & Header Sorting States
   const [userFilterRole, setUserFilterRole] = useState<string>("");
-  const [userSortBy, setUserSortBy] = useState<"nama_asc" | "nama_desc" | "role_asc" | "username_asc">("nama_asc");
   const [userSearchQuery, setUserSearchQuery] = useState<string>("");
+  const [userSortField, setUserSortField] = useState<"nama" | "nip" | "username" | "role">("nama");
+  const [userSortOrder, setUserSortOrder] = useState<"asc" | "desc">("asc");
+
+  const handleUserSort = (field: "nama" | "nip" | "username" | "role") => {
+    if (userSortField === field) {
+      setUserSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setUserSortField(field);
+      setUserSortOrder("asc");
+    }
+  };
 
   // Memoized Filtered & Sorted Users
   const filteredAndSortedUsers = useMemo(() => {
@@ -246,25 +259,28 @@ export default function KesiswaanClient({
     }
 
     list.sort((a, b) => {
-      if (userSortBy === "nama_asc") {
-        return a.nama.localeCompare(b.nama, "id", { numeric: true });
+      let valA = "";
+      let valB = "";
+      if (userSortField === "nama") {
+        valA = a.nama;
+        valB = b.nama;
+      } else if (userSortField === "nip") {
+        valA = a.nip || "";
+        valB = b.nip || "";
+      } else if (userSortField === "username") {
+        valA = a.username;
+        valB = b.username;
+      } else if (userSortField === "role") {
+        valA = a.role;
+        valB = b.role;
       }
-      if (userSortBy === "nama_desc") {
-        return b.nama.localeCompare(a.nama, "id", { numeric: true });
-      }
-      if (userSortBy === "role_asc") {
-        const roleComp = a.role.localeCompare(b.role, "id", { numeric: true });
-        if (roleComp !== 0) return roleComp;
-        return a.nama.localeCompare(b.nama, "id", { numeric: true });
-      }
-      if (userSortBy === "username_asc") {
-        return a.username.localeCompare(b.username, "id", { numeric: true });
-      }
-      return 0;
+
+      const res = valA.localeCompare(valB, "id", { numeric: true });
+      return userSortOrder === "asc" ? res : -res;
     });
 
     return list;
-  }, [initialUsers, userFilterRole, userSearchQuery, userSortBy]);
+  }, [initialUsers, userFilterRole, userSearchQuery, userSortField, userSortOrder]);
 
   const paginatedUsers = useMemo(() => {
     return pageSize === 99999
@@ -276,10 +292,20 @@ export default function KesiswaanClient({
     return pageSize === 99999 ? initialClasses : initialClasses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   }, [initialClasses, currentPage, pageSize]);
 
-  // Student Filter & Sorting States
+  // Student Filter & Header Sorting States
   const [studentFilterClassId, setStudentFilterClassId] = useState<string>("");
-  const [studentSortBy, setStudentSortBy] = useState<"nama_asc" | "nama_desc" | "kelas_asc" | "nis_asc" | "nis_desc">("nama_asc");
   const [studentSearchQuery, setStudentSearchQuery] = useState<string>("");
+  const [studentSortField, setStudentSortField] = useState<"nama" | "nis" | "kelas">("nama");
+  const [studentSortOrder, setStudentSortOrder] = useState<"asc" | "desc">("asc");
+
+  const handleStudentSort = (field: "nama" | "nis" | "kelas") => {
+    if (studentSortField === field) {
+      setStudentSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setStudentSortField(field);
+      setStudentSortOrder("asc");
+    }
+  };
 
   // Memoized Filtered & Sorted Students
   const filteredAndSortedStudents = useMemo(() => {
@@ -297,28 +323,25 @@ export default function KesiswaanClient({
     }
 
     list.sort((a, b) => {
-      if (studentSortBy === "nama_asc") {
-        return a.nama.localeCompare(b.nama, "id", { numeric: true });
+      let valA = "";
+      let valB = "";
+      if (studentSortField === "nama") {
+        valA = a.nama;
+        valB = b.nama;
+      } else if (studentSortField === "nis") {
+        valA = a.nis;
+        valB = b.nis;
+      } else if (studentSortField === "kelas") {
+        valA = a.kelas?.nama || "";
+        valB = b.kelas?.nama || "";
       }
-      if (studentSortBy === "nama_desc") {
-        return b.nama.localeCompare(a.nama, "id", { numeric: true });
-      }
-      if (studentSortBy === "kelas_asc") {
-        const classComp = (a.kelas?.nama || "").localeCompare(b.kelas?.nama || "", "id", { numeric: true });
-        if (classComp !== 0) return classComp;
-        return a.nama.localeCompare(b.nama, "id", { numeric: true });
-      }
-      if (studentSortBy === "nis_asc") {
-        return a.nis.localeCompare(b.nis, "id", { numeric: true });
-      }
-      if (studentSortBy === "nis_desc") {
-        return b.nis.localeCompare(a.nis, "id", { numeric: true });
-      }
-      return 0;
+
+      const res = valA.localeCompare(valB, "id", { numeric: true });
+      return studentSortOrder === "asc" ? res : -res;
     });
 
     return list;
-  }, [initialStudents, studentFilterClassId, studentSearchQuery, studentSortBy]);
+  }, [initialStudents, studentFilterClassId, studentSearchQuery, studentSortField, studentSortOrder]);
 
   const paginatedStudents = useMemo(() => {
     return pageSize === 99999
@@ -987,7 +1010,7 @@ export default function KesiswaanClient({
           </div>
 
           {/* Bar Filter & Pencarian Pengguna (Guru & Staf) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950/60 p-4 rounded-xl border border-slate-900">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-950/60 p-4 rounded-xl border border-slate-900">
             {/* Cari Nama / NIP / Username */}
             <div>
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
@@ -1031,26 +1054,6 @@ export default function KesiswaanClient({
                 <option value="SEKRETARIS">Sekretaris Kelas (SEKRETARIS)</option>
               </select>
             </div>
-
-            {/* Urutan (Sorting) */}
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Urutkan Berdasarkan
-              </label>
-              <select
-                value={userSortBy}
-                onChange={(e) => {
-                  setUserSortBy(e.target.value as any);
-                  setCurrentPage(1);
-                }}
-                className="w-full py-2 px-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer font-semibold"
-              >
-                <option value="nama_asc">Nama Lengkap (A - Z)</option>
-                <option value="nama_desc">Nama Lengkap (Z - A)</option>
-                <option value="role_asc">Role / Jabatan</option>
-                <option value="username_asc">Username (A - Z)</option>
-              </select>
-            </div>
           </div>
 
           <div className="overflow-x-auto border border-slate-800 rounded-xl">
@@ -1066,10 +1069,58 @@ export default function KesiswaanClient({
                     />
                   </th>
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
-                  <th className="py-3.5 px-4">Nama Lengkap</th>
-                  <th className="py-3.5 px-4">NIP</th>
-                  <th className="py-3.5 px-4">Username</th>
-                  <th className="py-3.5 px-4">Role</th>
+                  <th
+                    onClick={() => handleUserSort("nama")}
+                    className="py-3.5 px-4 cursor-pointer select-none hover:text-white transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Nama Lengkap</span>
+                      {userSortField === "nama" ? (
+                        userSortOrder === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-600" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleUserSort("nip")}
+                    className="py-3.5 px-4 cursor-pointer select-none hover:text-white transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>NIP</span>
+                      {userSortField === "nip" ? (
+                        userSortOrder === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-600" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleUserSort("username")}
+                    className="py-3.5 px-4 cursor-pointer select-none hover:text-white transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Username</span>
+                      {userSortField === "username" ? (
+                        userSortOrder === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-600" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleUserSort("role")}
+                    className="py-3.5 px-4 cursor-pointer select-none hover:text-white transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Role</span>
+                      {userSortField === "role" ? (
+                        userSortOrder === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-600" />
+                      )}
+                    </div>
+                  </th>
                   <th className="py-3.5 px-4">No. WhatsApp</th>
                   <th className="py-3.5 px-4 text-center w-28">Aksi</th>
                 </tr>
@@ -1347,7 +1398,7 @@ export default function KesiswaanClient({
           </div>
 
           {/* Bar Filter & Pencarian Siswa */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950/60 p-4 rounded-xl border border-slate-900">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-950/60 p-4 rounded-xl border border-slate-900">
             {/* Cari Nama / NIS */}
             <div>
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
@@ -1392,27 +1443,6 @@ export default function KesiswaanClient({
                 })}
               </select>
             </div>
-
-            {/* Urutan (Sorting) */}
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Urutkan Berdasarkan
-              </label>
-              <select
-                value={studentSortBy}
-                onChange={(e) => {
-                  setStudentSortBy(e.target.value as any);
-                  setCurrentPage(1);
-                }}
-                className="w-full py-2 px-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer font-semibold"
-              >
-                <option value="nama_asc">Nama Siswa (A - Z)</option>
-                <option value="nama_desc">Nama Siswa (Z - A)</option>
-                <option value="kelas_asc">Nama Kelas (Tingkat & Abjad)</option>
-                <option value="nis_asc">NIS Siswa (Urut Naik)</option>
-                <option value="nis_desc">NIS Siswa (Urut Turun)</option>
-              </select>
-            </div>
           </div>
 
           <div className="overflow-x-auto border border-slate-800 rounded-xl">
@@ -1428,9 +1458,45 @@ export default function KesiswaanClient({
                     />
                   </th>
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
-                  <th className="py-3.5 px-4">Nama Lengkap</th>
-                  <th className="py-3.5 px-4">NIS</th>
-                  <th className="py-3.5 px-4">Kelas</th>
+                  <th
+                    onClick={() => handleStudentSort("nama")}
+                    className="py-3.5 px-4 cursor-pointer select-none hover:text-white transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Nama Lengkap</span>
+                      {studentSortField === "nama" ? (
+                        studentSortOrder === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-600" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleStudentSort("nis")}
+                    className="py-3.5 px-4 cursor-pointer select-none hover:text-white transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>NIS</span>
+                      {studentSortField === "nis" ? (
+                        studentSortOrder === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-600" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleStudentSort("kelas")}
+                    className="py-3.5 px-4 cursor-pointer select-none hover:text-white transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Kelas</span>
+                      {studentSortField === "kelas" ? (
+                        studentSortOrder === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-600" />
+                      )}
+                    </div>
+                  </th>
                   <th className="py-3.5 px-4 text-center w-28">Aksi</th>
                 </tr>
               </thead>
