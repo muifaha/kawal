@@ -1632,7 +1632,6 @@ export default function DashboardClient({
                     >
                       <Clock className="w-3.5 h-3.5 text-amber-400" />
                       <span>{c.nama}</span>
-                      <span className="text-[10px] text-amber-400/70 underline ml-1">Isi Absensi &rarr;</span>
                     </Link>
                   ))}
                 </div>
