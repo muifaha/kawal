@@ -1586,7 +1586,7 @@ export default function DashboardClient({
       <SidebarLayout user={user}>
         <div className="space-y-6">
           {/* Welcome Header */}
-          <div className="md:flex md:items-center md:justify-between">
+          <div className="md:flex md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
                 Selamat Datang, {user.nama}
@@ -1594,8 +1594,17 @@ export default function DashboardClient({
               <p className="mt-1 text-sm text-slate-400 flex flex-wrap items-center gap-2">
                 <span className="text-emerald-400 font-bold">Guru Piket</span>
                 <span className="text-slate-600">•</span>
-                <span>Monitoring Kehadiran Siswa Hari Ini ({todayFormattedStr})</span>
+                <span>Monitoring & Pencatatan Kehadiran Siswa Hari Ini ({todayFormattedStr})</span>
               </p>
+            </div>
+            <div className="mt-4 md:mt-0 flex items-center gap-2">
+              <Link
+                href="/absensi"
+                className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-950 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-98 cursor-pointer shadow-lg shadow-emerald-400/10"
+              >
+                <CalendarCheck className="w-4 h-4" />
+                <span>Input / Catat Absensi Siswa</span>
+              </Link>
             </div>
           </div>
 
@@ -1611,17 +1620,20 @@ export default function DashboardClient({
                   </span>
                 </div>
                 <p className="text-xs leading-relaxed text-slate-300">
-                  Berikut daftar kelas yang belum menginput absensi kehadiran untuk hari ini:
+                  Berikut daftar kelas yang belum menginput absensi kehadiran untuk hari ini (klik nama kelas untuk mengisi):
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {classesNotSubmittedToday.map((c) => (
-                    <span
+                    <Link
                       key={c.id}
-                      className="px-3 py-1 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-300 flex items-center gap-1.5"
+                      href={`/absensi?classId=${c.id}`}
+                      className="px-3 py-1 bg-slate-950 hover:bg-slate-900 border border-amber-500/30 hover:border-amber-400 rounded-xl text-xs font-bold text-amber-300 flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Klik untuk mengisi absensi kelas ini"
                     >
                       <Clock className="w-3.5 h-3.5 text-amber-400" />
                       <span>{c.nama}</span>
-                    </span>
+                      <span className="text-[10px] text-amber-400/70 underline ml-1">Isi Absensi &rarr;</span>
+                    </Link>
                   ))}
                 </div>
               </div>

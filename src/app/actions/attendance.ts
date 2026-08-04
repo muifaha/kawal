@@ -24,7 +24,7 @@ export async function saveAttendanceAction(
     return { error: "Silakan login terlebih dahulu." };
   }
 
-  const allowedRoles = ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS"];
+  const allowedRoles = ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS", "PIKET"];
   if (!allowedRoles.includes(user.role)) {
     return { error: "Akses ditolak. Peran Anda tidak memiliki wewenang untuk mencatat absensi." };
   }
@@ -221,7 +221,7 @@ export async function getMonthlyAttendanceMatrixAction(
     return { error: "Silakan login terlebih dahulu." };
   }
 
-  const allowedRoles = ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS"];
+  const allowedRoles = ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS", "PIKET"];
   if (!allowedRoles.includes(user.role)) {
     return { error: "Akses ditolak." };
   }

@@ -112,7 +112,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       name: "Absensi Harian",
       href: "/absensi",
       icon: CalendarCheck,
-      roles: ["BK", "SEKRETARIS"],
+      roles: ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS", "PIKET"],
     },
     {
       name: "Rekap Absensi",

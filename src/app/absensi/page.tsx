@@ -18,7 +18,7 @@ export default async function AbsensiPage({
     redirect("/login");
   }
 
-  const allowedRoles = ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS"];
+  const allowedRoles = ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS", "PIKET"];
   if (!user || !allowedRoles.includes(user.role)) {
     redirect("/dashboard?error=unauthorized");
   }
