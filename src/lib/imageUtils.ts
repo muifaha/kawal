@@ -1,6 +1,6 @@
 /**
- * Kompresi foto secara otomatis di client-side menggunakan HTML5 Canvas.
- * Mengubah foto berukuran besar (2MB-10MB) dari kamera HP/perangkat menjadi ~150KB-300KB.
+ * Kompresi foto secara otomatis di client-side menggunakan HTML5 Canvas dan mengonversi ke format WebP.
+ * Mengubah foto berukuran besar (2MB-10MB) dari kamera HP/perangkat menjadi file WebP sangat kecil (~80KB-180KB).
  */
 export async function compressImageFile(
   file: File,
@@ -33,7 +33,11 @@ export async function compressImageFile(
         }
 
         ctx.drawImage(img, 0, 0, width, height);
-        const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
+        // Konversi ke WebP untuk efisiensi kompresi maksimal
+        let compressedDataUrl = canvas.toDataURL("image/webp", quality);
+        if (!compressedDataUrl.startsWith("data:image/webp")) {
+          compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
+        }
         resolve(compressedDataUrl);
       };
       img.src = e.target?.result as string;
