@@ -7,6 +7,34 @@ import { revalidatePath } from "next/cache";
 import fs from "fs";
 import path from "path";
 
+function saveBase64Image(base64Data: string, prefix: string): string | null {
+  try {
+    if (!base64Data || typeof base64Data !== "string" || !base64Data.includes(";base64,")) {
+      return null;
+    }
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const parts = base64Data.split(";base64,");
+    const mimeMatch = parts[0].match(/data:(image\/[a-zA-Z0-9+\-+.]+)/i);
+    const rawExt = mimeMatch ? (mimeMatch[1].split("/")[1] || "jpg") : "jpg";
+    const ext = rawExt.toLowerCase() === "jpeg" ? "jpg" : rawExt.toLowerCase();
+
+    const cleanBase64 = parts[1].replace(/\s/g, "");
+    const buffer = Buffer.from(cleanBase64, "base64");
+    const filename = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+    const fullPath = path.join(uploadDir, filename);
+
+    fs.writeFileSync(fullPath, buffer);
+    return `/uploads/${filename}`;
+  } catch (err) {
+    console.error("Save base64 image error:", err);
+    return null;
+  }
+}
+
 /**
  * Mengirimkan laporan pelanggaran siswa.
  * Jika dilaporkan oleh BK, status otomatis APPROVED.
@@ -48,22 +76,12 @@ export async function reportViolationAction(
     // 1. Proses upload file bukti jika ada (Base64 data URL)
     let uploadedBukti: string[] = [];
     if (buktiBase64 && buktiBase64.length > 0) {
-      const uploadDir = path.join(process.cwd(), "public", "uploads");
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
       for (let i = 0; i < buktiBase64.length; i++) {
         const b64Data = buktiBase64[i];
         if (b64Data && typeof b64Data === "string") {
-          const match = b64Data.match(/^data:(image\/\w+);base64,(.+)$/);
-          if (match) {
-            const ext = match[1].split("/")[1] || "jpeg";
-            const buffer = Buffer.from(match[2], "base64");
-            const filename = `${Date.now()}_${i}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
-            const fullPath = path.join(uploadDir, filename);
-            fs.writeFileSync(fullPath, buffer);
-            uploadedBukti.push(`/uploads/${filename}`);
+          const savedPath = saveBase64Image(b64Data, `pelanggaran_${i}`);
+          if (savedPath) {
+            uploadedBukti.push(savedPath);
           }
         }
       }

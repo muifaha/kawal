@@ -7,6 +7,7 @@ import {
   deleteViolationReportAction,
   updateViolationReportAction,
 } from "@/app/actions/violation";
+import { compressImageFile } from "@/lib/imageUtils";
 import {
   AlertCircle,
   CheckCircle,
@@ -343,13 +344,12 @@ export default function ViolationClient({ user, classes, categories, initialHist
         let buktiBase64: string[] = [];
         if (selectedFiles.length > 0) {
           for (const file of selectedFiles) {
-            const base64 = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = (err) => reject(err);
-              reader.readAsDataURL(file);
-            });
-            buktiBase64.push(base64);
+            try {
+              const base64 = await compressImageFile(file, 1200, 0.75);
+              buktiBase64.push(base64);
+            } catch (err) {
+              console.error("Kompresi foto bukti gagal:", err);
+            }
           }
         }
 

@@ -31,6 +31,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { reportPrestasiAction, deletePrestasiAction, updatePrestasiAction } from "@/app/actions/prestasi";
+import { compressImageFile } from "@/lib/imageUtils";
 
 interface StudentItem {
   id: string;
@@ -283,35 +284,29 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
     setSelectedStudentIds((prev) => prev.filter((sid) => sid !== id));
   };
 
-  // File Upload Handlers (Base64)
-  const handlePiagamFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // File Upload Handlers (Base64 dengan Kompresi Otomatis)
+  const handlePiagamFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Ukuran file foto piagam maksimal 5MB");
-      return;
+    try {
+      const base64 = await compressImageFile(file, 1200, 0.75);
+      setFotoPiagamBase64(base64);
+      setFotoPiagamPreview(base64);
+    } catch (err) {
+      console.error("Kompresi foto piagam gagal:", err);
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFotoPiagamBase64(reader.result as string);
-      setFotoPiagamPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
   };
 
-  const handleKegiatanFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleKegiatanFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Ukuran file foto kegiatan maksimal 5MB");
-      return;
+    try {
+      const base64 = await compressImageFile(file, 1200, 0.75);
+      setFotoKegiatanBase64(base64);
+      setFotoKegiatanPreview(base64);
+    } catch (err) {
+      console.error("Kompresi foto kegiatan gagal:", err);
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFotoKegiatanBase64(reader.result as string);
-      setFotoKegiatanPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
   };
 
   // Submit Handler

@@ -9,6 +9,34 @@ import { JenisKepesertaan, KategoriPrestasi, TingkatPrestasi } from "@prisma/cli
 
 const ALLOWED_ROLES = ["PEMBINA_OSIS", "WAKA", "BK", "WALAS", "GURU"];
 
+function saveBase64Image(base64Data: string, prefix: string): string | null {
+  try {
+    if (!base64Data || typeof base64Data !== "string" || !base64Data.includes(";base64,")) {
+      return null;
+    }
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const parts = base64Data.split(";base64,");
+    const mimeMatch = parts[0].match(/data:(image\/[a-zA-Z0-9+\-+.]+)/i);
+    const rawExt = mimeMatch ? (mimeMatch[1].split("/")[1] || "jpg") : "jpg";
+    const ext = rawExt.toLowerCase() === "jpeg" ? "jpg" : rawExt.toLowerCase();
+
+    const cleanBase64 = parts[1].replace(/\s/g, "");
+    const buffer = Buffer.from(cleanBase64, "base64");
+    const filename = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+    const fullPath = path.join(uploadDir, filename);
+
+    fs.writeFileSync(fullPath, buffer);
+    return `/uploads/${filename}`;
+  } catch (err) {
+    console.error("Save base64 image error:", err);
+    return null;
+  }
+}
+
 /**
  * Menginput data prestasi siswa (Individu / Tim).
  * Otomatis memberikan remisi 10% dari poin pelanggaran aktif siswa.
@@ -63,38 +91,9 @@ export async function reportPrestasiAction(payload: {
   }
 
   try {
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    // 1. Simpan Foto Piagam jika ada
-    let fotoPiagamPath: string | null = null;
-    if (fotoPiagamBase64 && typeof fotoPiagamBase64 === "string" && fotoPiagamBase64.startsWith("data:")) {
-      const match = fotoPiagamBase64.match(/^data:(image\/\w+);base64,(.+)$/);
-      if (match) {
-        const ext = match[1].split("/")[1] || "png";
-        const buffer = Buffer.from(match[2], "base64");
-        const filename = `piagam_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
-        const fullPath = path.join(uploadDir, filename);
-        fs.writeFileSync(fullPath, buffer);
-        fotoPiagamPath = `/uploads/${filename}`;
-      }
-    }
-
-    // 2. Simpan Foto Kegiatan/Penyerahan jika ada
-    let fotoKegiatanPath: string | null = null;
-    if (fotoKegiatanBase64 && typeof fotoKegiatanBase64 === "string" && fotoKegiatanBase64.startsWith("data:")) {
-      const match = fotoKegiatanBase64.match(/^data:(image\/\w+);base64,(.+)$/);
-      if (match) {
-        const ext = match[1].split("/")[1] || "png";
-        const buffer = Buffer.from(match[2], "base64");
-        const filename = `kegiatan_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
-        const fullPath = path.join(uploadDir, filename);
-        fs.writeFileSync(fullPath, buffer);
-        fotoKegiatanPath = `/uploads/${filename}`;
-      }
-    }
+    // 1. Simpan Foto Piagam & Kegiatan jika ada
+    const fotoPiagamPath = fotoPiagamBase64 ? saveBase64Image(fotoPiagamBase64, "piagam") : null;
+    const fotoKegiatanPath = fotoKegiatanBase64 ? saveBase64Image(fotoKegiatanBase64, "kegiatan") : null;
 
     const buktiArr: string[] = [];
     if (fotoPiagamPath) buktiArr.push(fotoPiagamPath);
@@ -367,29 +366,15 @@ export async function updatePrestasiAction(payload: {
     }
 
     let fotoPiagamPath = existing.fotoPiagam;
-    if (fotoPiagamBase64 && typeof fotoPiagamBase64 === "string" && fotoPiagamBase64.startsWith("data:")) {
-      const match = fotoPiagamBase64.match(/^data:(image\/\w+);base64,(.+)$/);
-      if (match) {
-        const ext = match[1].split("/")[1] || "png";
-        const buffer = Buffer.from(match[2], "base64");
-        const filename = `piagam_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
-        const fullPath = path.join(uploadDir, filename);
-        fs.writeFileSync(fullPath, buffer);
-        fotoPiagamPath = `/uploads/${filename}`;
-      }
+    if (fotoPiagamBase64) {
+      const saved = saveBase64Image(fotoPiagamBase64, "piagam");
+      if (saved) fotoPiagamPath = saved;
     }
 
     let fotoKegiatanPath = existing.fotoKegiatan;
-    if (fotoKegiatanBase64 && typeof fotoKegiatanBase64 === "string" && fotoKegiatanBase64.startsWith("data:")) {
-      const match = fotoKegiatanBase64.match(/^data:(image\/\w+);base64,(.+)$/);
-      if (match) {
-        const ext = match[1].split("/")[1] || "png";
-        const buffer = Buffer.from(match[2], "base64");
-        const filename = `kegiatan_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
-        const fullPath = path.join(uploadDir, filename);
-        fs.writeFileSync(fullPath, buffer);
-        fotoKegiatanPath = `/uploads/${filename}`;
-      }
+    if (fotoKegiatanBase64) {
+      const saved = saveBase64Image(fotoKegiatanBase64, "kegiatan");
+      if (saved) fotoKegiatanPath = saved;
     }
 
     const updated = await prisma.prestasiSiswa.update({
