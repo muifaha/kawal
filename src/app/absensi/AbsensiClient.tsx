@@ -113,15 +113,25 @@ export default function AbsensiClient({
       return;
     }
 
+    let isMounted = true;
+
     async function loadExistingAttendance() {
+      const selectedClassObj = classes.find((c) => c.id === selectedClassId);
+      const classStudents = selectedClassObj?.siswa || [];
+
       const defaultMap: Record<string, StatusType> = {};
-      students.forEach((s) => {
+      classStudents.forEach((s) => {
         defaultMap[s.id] = "H";
       });
-      setAttendanceMap(defaultMap);
-      setFocusedIndex(null);
+
+      if (isMounted) {
+        setAttendanceMap(defaultMap);
+        setFocusedIndex(null);
+      }
 
       const res = await getAttendanceAction(selectedClassId, selectedDate);
+      if (!isMounted) return;
+
       if (res.success) {
         setIsLockedForSekretaris(!!res.isLockedForSekretaris);
         if (res.data && res.data.length > 0) {
@@ -144,7 +154,11 @@ export default function AbsensiClient({
     }
 
     loadExistingAttendance();
-  }, [selectedClassId, selectedDate, students]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedClassId, selectedDate, classes]);
 
   const isReadOnly = isLockedForSekretaris || (hasExistingRecords && !isEditUnlocked);
 

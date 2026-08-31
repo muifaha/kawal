@@ -148,17 +148,17 @@ Terima kasih atas kerja samanya.
 _SMKN KAWAL powered by Kawal_`;
       }
 
-      // Kirim via Helper WhatsApp
-      const waSent = await sendWhatsAppNotification(walas.whatsappNumber!, waMessage);
-      
+      // Kirim via Helper WhatsApp di background tanpa membekukan response
+      sendWhatsAppNotification(walas.whatsappNumber!, waMessage).catch((err) =>
+        console.error("Async WA notification error:", err)
+      );
+
       revalidatePath("/dashboard");
       revalidatePath("/absensi");
-
-      if (waSent) {
-        return { success: true, message: `Absensi berhasil disimpan dan notifikasi WhatsApp dikirim ke Wali Kelas (${walas.nama}).` };
-      } else {
-        return { success: true, message: "Absensi berhasil disimpan." };
-      }
+      return {
+        success: true,
+        message: `Absensi berhasil disimpan dan notifikasi WhatsApp sedang dikirim ke Wali Kelas (${walas.nama}).`,
+      };
     }
 
     revalidatePath("/dashboard");
