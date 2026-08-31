@@ -66,6 +66,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard?error=unauthorized", request.url));
   }
 
+  // Halaman Prestasi Siswa (Dapat diakses oleh WAKA, BK, WALAS, GURU, dan PEMBINA_OSIS)
+  if (pathname.startsWith("/prestasi") && !["WAKA", "BK", "WALAS", "GURU", "PEMBINA_OSIS"].includes(role)) {
+    return NextResponse.redirect(new URL("/dashboard?error=unauthorized", request.url));
+  }
+
   // Halaman khusus Guru BK (Approval & Remisi Poin)
   const bkOnlyPaths = ["/approval", "/remisi"];
   const isBkPath = bkOnlyPaths.some((path) => pathname.startsWith(path));

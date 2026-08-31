@@ -15,6 +15,7 @@ enum Role {
   OSIS
   SEKRETARIS
   PIKET
+  PEMBINA_OSIS
 }
 
 enum AttendanceStatus {
@@ -60,6 +61,7 @@ model User {
   bimbinganDilakukan    BimbinganKonseling[] @relation("BimbinganKonselorRelation")
   jadwalMengajar        JadwalPelajaran[]
   jurnalMengajar        JurnalMengajar[]
+  prestasiDilaporkan    PrestasiSiswa[]      @relation("PrestasiReporterRelation")
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -117,6 +119,7 @@ model Siswa {
   bimbingan   BimbinganKonseling[]
   jurnalAbsensi   JurnalAbsensi[]
   jurnalPenilaian JurnalPenilaian[]
+  prestasiAnggota PrestasiSiswaAnggota[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -354,4 +357,64 @@ model JurnalPenilaian {
   siswa      Siswa          @relation(fields: [siswaId], references: [id], onDelete: Cascade)
   nilai      Int
   keterangan String?        // Contoh: "Tugas Harian 1"
+}
+
+enum JenisKepesertaan {
+  INDIVIDU
+  TIM
+}
+
+enum KategoriPrestasi {
+  BERJENJANG
+  TIDAK_BERJENJANG
+}
+
+enum TingkatPrestasi {
+  KECAMATAN
+  KOTA
+  PROVINSI
+  NASIONAL
+  INTERNASIONAL
+}
+
+model PrestasiSiswa {
+  id               String           @id @default(uuid())
+  jenisKepesertaan JenisKepesertaan @default(INDIVIDU)
+  namaTim          String?          // Nama Tim / Kontingen jika TIM
+
+  // Detail Kejuaraan
+  namaPrestasi     String           // Nama Prestasi / Kejuaraan (Termasuk Peringkat / Juara)
+  waktuPelaksanaan DateTime         @db.Date
+  penyelenggara    String           // Penyelenggara Event / Kejuaraan
+  kategori         KategoriPrestasi @default(BERJENJANG)
+  tingkat          TingkatPrestasi  @default(KOTA)
+  catatan          String?          // Catatan tambahan (opsional)
+
+  // Otomatis Remisi Poin
+  isRemisiOtomatis Boolean          @default(true)
+  poinRemisi       Float            @default(0)
+
+  // Bukti Upload (Foto Piagam & Foto Diri / Kelompok)
+  fotoPiagam       String?          // Path foto piagam / sertifikat
+  fotoKegiatan     String?          // Path foto diri / kelompok / penyerahan hadiah
+
+  // User Pelapor (Pembina OSIS / BK / WAKA / Guru)
+  pelaporId        String
+  pelapor          User             @relation("PrestasiReporterRelation", fields: [pelaporId], references: [id], onDelete: Cascade)
+
+  // Daftar Siswa Anggota Prestasi
+  anggota          PrestasiSiswaAnggota[]
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model PrestasiSiswaAnggota {
+  id         String        @id @default(uuid())
+  prestasiId String
+  prestasi   PrestasiSiswa @relation(fields: [prestasiId], references: [id], onDelete: Cascade)
+  siswaId    String
+  siswa      Siswa         @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+
+  @@unique([prestasiId, siswaId])
 }

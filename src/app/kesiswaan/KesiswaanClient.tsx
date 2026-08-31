@@ -1051,6 +1051,7 @@ export default function KesiswaanClient({
                 <option value="GURU">Guru Pengajar (GURU)</option>
                 <option value="PIKET">Guru Piket (PIKET)</option>
                 <option value="OSIS">Pengurus OSIS (OSIS)</option>
+                <option value="PEMBINA_OSIS">Pembina OSIS (PEMBINA_OSIS)</option>
                 <option value="SEKRETARIS">Sekretaris Kelas (SEKRETARIS)</option>
               </select>
             </div>
@@ -2418,6 +2419,7 @@ export default function KesiswaanClient({
                   <option value="WALAS">Wali Kelas (Walas)</option>
                   <option value="BK">Guru BK (Super Admin/Approver)</option>
                   <option value="WAKA">Waka Kesiswaan (Master Admin)</option>
+                  <option value="PEMBINA_OSIS">Pembina OSIS (Input & Kelola Prestasi Siswa)</option>
                   <option value="OSIS">Pengurus OSIS (Lapor Poin Upacara)</option>
                   <option value="SEKRETARIS">Pengurus / Sekretaris Kelas (Absensi Kelas)</option>
                 </select>

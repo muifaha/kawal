@@ -23,6 +23,7 @@ import {
   HeartHandshake,
   Smartphone,
   Download,
+  Trophy,
 } from "lucide-react";
 
 interface SidebarLayoutProps {
@@ -106,7 +107,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       name: "Dashboard",
       href: "/dashboard",
       icon: LayoutDashboard,
-      roles: ["WAKA", "BK", "WALAS", "GURU", "OSIS", "SEKRETARIS", "PIKET"],
+      roles: ["WAKA", "BK", "WALAS", "GURU", "OSIS", "SEKRETARIS", "PIKET", "PEMBINA_OSIS"],
     },
     {
       name: "Absensi Harian",
@@ -146,6 +147,12 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
           roles: ["BK"],
         },
       ],
+    },
+    {
+      name: "Prestasi Siswa",
+      href: "/prestasi",
+      icon: Trophy,
+      roles: ["WAKA", "BK", "WALAS", "GURU", "PEMBINA_OSIS"],
     },
     {
       name: "Bimbingan Konseling",
