@@ -79,6 +79,16 @@ async function main() {
     },
   });
 
+  const userPembinaOsis = await prisma.user.create({
+    data: {
+      nip: "198505102010012005",
+      username: "pembina_osis",
+      passwordHash: hashOsis,
+      nama: "Siti Rahmawati, S.Pd. (Pembina OSIS)",
+      role: Role.PEMBINA_OSIS,
+    },
+  });
+
   console.log("Users created.");
 
   // 4. Create Tahun Ajaran

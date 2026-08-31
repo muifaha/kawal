@@ -22,6 +22,12 @@ import {
   Filter,
   Check,
   Zap,
+  Medal,
+  Globe,
+  Star,
+  ChevronRight,
+  TrendingUp,
+  Image as ImageIcon,
 } from "lucide-react";
 import { reportPrestasiAction, deletePrestasiAction } from "@/app/actions/prestasi";
 
@@ -84,12 +90,12 @@ const DEFAULT_REMISI_POINTS: Record<string, number> = {
   INTERNASIONAL: 50,
 };
 
-const TINGKAT_BADGE_STYLE: Record<string, { bg: string; text: string; border: string }> = {
-  KECAMATAN: { bg: "bg-slate-500/10", text: "text-slate-300", border: "border-slate-500/20" },
-  KOTA: { bg: "bg-sky-500/10", text: "text-sky-400", border: "border-sky-500/20" },
-  PROVINSI: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
-  NASIONAL: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" },
-  INTERNASIONAL: { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/20" },
+const TINGKAT_BADGE_STYLE: Record<string, { bg: string; text: string; border: string; icon: any }> = {
+  KECAMATAN: { bg: "bg-slate-500/10", text: "text-slate-300", border: "border-slate-500/30", icon: Building },
+  KOTA: { bg: "bg-sky-500/10", text: "text-sky-400", border: "border-sky-500/30", icon: Award },
+  PROVINSI: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/30", icon: Medal },
+  NASIONAL: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/30", icon: Star },
+  INTERNASIONAL: { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/30", icon: Globe },
 };
 
 export default function PrestasiClient({ user, classes, initialPrestasiList }: PrestasiClientProps) {
@@ -108,7 +114,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
   const [penyelenggara, setPenyelenggara] = useState("");
   const [kategori, setKategori] = useState<"BERJENJANG" | "TIDAK_BERJENJANG">("BERJENJANG");
   const [tingkat, setTingkat] = useState<"KECAMATAN" | "KOTA" | "PROVINSI" | "NASIONAL" | "INTERNASIONAL">("KOTA");
-  
+
   // Remisi Otomatis States
   const [isRemisiOtomatis, setIsRemisiOtomatis] = useState(true);
   const [poinRemisi, setPoinRemisi] = useState(10); // default for KOTA
@@ -130,6 +136,31 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
   const [historySearchQuery, setHistorySearchQuery] = useState("");
   const [historyTingkatFilter, setHistoryTingkatFilter] = useState("");
   const [historyKategoriFilter, setHistoryKategoriFilter] = useState("");
+
+  // KPI Metrics Calculation
+  const metrics = useMemo(() => {
+    const totalCount = prestasiList.length;
+    const nationalOrHigher = prestasiList.filter((p) => p.tingkat === "NASIONAL" || p.tingkat === "INTERNASIONAL").length;
+
+    const uniqueStudentsSet = new Set<string>();
+    let totalRemissionPoints = 0;
+
+    prestasiList.forEach((p) => {
+      p.anggota.forEach((a) => {
+        uniqueStudentsSet.add(a.id);
+        if (p.isRemisiOtomatis) {
+          totalRemissionPoints += p.poinRemisi;
+        }
+      });
+    });
+
+    return {
+      totalCount,
+      nationalOrHigher,
+      totalStudents: uniqueStudentsSet.size,
+      totalRemissionPoints,
+    };
+  }, [prestasiList]);
 
   // Flat Student List for Autocomplete Tagging
   const allStudents = useMemo(() => {
@@ -155,8 +186,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
       const q = studentSearchQuery.trim().toLowerCase();
       list = list.filter((s) => s.searchString.includes(q));
     }
-    // Exclude already selected students
-    return list.filter((s) => !selectedStudentIds.includes(s.id)).slice(0, 20);
+    return list.filter((s) => !selectedStudentIds.includes(s.id)).slice(0, 15);
   }, [allStudents, classFilterId, studentSearchQuery, selectedStudentIds]);
 
   // Selected Students Detail
@@ -177,9 +207,9 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
   // Add / Remove Student Handler
   const handleAddStudent = (id: string) => {
     if (jenisKepesertaan === "INDIVIDU") {
-      setSelectedStudentIds([id]); // Single student for INDIVIDU
+      setSelectedStudentIds([id]);
     } else {
-      setSelectedStudentIds((prev) => [...prev, id]); // Multi students for TIM
+      setSelectedStudentIds((prev) => [...prev, id]);
     }
     setStudentSearchQuery("");
   };
@@ -262,7 +292,6 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
       } else {
         setStatusMessage({ type: "success", text: res.message || "Data prestasi berhasil disimpan!" });
 
-        // Update local list
         if (res.newPrestasi) {
           const formattedNew: PrestasiItem = {
             id: res.newPrestasi.id,
@@ -351,32 +380,32 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 border border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-xl">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1">
-                <Trophy className="w-3 h-3 text-amber-400" />
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="px-2.5 py-1 bg-amber-400/10 border border-amber-400/30 text-amber-300 text-[10px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                <Trophy className="w-3.5 h-3.5 text-amber-400" />
                 Modul Prestasi Siswa
               </span>
               <span className="text-xs text-slate-400 font-semibold">• Kawal Sekolahan</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
               Pencatatan & Rekapitulasi Prestasi Siswa
             </h1>
-            <p className="text-xs text-slate-400 mt-1">
-              Kelola data kejuaraan individu maupun tim, apresiasi sertifikat, dan pemberian remisi poin pelanggaran otomatis.
+            <p className="text-xs text-slate-300 mt-1.5 max-w-2xl leading-relaxed">
+              Kelola pendokumentasian prestasi kejuaraan siswa, apresiasi sertifikat/piagam, serta integrasi pemotongan poin pelanggaran secara langsung.
             </p>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 self-start md:self-auto">
+          <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 self-start md:self-auto shrink-0">
             <button
               onClick={() => setActiveTab("input")}
               className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 activeTab === "input"
-                  ? "bg-amber-400 text-amber-950 shadow-md shadow-amber-400/10"
+                  ? "bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 shadow-md shadow-amber-400/20"
                   : "text-slate-400 hover:text-white hover:bg-slate-900"
               }`}
             >
@@ -387,7 +416,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
               onClick={() => setActiveTab("list")}
               className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 activeTab === "list"
-                  ? "bg-amber-400 text-amber-950 shadow-md shadow-amber-400/10"
+                  ? "bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 shadow-md shadow-amber-400/20"
                   : "text-slate-400 hover:text-white hover:bg-slate-900"
               }`}
             >
@@ -398,28 +427,67 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
         </div>
       </div>
 
+      {/* Metric KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="p-4 bg-slate-900/50 border border-slate-800/80 rounded-2xl space-y-1 relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Total Prestasi</span>
+            <Trophy className="w-4 h-4 text-amber-400/70" />
+          </div>
+          <p className="text-2xl font-bold text-white">{metrics.totalCount}</p>
+          <p className="text-[10px] text-slate-400">Kejuaraan berhasil didokumentasikan</p>
+        </div>
+
+        <div className="p-4 bg-slate-900/50 border border-slate-800/80 rounded-2xl space-y-1 relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Nasional / Internasional</span>
+            <Globe className="w-4 h-4 text-purple-400/70" />
+          </div>
+          <p className="text-2xl font-bold text-purple-300">{metrics.nationalOrHigher}</p>
+          <p className="text-[10px] text-slate-400">Tingkat tinggi diraih</p>
+        </div>
+
+        <div className="p-4 bg-slate-900/50 border border-slate-800/80 rounded-2xl space-y-1 relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider">Siswa Berprestasi</span>
+            <Users className="w-4 h-4 text-sky-400/70" />
+          </div>
+          <p className="text-2xl font-bold text-sky-300">{metrics.totalStudents}</p>
+          <p className="text-[10px] text-slate-400">Siswa terlibat individu & tim</p>
+        </div>
+
+        <div className="p-4 bg-slate-900/50 border border-slate-800/80 rounded-2xl space-y-1 relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Total Remisi Poin</span>
+            <Zap className="w-4 h-4 text-emerald-400/70" />
+          </div>
+          <p className="text-2xl font-bold text-emerald-300">+{metrics.totalRemissionPoints}</p>
+          <p className="text-[10px] text-slate-400">Poin remisi disalurkan</p>
+        </div>
+      </div>
+
       {/* Alert Status Banner */}
       {statusMessage && (
         <div
-          className={`p-4 rounded-xl border flex items-center justify-between gap-3 text-xs font-medium ${
+          className={`p-4 rounded-xl border flex items-center justify-between gap-3 text-xs font-semibold transition-all ${
             statusMessage.type === "success"
-              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-              : "bg-rose-500/10 border-rose-500/20 text-rose-300"
+              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+              : "bg-rose-500/10 border-rose-500/30 text-rose-300"
           }`}
         >
           <div className="flex items-center gap-2">
             {statusMessage.type === "success" ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400 shrink-0" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <AlertCircle className="w-4.5 h-4.5 text-rose-400 shrink-0" />
             )}
             <span>{statusMessage.text}</span>
           </div>
           <button
             onClick={() => setStatusMessage(null)}
-            className="p-1 hover:bg-slate-900 rounded transition-all text-slate-400 hover:text-white"
+            className="p-1 hover:bg-slate-900 rounded-lg transition-all text-slate-400 hover:text-white"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -428,11 +496,13 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
       {activeTab === "input" && (
         <form onSubmit={handleSubmitForm} className="space-y-6">
           {/* SECTION 1: KEPESERTAAN & SISWA */}
-          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-800/60">
-              <Users className="w-4 h-4 text-amber-400" />
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                1. Kategori Kepesertaan & Tagging Siswa
+          <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
+              <span className="w-6 h-6 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-bold flex items-center justify-center">
+                1
+              </span>
+              <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+                Kategori Kepesertaan & Tagging Siswa
               </h2>
             </div>
 
@@ -451,7 +521,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                     }}
                     className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       jenisKepesertaan === "INDIVIDU"
-                        ? "bg-amber-400 text-amber-950"
+                        ? "bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 shadow-md shadow-amber-400/10"
                         : "text-slate-400 hover:text-white"
                     }`}
                   >
@@ -463,7 +533,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                     onClick={() => setJenisKepesertaan("TIM")}
                     className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       jenisKepesertaan === "TIM"
-                        ? "bg-amber-400 text-amber-950"
+                        ? "bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 shadow-md shadow-amber-400/10"
                         : "text-slate-400 hover:text-white"
                     }`}
                   >
@@ -563,7 +633,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                     {selectedStudentsDetail.map((s) => (
                       <div
                         key={s.id}
-                        className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-300 flex items-center gap-2"
+                        className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs font-bold text-amber-300 flex items-center gap-2 shadow-sm"
                       >
                         <span>
                           {s.nama} ({s.kelasNama})
@@ -584,11 +654,13 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
           </div>
 
           {/* SECTION 2: DETAIL KEJUARAAN & TINGKAT PRESTASI */}
-          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-800/60">
-              <Award className="w-4 h-4 text-amber-400" />
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                2. Detail Kejuaraan & Tingkat Prestasi
+          <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
+              <span className="w-6 h-6 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-bold flex items-center justify-center">
+                2
+              </span>
+              <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+                Detail Kejuaraan & Tingkat Prestasi
               </h2>
             </div>
 
@@ -647,7 +719,9 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                     type="button"
                     onClick={() => setKategori("BERJENJANG")}
                     className={`py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      kategori === "BERJENJANG" ? "bg-amber-400 text-amber-950" : "text-slate-400 hover:text-white"
+                      kategori === "BERJENJANG"
+                        ? "bg-amber-400 text-amber-950 shadow-md shadow-amber-400/10"
+                        : "text-slate-400 hover:text-white"
                     }`}
                   >
                     Berjenjang (Resmi)
@@ -656,7 +730,9 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                     type="button"
                     onClick={() => setKategori("TIDAK_BERJENJANG")}
                     className={`py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      kategori === "TIDAK_BERJENJANG" ? "bg-amber-400 text-amber-950" : "text-slate-400 hover:text-white"
+                      kategori === "TIDAK_BERJENJANG"
+                        ? "bg-amber-400 text-amber-950 shadow-md shadow-amber-400/10"
+                        : "text-slate-400 hover:text-white"
                     }`}
                   >
                     Tidak Berjenjang
@@ -684,10 +760,10 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
             </div>
 
             {/* INTEGRASI AUTOMATIC REMISI POIN */}
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl space-y-3 mt-3">
+            <div className="p-4 bg-gradient-to-r from-emerald-950/40 to-slate-950 border border-emerald-500/30 rounded-xl space-y-3 mt-3 shadow-inner">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-emerald-400" />
+                  <Zap className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span className="text-xs font-bold text-emerald-300 uppercase tracking-wider">
                     Otomatis Potong / Remisi Poin Pelanggaran Siswa
                   </span>
@@ -697,14 +773,14 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                     type="checkbox"
                     checked={isRemisiOtomatis}
                     onChange={(e) => setIsRemisiOtomatis(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500"
+                    className="w-4 h-4 rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
                   />
                   <span className="text-xs font-bold text-white">Aktifkan Remisi</span>
                 </label>
               </div>
 
               {isRemisiOtomatis && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-emerald-500/20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-emerald-500/20">
                   <div>
                     <label className="block text-[11px] font-semibold text-emerald-400 mb-1">
                       Jumlah Poin Remisi per Siswa
@@ -729,11 +805,13 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
           </div>
 
           {/* SECTION 3: UPLOAD DOKUMEN & CATATAN */}
-          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-800/60">
-              <Upload className="w-4 h-4 text-amber-400" />
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                3. Upload Dokumen Piagam & Catatan Tambahan (Opsional)
+          <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
+              <span className="w-6 h-6 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-bold flex items-center justify-center">
+                3
+              </span>
+              <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+                Upload Dokumen Piagam & Catatan Tambahan (Opsional)
               </h2>
             </div>
 
@@ -758,7 +836,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                         setFotoPiagamBase64(null);
                         setFotoPiagamPreview(null);
                       }}
-                      className="absolute top-1 right-1 p-1 bg-rose-600/80 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute top-1 right-1 p-1 bg-rose-600/80 text-white rounded-full transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -786,7 +864,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                         setFotoKegiatanBase64(null);
                         setFotoKegiatanPreview(null);
                       }}
-                      className="absolute top-1 right-1 p-1 bg-rose-600/80 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute top-1 right-1 p-1 bg-rose-600/80 text-white rounded-full transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -815,7 +893,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-6 py-3 bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold rounded-xl text-xs transition-all cursor-pointer shadow-lg shadow-amber-400/10 disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-amber-950 font-bold rounded-xl text-xs transition-all cursor-pointer shadow-lg shadow-amber-400/20 disabled:opacity-50"
             >
               <Trophy className="w-4 h-4" />
               <span>{isSubmitting ? "Memproses Data..." : "Simpan Data Prestasi Siswa"}</span>
@@ -828,7 +906,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
       {activeTab === "list" && (
         <div className="space-y-4">
           {/* Filter Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/50 p-4 rounded-2xl border border-slate-800/80">
             {/* Search Input */}
             <div className="relative">
               <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
@@ -872,7 +950,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
           </div>
 
           {/* Table Container */}
-          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl overflow-hidden">
+          <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-800 text-xs">
                 <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold">
@@ -892,12 +970,13 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                     <tr>
                       <td colSpan={8} className="py-12 text-center text-slate-500">
                         <Trophy className="w-8 h-8 text-slate-700 mx-auto mb-2" />
-                        <p className="font-semibold">Belum ada data prestasi yang sesuai dengan filter.</p>
+                        <p className="font-semibold text-slate-400">Belum ada data prestasi yang sesuai dengan filter.</p>
                       </td>
                     </tr>
                   ) : (
                     filteredHistory.map((item, idx) => {
                       const badge = TINGKAT_BADGE_STYLE[item.tingkat] || TINGKAT_BADGE_STYLE.KOTA;
+                      const IconComp = badge.icon;
                       const formattedDate = new Date(item.waktuPelaksanaan).toLocaleDateString("id-ID", {
                         day: "numeric",
                         month: "short",
@@ -905,7 +984,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                       });
 
                       return (
-                        <tr key={item.id} className="hover:bg-slate-900/50 transition-colors">
+                        <tr key={item.id} className="hover:bg-slate-900/60 transition-colors">
                           <td className="py-3.5 px-4 text-center font-bold text-slate-500">{idx + 1}</td>
 
                           {/* Nama Prestasi */}
@@ -919,7 +998,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                                 <p className="text-[10px] text-slate-400 italic">"{item.catatan}"</p>
                               )}
                               <p className="text-[10px] text-slate-500">
-                                Dicatat oleh: <span className="text-slate-400 font-semibold">{item.pelapor.nama}</span>
+                                Pelapor: <span className="text-slate-400 font-semibold">{item.pelapor.nama}</span>
                               </p>
                             </div>
                           </td>
@@ -928,7 +1007,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                           <td className="py-3.5 px-4">
                             <div className="space-y-1">
                               {item.jenisKepesertaan === "TIM" && item.namaTim && (
-                                <span className="px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[10px] font-bold rounded">
+                                <span className="px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[10px] font-bold rounded inline-block">
                                   Tim: {item.namaTim}
                                 </span>
                               )}
@@ -949,9 +1028,10 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                           <td className="py-3.5 px-4">
                             <div className="space-y-1">
                               <span
-                                className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badge.bg} ${badge.text} ${badge.border}`}
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badge.bg} ${badge.text} ${badge.border}`}
                               >
-                                Tingkat {item.tingkat}
+                                <IconComp className="w-3 h-3" />
+                                <span>Tingkat {item.tingkat}</span>
                               </span>
                               <p className="text-[10px] text-slate-400">
                                 {item.kategori === "BERJENJANG" ? "Berjenjang (Resmi)" : "Tidak Berjenjang"}
@@ -976,7 +1056,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                           {/* Remisi Poin */}
                           <td className="py-3.5 px-4 text-center">
                             {item.isRemisiOtomatis && item.poinRemisi > 0 ? (
-                              <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold rounded-lg text-[10px] inline-flex items-center gap-1">
+                              <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold rounded-lg text-[10px] inline-flex items-center gap-1 shadow-sm">
                                 <Zap className="w-3 h-3" />+{item.poinRemisi} Poin
                               </span>
                             ) : (
@@ -1051,7 +1131,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
       {/* ==================== IMAGE PREVIEW MODAL ==================== */}
       {previewImageModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-5 space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-400" />
@@ -1060,7 +1140,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
               <button
                 type="button"
                 onClick={() => setPreviewImageModal(null)}
-                className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
+                className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
