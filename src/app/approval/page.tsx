@@ -78,8 +78,8 @@ export default async function ApprovalPage() {
       (sum, v) => sum + v.detailPelanggaran.poin,
       0
     );
-    const totalRemissions = report.siswa.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0);
-    const currentPoints = Math.max(0, totalViolations - totalRemissions);
+    const totalRemissions = Math.round(report.siswa.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
+    const currentPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
 
     return {
       id: report.id,

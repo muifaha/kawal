@@ -526,8 +526,8 @@ export default async function DashboardPage() {
         (sum, v) => sum + v.detailPelanggaran.poin,
         0
       );
-      const totalRemissions = student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0);
-      const finalPoints = Math.max(0, totalViolations - totalRemissions);
+      const totalRemissions = Math.round(student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
+      const finalPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
 
       return {
         id: student.id,
@@ -840,8 +840,8 @@ export default async function DashboardPage() {
       (sum, v) => sum + v.detailPelanggaran.poin,
       0
     );
-    const totalRemissions = student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0);
-    const netPoints = Math.max(0, totalViolations - totalRemissions);
+    const totalRemissions = Math.round(student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
+    const netPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
 
     let qualifiedPointsLevel = 0;
     let qualifiedPointsThreshold = 0;

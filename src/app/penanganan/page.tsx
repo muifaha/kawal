@@ -123,8 +123,8 @@ export default async function PenangananPage({
 
     students = dbStudents.map((s) => {
       const totalViolations = s.pelanggaran.reduce((sum, p) => sum + p.detailPelanggaran.poin, 0);
-      const totalRemissions = s.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0);
-      const netPoints = Math.max(0, totalViolations - totalRemissions);
+      const totalRemissions = Math.round(s.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
+      const netPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
 
       const activeWarnings: any[] = [];
 

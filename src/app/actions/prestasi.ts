@@ -173,11 +173,11 @@ export async function reportPrestasiAction(payload: {
               (sum, v) => sum + v.detailPelanggaran.poin,
               0
             );
-            const totalRemissions = student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0);
-            const currentPoints = Math.max(0, totalViolations - totalRemissions);
+            const totalRemissions = Math.round(student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
+            const currentPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
 
             if (currentPoints > 0) {
-              // Remisi 10% dari poin berjalan
+              // Remisi 10% dari poin berjalan (dibulatkan 2 angka di belakang koma)
               const pointsToReduce = Math.max(0.1, Math.round(currentPoints * 0.10 * 100) / 100);
 
               await tx.transaksiRemisi.create({
@@ -192,7 +192,7 @@ export async function reportPrestasiAction(payload: {
               });
 
               totalRemissionStudents++;
-              totalRemissionPoinSum += pointsToReduce;
+              totalRemissionPoinSum = Math.round((totalRemissionPoinSum + pointsToReduce) * 100) / 100;
             }
           }
         }

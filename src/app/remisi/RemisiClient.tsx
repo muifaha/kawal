@@ -391,7 +391,7 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
                         </td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           <span className="font-bold text-emerald-400 font-mono">
-                            -{item.poinDikurangi} Pts
+                            -{Math.round(item.poinDikurangi * 100) / 100} Pts
                           </span>
                         </td>
                         <td className="py-3 px-4 text-slate-400 whitespace-nowrap">

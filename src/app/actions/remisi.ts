@@ -55,8 +55,8 @@ export async function applyConditionalRemisiAction(
       (sum, v) => sum + v.detailPelanggaran.poin,
       0
     );
-    const totalRemissions = student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0);
-    const currentPoints = Math.max(0, totalViolations - totalRemissions);
+    const totalRemissions = Math.round(student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
+    const currentPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
 
     if (currentPoints === 0) {
       return { error: `Siswa ${student.nama} memiliki 0 poin. Tidak memerlukan remisi.` };
@@ -152,8 +152,8 @@ export async function runAutomaticRemissionAction() {
         (sum, v) => sum + v.detailPelanggaran.poin,
         0
       );
-      const totalRemissions = student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0);
-      const currentPoints = Math.max(0, totalViolations - totalRemissions);
+      const totalRemissions = Math.round(student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
+      const currentPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
 
       // Siswa harus memiliki poin > 0 untuk menerima remisi
       if (currentPoints === 0) continue;
@@ -246,8 +246,8 @@ export async function checkAndApplyAutomaticRemissions() {
         (sum, v) => sum + v.detailPelanggaran.poin,
         0
       );
-      const totalRemissions = student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0);
-      const currentPoints = Math.max(0, totalViolations - totalRemissions);
+      const totalRemissions = Math.round(student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
+      const currentPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
 
       // Lewati jika siswa tidak memiliki poin
       if (currentPoints === 0) continue;

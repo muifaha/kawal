@@ -224,7 +224,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
       totalCount,
       nationalOrHigher,
       totalStudents: uniqueStudentsSet.size,
-      totalRemissionPoints,
+      totalRemissionPoints: Math.round(totalRemissionPoints * 100) / 100,
     };
   }, [prestasiList]);
 

@@ -2700,7 +2700,7 @@ export default function DashboardClient({
                                     : "bg-slate-800 text-slate-300"
                                 }`}
                               >
-                                {student.points} Poin
+                                {Math.round(student.points * 100) / 100} Poin
                               </span>
                             </td>
                             <td className="py-3.5 px-4 text-center whitespace-nowrap">
