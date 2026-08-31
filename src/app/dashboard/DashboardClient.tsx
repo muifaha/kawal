@@ -1584,7 +1584,7 @@ export default function DashboardClient({
             <div className="mt-4 md:mt-0 flex items-center gap-2">
               <Link
                 href="/prestasi?tab=input"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-amber-950 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-98 cursor-pointer shadow-lg shadow-amber-400/20"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-98 cursor-pointer shadow-lg shadow-amber-500/20"
               >
                 <PlusCircle className="w-4 h-4" />
                 <span>Input Prestasi Baru</span>
