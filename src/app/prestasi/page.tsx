@@ -8,7 +8,12 @@ import { getPrestasiListAction } from "@/app/actions/prestasi";
 
 export const revalidate = 0;
 
-export default async function PrestasiPage() {
+export default async function PrestasiPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
   const user = await getSessionUser();
   if (!user) {
     redirect("/login");
@@ -56,6 +61,7 @@ export default async function PrestasiPage() {
         user={user}
         classes={classes}
         initialPrestasiList={initialPrestasiList as any}
+        defaultTab={tab === "input" ? "input" : "list"}
       />
     </SidebarLayout>
   );

@@ -80,6 +80,7 @@ interface PrestasiClientProps {
   };
   classes: KelasItem[];
   initialPrestasiList: PrestasiItem[];
+  defaultTab?: "input" | "list";
 }
 
 const DEFAULT_REMISI_POINTS: Record<string, number> = {
@@ -98,8 +99,8 @@ const TINGKAT_BADGE_STYLE: Record<string, { bg: string; text: string; border: st
   INTERNASIONAL: { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/30", icon: Globe },
 };
 
-export default function PrestasiClient({ user, classes, initialPrestasiList }: PrestasiClientProps) {
-  const [activeTab, setActiveTab] = useState<"input" | "list">("input");
+export default function PrestasiClient({ user, classes, initialPrestasiList, defaultTab = "list" }: PrestasiClientProps) {
+  const [activeTab, setActiveTab] = useState<"input" | "list">(defaultTab);
   const [prestasiList, setPrestasiList] = useState<PrestasiItem[]>(initialPrestasiList);
 
   // Form States

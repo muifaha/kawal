@@ -38,6 +38,10 @@ import {
   CheckCircle,
   Share2,
   Pencil,
+  Trophy,
+  PlusCircle,
+  Globe,
+  Zap,
 } from "lucide-react";
 import { resolveSummonsAction } from "@/app/actions/kesiswaan";
 import { sendDailyAttendanceToWAGroupAction } from "@/app/actions/attendance";
@@ -270,6 +274,7 @@ interface DashboardClientProps {
       status: "S" | "I" | "A" | "D";
     }>;
   }>;
+  pembinaOsisPrestasi?: any[];
 }
 
 const INDONESIAN_MONTHS = [
@@ -312,6 +317,7 @@ export default function DashboardClient({
   attendanceCompleteness,
   piketAbsentStudents = [],
   sekretarisWeeklyAbsent = [],
+  pembinaOsisPrestasi = [],
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<"summary" | "absen_rekap" | "pelanggaran_rekap">("summary");
   const [showExportModal, setShowExportModal] = useState(false);
@@ -1534,6 +1540,157 @@ export default function DashboardClient({
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </SidebarLayout>
+    );
+  }
+
+  if (user.role === "PEMBINA_OSIS") {
+    const list = pembinaOsisPrestasi || [];
+
+    const totalCount = list.length;
+    const nationalCount = list.filter((p: any) => p.tingkat === "NASIONAL" || p.tingkat === "INTERNASIONAL").length;
+    const uniqueStudents = new Set<string>();
+    let totalRemisionPoints = 0;
+
+    list.forEach((p: any) => {
+      p.anggota?.forEach((a: any) => {
+        uniqueStudents.add(a.id);
+        if (p.isRemisiOtomatis) totalRemisionPoints += (p.poinRemisi || 0);
+      });
+    });
+
+    return (
+      <SidebarLayout user={user}>
+        <div className="space-y-6">
+          {/* Welcome Header */}
+          <div className="md:flex md:items-center md:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1">
+                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                  Pembina OSIS
+                </span>
+                <span className="text-xs text-slate-400 font-semibold">• Dashboard Prestasi</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                Selamat Datang, {user.nama}
+              </h1>
+              <p className="mt-1 text-sm text-slate-400">
+                Pusat Pendokumentasian Kejuaraan & Prestasi Siswa Terpadu.
+              </p>
+            </div>
+            <div className="mt-4 md:mt-0 flex items-center gap-2">
+              <Link
+                href="/prestasi?tab=input"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-amber-950 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-98 cursor-pointer shadow-lg shadow-amber-400/20"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Input Prestasi Baru</span>
+              </Link>
+              <Link
+                href="/prestasi?tab=list"
+                className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer"
+              >
+                <Trophy className="w-4 h-4 text-amber-400" />
+                <span>Daftar Prestasi</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* KPI Summary Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-5 bg-slate-900/40 border border-slate-800 rounded-2xl space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Total Prestasi</span>
+                <Trophy className="w-4 h-4 text-amber-400" />
+              </div>
+              <p className="text-3xl font-bold text-white">{totalCount}</p>
+              <p className="text-[11px] text-slate-400">Kejuaraan tercatat di sistem</p>
+            </div>
+
+            <div className="p-5 bg-slate-900/40 border border-slate-800 rounded-2xl space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Tingkat Nasional+</span>
+                <Globe className="w-4 h-4 text-purple-400" />
+              </div>
+              <p className="text-3xl font-bold text-purple-300">{nationalCount}</p>
+              <p className="text-[11px] text-slate-400">Nasional & Internasional</p>
+            </div>
+
+            <div className="p-5 bg-slate-900/40 border border-slate-800 rounded-2xl space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-sky-400 uppercase tracking-wider">Siswa Berprestasi</span>
+                <Users className="w-4 h-4 text-sky-400" />
+              </div>
+              <p className="text-3xl font-bold text-sky-300">{uniqueStudents.size}</p>
+              <p className="text-[11px] text-slate-400">Penerima Individu & Tim</p>
+            </div>
+
+            <div className="p-5 bg-slate-900/40 border border-slate-800 rounded-2xl space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Total Remisi Poin</span>
+                <Zap className="w-4 h-4 text-emerald-400" />
+              </div>
+              <p className="text-3xl font-bold text-emerald-300">+{totalRemisionPoints}</p>
+              <p className="text-[11px] text-slate-400">Poin remisi disalurkan</p>
+            </div>
+          </div>
+
+          {/* Kejuaraan Terkini Table / List */}
+          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Kejuaraan Siswa Terkini</h3>
+              </div>
+              <Link
+                href="/prestasi?tab=list"
+                className="text-xs font-bold text-amber-400 hover:underline flex items-center gap-1"
+              >
+                <span>Lihat Seluruh Daftar ({list.length}) &rarr;</span>
+              </Link>
+            </div>
+
+            {list.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 space-y-3">
+                <Trophy className="w-10 h-10 text-slate-700 mx-auto" />
+                <p className="font-semibold text-sm">Belum ada data prestasi yang dicatat.</p>
+                <Link
+                  href="/prestasi?tab=input"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-400 text-amber-950 font-bold rounded-xl text-xs"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Input Prestasi Pertama</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="overflow-x-auto border border-slate-800 rounded-xl">
+                <table className="min-w-full divide-y divide-slate-800 text-xs">
+                  <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold">
+                    <tr>
+                      <th className="py-3 px-4 text-left">Nama Kejuaraan / Prestasi</th>
+                      <th className="py-3 px-4 text-left">Penerima / Anggota</th>
+                      <th className="py-3 px-4 text-left">Tingkat</th>
+                      <th className="py-3 px-4 text-left">Waktu & Penyelenggara</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                    {list.slice(0, 5).map((item: any) => (
+                      <tr key={item.id} className="hover:bg-slate-900/50">
+                        <td className="py-3 px-4 font-bold text-white">{item.namaPrestasi}</td>
+                        <td className="py-3 px-4">
+                          {item.anggota?.map((a: any) => `${a.nama} (${a.kelasNama})`).join(", ")}
+                        </td>
+                        <td className="py-3 px-4 font-bold text-amber-400">Tingkat {item.tingkat}</td>
+                        <td className="py-3 px-4 text-slate-400">{item.penyelenggara}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </SidebarLayout>

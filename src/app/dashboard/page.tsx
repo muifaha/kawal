@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
 import { checkAndApplyAutomaticRemissions } from "@/app/actions/remisi";
 import { calculateAttendanceRate } from "@/lib/attendanceUtils";
+import { getPrestasiListAction } from "@/app/actions/prestasi";
 
 export const revalidate = 0; // Disable caching to ensure real-time statistics
 
@@ -127,6 +128,38 @@ export default async function DashboardPage() {
         classesNotSubmittedToday={classesNotSubmittedToday}
         sekretarisWeeklyAbsent={sekretarisWeeklyAbsent}
         stats={{ totalSiswa: 0, attendanceRate: 100, violationsMonthCount: 0, threatStudentsCount: 0 }}
+        studentRankings={[]}
+        attendanceRecap={[]}
+        violationRecap={[]}
+        dailyAttendance={[]}
+        holidays={[]}
+        topAbsentClasses={[]}
+        topAlphaStudents={[]}
+        topViolationClasses={[]}
+        summonsList={[]}
+        thresholds={{ threshold1: 10, threshold2: 25, threshold3: 50 }}
+        settings={settings}
+      />
+    );
+  }
+
+  // FAST PATH UNTUK PEMBINA OSIS (Fokus Prestasi Siswa)
+  if (user.role === "PEMBINA_OSIS") {
+    const resPrestasi = await getPrestasiListAction();
+    const prestasiList = resPrestasi.success && resPrestasi.data ? resPrestasi.data : [];
+
+    return (
+      <DashboardClient
+        user={user}
+        activeTA={activeTA}
+        pembinaOsisPrestasi={prestasiList as any}
+        classes={[]}
+        stats={{
+          totalSiswa: 0,
+          attendanceRate: 0,
+          violationsMonthCount: 0,
+          threatStudentsCount: 0,
+        }}
         studentRankings={[]}
         attendanceRecap={[]}
         violationRecap={[]}
