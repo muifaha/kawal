@@ -724,7 +724,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                         : "text-slate-400 hover:text-white"
                     }`}
                   >
-                    Berjenjang (Resmi)
+                    Berjenjang
                   </button>
                   <button
                     type="button"
@@ -943,7 +943,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                 className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer font-semibold"
               >
                 <option value="">-- Semua Kategori --</option>
-                <option value="BERJENJANG">Berjenjang (Resmi)</option>
+                <option value="BERJENJANG">Berjenjang</option>
                 <option value="TIDAK_BERJENJANG">Tidak Berjenjang</option>
               </select>
             </div>
@@ -1034,7 +1034,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                                 <span>Tingkat {item.tingkat}</span>
                               </span>
                               <p className="text-[10px] text-slate-400">
-                                {item.kategori === "BERJENJANG" ? "Berjenjang (Resmi)" : "Tidak Berjenjang"}
+                                {item.kategori === "BERJENJANG" ? "Berjenjang" : "Tidak Berjenjang"}
                               </p>
                             </div>
                           </td>
