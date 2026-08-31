@@ -280,8 +280,6 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
         penyelenggara: penyelenggara.trim(),
         kategori,
         tingkat,
-        isRemisiOtomatis,
-        poinRemisi: isRemisiOtomatis ? poinRemisi : 0,
         catatan: catatan.trim() || undefined,
         fotoPiagamBase64: fotoPiagamBase64 || undefined,
         fotoKegiatanBase64: fotoKegiatanBase64 || undefined,
@@ -747,60 +745,16 @@ export default function PrestasiClient({ user, classes, initialPrestasiList }: P
                 </label>
                 <select
                   value={tingkat}
-                  onChange={(e) => handleTingkatChange(e.target.value as any)}
+                  onChange={(e) => setTingkat(e.target.value as any)}
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer font-semibold"
                 >
-                  <option value="KECAMATAN">Tingkat Kecamatan (+5 Poin Remisi Default)</option>
-                  <option value="KOTA">Tingkat Kota / Kabupaten (+10 Poin Remisi Default)</option>
-                  <option value="PROVINSI">Tingkat Provinsi (+15 Poin Remisi Default)</option>
-                  <option value="NASIONAL">Tingkat Nasional (+25 Poin Remisi Default)</option>
-                  <option value="INTERNASIONAL">Tingkat Internasional (+50 Poin Remisi Default)</option>
+                  <option value="KECAMATAN">Tingkat Kecamatan</option>
+                  <option value="KOTA">Tingkat Kota / Kabupaten</option>
+                  <option value="PROVINSI">Tingkat Provinsi</option>
+                  <option value="NASIONAL">Tingkat Nasional</option>
+                  <option value="INTERNASIONAL">Tingkat Internasional</option>
                 </select>
               </div>
-            </div>
-
-            {/* INTEGRASI AUTOMATIC REMISI POIN */}
-            <div className="p-4 bg-gradient-to-r from-emerald-950/40 to-slate-950 border border-emerald-500/30 rounded-xl space-y-3 mt-3 shadow-inner">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="text-xs font-bold text-emerald-300 uppercase tracking-wider">
-                    Otomatis Potong / Remisi Poin Pelanggaran Siswa
-                  </span>
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isRemisiOtomatis}
-                    onChange={(e) => setIsRemisiOtomatis(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
-                  />
-                  <span className="text-xs font-bold text-white">Aktifkan Remisi</span>
-                </label>
-              </div>
-
-              {isRemisiOtomatis && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-emerald-500/20">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-emerald-400 mb-1">
-                      Jumlah Poin Remisi per Siswa
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={poinRemisi}
-                      onChange={(e) => setPoinRemisi(Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-                  <div className="text-[11px] text-slate-300 leading-relaxed self-center">
-                    Sistem akan membuatkan <span className="text-emerald-400 font-bold">Transaksi Remisi</span> sebesar{" "}
-                    <span className="text-emerald-400 font-bold">{poinRemisi} Poin</span> secara otomatis untuk seluruh
-                    siswa penerima/anggota tim.
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
