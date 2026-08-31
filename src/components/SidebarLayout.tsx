@@ -41,12 +41,17 @@ let cachedSettings: { schoolName: string; schoolLogo: string } | null = null;
 export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [schoolName, setSchoolName] = useState(() => cachedSettings?.schoolName || "KAWAL");
   const [schoolLogo, setSchoolLogo] = useState(() => cachedSettings?.schoolLogo || "");
   const handleInstallApp = () => {
     window.dispatchEvent(new CustomEvent("trigger-pwa-install"));
   };
+
+  useEffect(() => {
+    setIsNavigating(false);
+  }, [pathname]);
 
   useEffect(() => {
     const localName = localStorage.getItem("cachedSchoolName");
@@ -210,7 +215,11 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-slate-950 text-white flex">
+      <div className="min-h-screen bg-slate-950 text-white flex relative">
+        {/* Top Loading Progress Line */}
+        {isNavigating && (
+          <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-amber-400 to-sky-400 animate-pulse z-[99999]" />
+        )}
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r border-slate-800 bg-slate-900/30 backdrop-blur-xl animate-fade-in">
         <div className="flex-1 flex flex-col min-h-0">
@@ -255,7 +264,9 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
                           <Link
                             key={child.name}
                             href={child.href}
-                            prefetch={false}
+                            onClick={() => {
+                              if (pathname !== child.href) setIsNavigating(true);
+                            }}
                             className={`group flex items-center px-3 py-2 text-xs font-medium rounded-xl transition-all duration-200 ${
                               isChildActive
                                 ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/10"
@@ -276,7 +287,9 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
                 <Link
                   key={item.name}
                   href={item.href!}
-                  prefetch={false}
+                  onClick={() => {
+                    if (pathname !== item.href) setIsNavigating(true);
+                  }}
                   className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                     isActive
                       ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/10"
@@ -306,7 +319,9 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
             </button>
             <Link
               href="/profile"
-              prefetch={false}
+              onClick={() => {
+                if (pathname !== "/profile") setIsNavigating(true);
+              }}
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 border ${
                 pathname === "/profile"
                   ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/10"
@@ -385,8 +400,10 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
                             <Link
                               key={child.name}
                               href={child.href}
-                              prefetch={false}
-                              onClick={() => setIsMobileOpen(false)}
+                              onClick={() => {
+                                setIsMobileOpen(false);
+                                if (pathname !== child.href) setIsNavigating(true);
+                              }}
                               className={`group flex items-center px-3 py-2 text-xs font-medium rounded-xl transition-all duration-200 ${
                                 isChildActive
                                   ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/10"
@@ -407,8 +424,10 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
                   <Link
                     key={item.name}
                     href={item.href!}
-                    prefetch={false}
-                    onClick={() => setIsMobileOpen(false)}
+                    onClick={() => {
+                      setIsMobileOpen(false);
+                      if (pathname !== item.href) setIsNavigating(true);
+                    }}
                     className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all ${
                       isActive ? "bg-emerald-500/10 text-emerald-400" : "text-slate-400 hover:bg-slate-800"
                     }`}
@@ -435,8 +454,10 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
               </button>
               <Link
                 href="/profile"
-                prefetch={false}
-                onClick={() => setIsMobileOpen(false)}
+                onClick={() => {
+                  setIsMobileOpen(false);
+                  if (pathname !== "/profile") setIsNavigating(true);
+                }}
                 className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all border ${
                   pathname === "/profile"
                     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/10"

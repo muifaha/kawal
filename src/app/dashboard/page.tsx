@@ -305,8 +305,10 @@ export default async function DashboardPage() {
     );
   }
 
-  // Pemicu remisi otomatis di background ( rolling 20 hari clean period ) untuk BK/Waka
-  await checkAndApplyAutomaticRemissions();
+  // Pemicu remisi otomatis di background tanpa membekukan halaman dashboard
+  checkAndApplyAutomaticRemissions().catch((err) =>
+    console.error("Automatic remission background check error:", err)
+  );
 
   const rangeMulai = activeTA
     ? (activeTA.semesterAktif === "GANJIL" ? activeTA.ganjilMulai : activeTA.genapMulai)

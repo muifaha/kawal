@@ -1,17 +1,34 @@
 import React from "react";
-import { RefreshCw } from "lucide-react";
 
 export default function Loading() {
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md transition-all">
-      <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-200">
-        <div className="relative flex items-center justify-center">
-          <div className="w-12 h-12 rounded-full border-2 border-emerald-500/20 border-t-emerald-500 animate-spin" />
-          <RefreshCw className="w-5 h-5 text-emerald-400 absolute animate-spin" style={{ animationDuration: "3s" }} />
-        </div>
-        <div className="text-center space-y-1">
-          <p className="text-sm font-bold text-white tracking-wide">Memuat Halaman...</p>
-          <p className="text-xs text-slate-400">Mohon tunggu sebentar</p>
+    <div className="w-full min-h-[70vh] p-4 sm:p-6 space-y-6 animate-pulse">
+      {/* Top Bar Skeleton */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="h-8 w-48 bg-slate-800/60 rounded-xl" />
+        <div className="h-8 w-32 bg-slate-800/60 rounded-xl" />
+      </div>
+
+      {/* KPI Cards Skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-28 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="h-4 w-24 bg-slate-800/80 rounded-lg" />
+              <div className="h-8 w-8 bg-slate-800/80 rounded-lg" />
+            </div>
+            <div className="h-6 w-16 bg-slate-700/80 rounded-lg" />
+          </div>
+        ))}
+      </div>
+
+      {/* Main Content / Table Skeleton */}
+      <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-6 space-y-4 shadow-xl">
+        <div className="h-6 w-40 bg-slate-800/80 rounded-lg" />
+        <div className="space-y-3 font-mono">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-12 bg-slate-950/60 rounded-xl w-full" />
+          ))}
         </div>
       </div>
     </div>
