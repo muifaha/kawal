@@ -911,11 +911,10 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                 <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold">
                   <tr>
                     <th className="py-3.5 px-4 text-center w-12">No</th>
-                    <th className="py-3.5 px-4 text-left">Nama Prestasi & Event</th>
-                    <th className="py-3.5 px-4 text-left">Penerima / Anggota</th>
-                    <th className="py-3.5 px-4 text-left">Tingkat & Kategori</th>
-                    <th className="py-3.5 px-4 text-left">Waktu & Penyelenggara</th>
-                    <th className="py-3.5 px-4 text-center">Remisi Poin</th>
+                    <th className="py-3.5 px-4 text-left">Nama Prestasi</th>
+                    <th className="py-3.5 px-4 text-left">Penerima</th>
+                    <th className="py-3.5 px-4 text-left">Tingkat dan Kategori</th>
+                    <th className="py-3.5 px-4 text-left">Waktu dan Penyelenggara</th>
                     <th className="py-3.5 px-4 text-center">Bukti Foto</th>
                     <th className="py-3.5 px-4 text-center w-20">Aksi</th>
                   </tr>
@@ -923,7 +922,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                 <tbody className="divide-y divide-slate-800/60 text-slate-300">
                   {filteredHistory.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-500">
+                      <td colSpan={7} className="py-12 text-center text-slate-500">
                         <Trophy className="w-8 h-8 text-slate-700 mx-auto mb-2" />
                         <p className="font-semibold text-slate-400">Belum ada data prestasi yang sesuai dengan filter.</p>
                       </td>
@@ -1006,17 +1005,6 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                                 <span>{item.penyelenggara}</span>
                               </p>
                             </div>
-                          </td>
-
-                          {/* Remisi Poin */}
-                          <td className="py-3.5 px-4 text-center">
-                            {item.isRemisiOtomatis && item.poinRemisi > 0 ? (
-                              <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold rounded-lg text-[10px] inline-flex items-center gap-1 shadow-sm">
-                                <Zap className="w-3 h-3" />+{item.poinRemisi} Poin
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-slate-500 italic">Tanpa Remisi</span>
-                            )}
                           </td>
 
                           {/* Bukti Foto */}
