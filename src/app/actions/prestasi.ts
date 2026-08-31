@@ -322,3 +322,127 @@ export async function deletePrestasiAction(prestasiId: string) {
     return { error: "Gagal menghapus data prestasi siswa." };
   }
 }
+
+/**
+ * Mengupdate data prestasi siswa.
+ */
+export async function updatePrestasiAction(payload: {
+  id: string;
+  namaPrestasi: string;
+  waktuPelaksanaan: string; // YYYY-MM-DD
+  penyelenggara: string;
+  kategori: "BERJENJANG" | "TIDAK_BERJENJANG";
+  tingkat: "KECAMATAN" | "KOTA" | "PROVINSI" | "NASIONAL" | "INTERNASIONAL";
+  catatan?: string;
+  fotoPiagamBase64?: string;
+  fotoKegiatanBase64?: string;
+}) {
+  const user = await getSessionUser();
+  if (!user) {
+    return { error: "Sesi Anda telah berakhir. Silakan login kembali." };
+  }
+
+  if (!ALLOWED_ROLES.includes(user.role)) {
+    return { error: "Akses ditolak. Anda tidak memiliki wewenang untuk memperbarui data prestasi." };
+  }
+
+  const { id, namaPrestasi, waktuPelaksanaan, penyelenggara, kategori, tingkat, catatan, fotoPiagamBase64, fotoKegiatanBase64 } = payload;
+
+  if (!id || !namaPrestasi || !waktuPelaksanaan || !penyelenggara) {
+    return { error: "Semua kolom utama wajib diisi." };
+  }
+
+  try {
+    const existing = await prisma.prestasiSiswa.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return { error: "Data prestasi tidak ditemukan." };
+    }
+
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    let fotoPiagamPath = existing.fotoPiagam;
+    if (fotoPiagamBase64 && typeof fotoPiagamBase64 === "string" && fotoPiagamBase64.startsWith("data:")) {
+      const match = fotoPiagamBase64.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (match) {
+        const ext = match[1].split("/")[1] || "png";
+        const buffer = Buffer.from(match[2], "base64");
+        const filename = `piagam_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+        const fullPath = path.join(uploadDir, filename);
+        fs.writeFileSync(fullPath, buffer);
+        fotoPiagamPath = `/uploads/${filename}`;
+      }
+    }
+
+    let fotoKegiatanPath = existing.fotoKegiatan;
+    if (fotoKegiatanBase64 && typeof fotoKegiatanBase64 === "string" && fotoKegiatanBase64.startsWith("data:")) {
+      const match = fotoKegiatanBase64.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (match) {
+        const ext = match[1].split("/")[1] || "png";
+        const buffer = Buffer.from(match[2], "base64");
+        const filename = `kegiatan_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+        const fullPath = path.join(uploadDir, filename);
+        fs.writeFileSync(fullPath, buffer);
+        fotoKegiatanPath = `/uploads/${filename}`;
+      }
+    }
+
+    const updated = await prisma.prestasiSiswa.update({
+      where: { id },
+      data: {
+        namaPrestasi,
+        waktuPelaksanaan: new Date(`${waktuPelaksanaan}T00:00:00`),
+        penyelenggara,
+        kategori: kategori as KategoriPrestasi,
+        tingkat: tingkat as TingkatPrestasi,
+        catatan: catatan || null,
+        fotoPiagam: fotoPiagamPath,
+        fotoKegiatan: fotoKegiatanPath,
+      },
+      include: {
+        pelapor: {
+          select: { id: true, nama: true, role: true },
+        },
+        anggota: {
+          include: {
+            siswa: {
+              include: {
+                riwayatKelas: {
+                  where: { tahunAjaran: { isActive: true } },
+                  include: { kelas: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const formattedUpdated = {
+      ...updated,
+      anggota: updated.anggota.map((a) => ({
+        id: a.siswa.id,
+        nis: a.siswa.nis,
+        nama: a.siswa.nama,
+        kelasNama: a.siswa.riwayatKelas[0]?.kelas.nama || "-",
+      })),
+    };
+
+    revalidatePath("/dashboard");
+    revalidatePath("/prestasi");
+
+    return {
+      success: true,
+      message: `Data prestasi "${namaPrestasi}" berhasil diperbarui.`,
+      updatedPrestasi: formattedUpdated,
+    };
+  } catch (error: any) {
+    console.error("Update prestasi error:", error);
+    return { error: `Gagal memperbarui data prestasi: ${error.message || error}` };
+  }
+}

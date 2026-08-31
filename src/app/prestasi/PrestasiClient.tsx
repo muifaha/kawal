@@ -28,8 +28,9 @@ import {
   ChevronRight,
   TrendingUp,
   Image as ImageIcon,
+  Pencil,
 } from "lucide-react";
-import { reportPrestasiAction, deletePrestasiAction } from "@/app/actions/prestasi";
+import { reportPrestasiAction, deletePrestasiAction, updatePrestasiAction } from "@/app/actions/prestasi";
 
 interface StudentItem {
   id: string;
@@ -137,6 +138,69 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
   const [historySearchQuery, setHistorySearchQuery] = useState("");
   const [historyTingkatFilter, setHistoryTingkatFilter] = useState("");
   const [historyKategoriFilter, setHistoryKategoriFilter] = useState("");
+
+  // Edit Modal States
+  const [editingItem, setEditingItem] = useState<PrestasiItem | null>(null);
+  const [editNamaPrestasi, setEditNamaPrestasi] = useState("");
+  const [editWaktuPelaksanaan, setEditWaktuPelaksanaan] = useState("");
+  const [editPenyelenggara, setEditPenyelenggara] = useState("");
+  const [editKategori, setEditKategori] = useState<"BERJENJANG" | "TIDAK_BERJENJANG">("BERJENJANG");
+  const [editTingkat, setEditTingkat] = useState<"KECAMATAN" | "KOTA" | "PROVINSI" | "NASIONAL" | "INTERNASIONAL">("KOTA");
+  const [editCatatan, setEditCatatan] = useState("");
+  const [editFotoPiagamBase64, setEditFotoPiagamBase64] = useState<string | null>(null);
+  const [editFotoPiagamPreview, setEditFotoPiagamPreview] = useState<string | null>(null);
+  const [editFotoKegiatanBase64, setEditFotoKegiatanBase64] = useState<string | null>(null);
+  const [editFotoKegiatanPreview, setEditFotoKegiatanPreview] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleOpenEditModal = (item: PrestasiItem) => {
+    setEditingItem(item);
+    setEditNamaPrestasi(item.namaPrestasi);
+    setEditWaktuPelaksanaan(item.waktuPelaksanaan.split("T")[0]);
+    setEditPenyelenggara(item.penyelenggara);
+    setEditKategori(item.kategori);
+    setEditTingkat(item.tingkat);
+    setEditCatatan(item.catatan || "");
+    setEditFotoPiagamPreview(item.fotoPiagam);
+    setEditFotoPiagamBase64(null);
+    setEditFotoKegiatanPreview(item.fotoKegiatan);
+    setEditFotoKegiatanBase64(null);
+  };
+
+  const handleSaveEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    try {
+      setIsUpdating(true);
+      const res = await updatePrestasiAction({
+        id: editingItem.id,
+        namaPrestasi: editNamaPrestasi.trim(),
+        waktuPelaksanaan: editWaktuPelaksanaan,
+        penyelenggara: editPenyelenggara.trim(),
+        kategori: editKategori,
+        tingkat: editTingkat,
+        catatan: editCatatan.trim() || undefined,
+        fotoPiagamBase64: editFotoPiagamBase64 || undefined,
+        fotoKegiatanBase64: editFotoKegiatanBase64 || undefined,
+      });
+
+      if (res.error) {
+        alert(res.error);
+      } else {
+        if (res.updatedPrestasi) {
+          setPrestasiList((prev) =>
+            prev.map((p) => (p.id === editingItem.id ? (res.updatedPrestasi as any) : p))
+          );
+        }
+        setEditingItem(null);
+      }
+    } catch (err: any) {
+      alert(`Gagal memperbarui data: ${err.message || err}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   // KPI Metrics Calculation
   const metrics = useMemo(() => {
@@ -910,19 +974,20 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
               <table className="min-w-full divide-y divide-slate-800 text-xs">
                 <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold">
                   <tr>
-                    <th className="py-3.5 px-4 text-center w-12">No</th>
-                    <th className="py-3.5 px-4 text-left">Nama Prestasi</th>
+                    <th className="py-3.5 px-4 text-center w-10">No</th>
+                    <th className="py-3.5 px-4 text-left w-48 max-w-[200px]">Nama Prestasi</th>
                     <th className="py-3.5 px-4 text-left">Penerima</th>
-                    <th className="py-3.5 px-4 text-left">Tingkat dan Kategori</th>
-                    <th className="py-3.5 px-4 text-left">Waktu dan Penyelenggara</th>
+                    <th className="py-3.5 px-4 text-left">Tingkat</th>
+                    <th className="py-3.5 px-4 text-left">Kategori</th>
+                    <th className="py-3.5 px-4 text-left">Waktu & Penyelenggara</th>
                     <th className="py-3.5 px-4 text-center">Bukti Foto</th>
-                    <th className="py-3.5 px-4 text-center w-20">Aksi</th>
+                    <th className="py-3.5 px-4 text-center w-24">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 text-slate-300">
                   {filteredHistory.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-500">
+                      <td colSpan={8} className="py-12 text-center text-slate-500">
                         <Trophy className="w-8 h-8 text-slate-700 mx-auto mb-2" />
                         <p className="font-semibold text-slate-400">Belum ada data prestasi yang sesuai dengan filter.</p>
                       </td>
@@ -941,15 +1006,15 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                         <tr key={item.id} className="hover:bg-slate-900/60 transition-colors">
                           <td className="py-3.5 px-4 text-center font-bold text-slate-500">{idx + 1}</td>
 
-                          {/* Nama Prestasi */}
-                          <td className="py-3.5 px-4">
+                          {/* Nama Prestasi (Persempit) */}
+                          <td className="py-3.5 px-4 w-48 max-w-[200px] break-words">
                             <div className="space-y-1">
-                              <p className="font-bold text-white text-xs flex items-center gap-1.5">
-                                <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                <span>{item.namaPrestasi}</span>
+                              <p className="font-bold text-white text-xs flex items-start gap-1.5 leading-snug">
+                                <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                                <span className="break-words">{item.namaPrestasi}</span>
                               </p>
                               {item.catatan && (
-                                <p className="text-[10px] text-slate-400 italic">"{item.catatan}"</p>
+                                <p className="text-[10px] text-slate-400 italic break-words">"{item.catatan}"</p>
                               )}
                               <p className="text-[10px] text-slate-500">
                                 Pelapor: <span className="text-slate-400 font-semibold">{item.pelapor.nama}</span>
@@ -978,30 +1043,32 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                             </div>
                           </td>
 
-                          {/* Tingkat & Kategori */}
+                          {/* Tingkat (Terpisah) */}
                           <td className="py-3.5 px-4">
-                            <div className="space-y-1">
-                              <span
-                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badge.bg} ${badge.text} ${badge.border}`}
-                              >
-                                <IconComp className="w-3 h-3" />
-                                <span>Tingkat {item.tingkat}</span>
-                              </span>
-                              <p className="text-[10px] text-slate-400">
-                                {item.kategori === "BERJENJANG" ? "Berjenjang" : "Tidak Berjenjang"}
-                              </p>
-                            </div>
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${badge.bg} ${badge.text} ${badge.border}`}
+                            >
+                              <IconComp className="w-3 h-3" />
+                              <span>Tingkat {item.tingkat}</span>
+                            </span>
+                          </td>
+
+                          {/* Kategori (Terpisah) */}
+                          <td className="py-3.5 px-4">
+                            <span className="px-2.5 py-1 bg-slate-950 border border-slate-800 rounded-lg text-[10px] font-semibold text-slate-300">
+                              {item.kategori === "BERJENJANG" ? "Berjenjang" : "Tidak Berjenjang"}
+                            </span>
                           </td>
 
                           {/* Waktu & Penyelenggara */}
                           <td className="py-3.5 px-4">
                             <div className="space-y-1">
                               <p className="text-xs font-semibold text-slate-200 flex items-center gap-1">
-                                <Calendar className="w-3 h-3 text-slate-400" />
+                                <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
                                 <span>{formattedDate}</span>
                               </p>
                               <p className="text-[10px] text-slate-400 flex items-center gap-1">
-                                <Building className="w-3 h-3 text-slate-500" />
+                                <Building className="w-3 h-3 text-slate-500 shrink-0" />
                                 <span>{item.penyelenggara}</span>
                               </p>
                             </div>
@@ -1048,17 +1115,27 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                             </div>
                           </td>
 
-                          {/* Aksi */}
+                          {/* Aksi (Tombol Edit & Delete) */}
                           <td className="py-3.5 px-4 text-center">
-                            <button
-                              type="button"
-                              disabled={deletingId === item.id}
-                              onClick={() => handleDeletePrestasi(item.id, item.namaPrestasi)}
-                              className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all disabled:opacity-50 cursor-pointer"
-                              title="Hapus Data Prestasi"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditModal(item)}
+                                className="p-1.5 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-all cursor-pointer"
+                                title="Edit Data Prestasi"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={deletingId === item.id}
+                                onClick={() => handleDeletePrestasi(item.id, item.namaPrestasi)}
+                                className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all disabled:opacity-50 cursor-pointer"
+                                title="Hapus Data Prestasi"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1095,6 +1172,130 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                 className="max-h-[65vh] w-auto object-contain rounded-lg"
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== EDIT PRESTASI MODAL ==================== */}
+      {editingItem && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-5 space-y-4 shadow-2xl my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-amber-400" />
+                <span>Edit Data Prestasi Siswa</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingItem(null)}
+                className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  Nama Prestasi / Kejuaraan
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editNamaPrestasi}
+                  onChange={(e) => setEditNamaPrestasi(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-semibold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                    Waktu Pelaksanaan
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editWaktuPelaksanaan}
+                    onChange={(e) => setEditWaktuPelaksanaan(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                    Penyelenggara Event
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editPenyelenggara}
+                    onChange={(e) => setEditPenyelenggara(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                    Kategori Prestasi
+                  </label>
+                  <select
+                    value={editKategori}
+                    onChange={(e) => setEditKategori(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-semibold cursor-pointer"
+                  >
+                    <option value="BERJENJANG">Berjenjang</option>
+                    <option value="TIDAK_BERJENJANG">Tidak Berjenjang</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                    Tingkat Prestasi
+                  </label>
+                  <select
+                    value={editTingkat}
+                    onChange={(e) => setEditTingkat(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-semibold cursor-pointer"
+                  >
+                    <option value="KECAMATAN">Tingkat Kecamatan</option>
+                    <option value="KOTA">Tingkat Kota / Kabupaten</option>
+                    <option value="PROVINSI">Tingkat Provinsi</option>
+                    <option value="NASIONAL">Tingkat Nasional</option>
+                    <option value="INTERNASIONAL">Tingkat Internasional</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  Catatan Tambahan
+                </label>
+                <textarea
+                  rows={2}
+                  value={editCatatan}
+                  onChange={(e) => setEditCatatan(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="px-4 py-2 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 font-bold rounded-xl text-xs transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-md shadow-amber-500/20 disabled:opacity-50"
+                >
+                  {isUpdating ? "Simpan..." : "Simpan Perubahan"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
