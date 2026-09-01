@@ -482,27 +482,27 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 self-start md:self-auto shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 w-full sm:w-auto shrink-0 font-semibold text-xs">
             <button
               onClick={() => setActiveTab("input")}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 activeTab === "input"
                   ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/20"
                   : "text-slate-400 hover:text-white hover:bg-slate-900"
               }`}
             >
-              <PlusCircle className="w-4 h-4" />
-              <span>Input Prestasi Siswa</span>
+              <PlusCircle className="w-4 h-4 shrink-0" />
+              <span>Input Prestasi</span>
             </button>
             <button
               onClick={() => setActiveTab("list")}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 activeTab === "list"
                   ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/20"
                   : "text-slate-400 hover:text-white hover:bg-slate-900"
               }`}
             >
-              <Trophy className="w-4 h-4" />
+              <Trophy className="w-4 h-4 shrink-0" />
               <span>Daftar & Riwayat ({prestasiList.length})</span>
             </button>
           </div>
@@ -866,7 +866,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                   className="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-amber-400 hover:file:bg-slate-800 cursor-pointer"
                 />
                 {fotoPiagamPreview && (
-                  <div className="relative mt-2 w-32 h-32 rounded-xl overflow-hidden border border-slate-700 group">
+                  <div className="relative mt-2 w-28 h-28 rounded-xl overflow-hidden border border-slate-700 group">
                     <img src={fotoPiagamPreview} alt="Piagam" className="w-full h-full object-cover" />
                     <button
                       type="button"
@@ -874,7 +874,8 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                         setFotoPiagamBase64(null);
                         setFotoPiagamPreview(null);
                       }}
-                      className="absolute top-1 right-1 p-1 bg-rose-600/80 text-white rounded-full transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                      className="absolute top-1 right-1 p-1 bg-rose-600/90 text-white rounded-full transition-all cursor-pointer shadow-md"
+                      title="Hapus Foto"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -894,7 +895,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                   className="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-amber-400 hover:file:bg-slate-800 cursor-pointer"
                 />
                 {fotoKegiatanPreview && (
-                  <div className="relative mt-2 w-32 h-32 rounded-xl overflow-hidden border border-slate-700 group">
+                  <div className="relative mt-2 w-28 h-28 rounded-xl overflow-hidden border border-slate-700 group">
                     <img src={fotoKegiatanPreview} alt="Kegiatan" className="w-full h-full object-cover" />
                     <button
                       type="button"
@@ -902,7 +903,8 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                         setFotoKegiatanBase64(null);
                         setFotoKegiatanPreview(null);
                       }}
-                      className="absolute top-1 right-1 p-1 bg-rose-600/80 text-white rounded-full transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                      className="absolute top-1 right-1 p-1 bg-rose-600/90 text-white rounded-full transition-all cursor-pointer shadow-md"
+                      title="Hapus Foto"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -931,9 +933,9 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-lg shadow-amber-500/20 disabled:opacity-50"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-lg shadow-amber-500/20 disabled:opacity-50"
             >
-              <Trophy className="w-4 h-4" />
+              <Trophy className="w-4 h-4 shrink-0" />
               <span>{isSubmitting ? "Memproses Data..." : "Simpan Data Prestasi Siswa"}</span>
             </button>
           </div>
@@ -994,7 +996,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                 <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold">
                   <tr>
                     <th className="py-3.5 px-4 text-center w-10">No</th>
-                    <th className="py-3.5 px-4 text-left w-48 max-w-[200px]">Nama Prestasi</th>
+                    <th className="py-3.5 px-4 text-left min-w-[260px] max-w-[400px]">Nama Prestasi</th>
                     <th className="py-3.5 px-4 text-left">Penerima</th>
                     <th className="py-3.5 px-4 text-left">Tingkat</th>
                     <th className="py-3.5 px-4 text-left">Kategori</th>
@@ -1025,8 +1027,8 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                         <tr key={item.id} className="hover:bg-slate-900/60 transition-colors">
                           <td className="py-3.5 px-4 text-center font-bold text-slate-500">{idx + 1}</td>
 
-                          {/* Nama Prestasi (Persempit) */}
-                          <td className="py-3.5 px-4 w-48 max-w-[200px] break-words">
+                          {/* Nama Prestasi (Diperpanjang, Pelapor Dihilangkan) */}
+                          <td className="py-3.5 px-4 min-w-[260px] max-w-[400px] break-words">
                             <div className="space-y-1">
                               <p className="font-bold text-white text-xs flex items-start gap-1.5 leading-snug">
                                 <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
@@ -1035,9 +1037,6 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                               {item.catatan && (
                                 <p className="text-[10px] text-slate-400 italic break-words">"{item.catatan}"</p>
                               )}
-                              <p className="text-[10px] text-slate-500">
-                                Pelapor: <span className="text-slate-400 font-semibold">{item.pelapor.nama}</span>
-                              </p>
                             </div>
                           </td>
 
