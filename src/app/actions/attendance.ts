@@ -110,6 +110,14 @@ export async function saveAttendanceAction(
       const walas = kelasInfo.walas;
       const notHadirItems = items.filter((item) => item.status !== "H");
 
+      // Ambil nama sekolah dari AppSetting
+      const settingsList = await prisma.appSetting.findMany();
+      const settingsMap: Record<string, string> = {};
+      settingsList.forEach((s) => {
+        settingsMap[s.key] = s.value;
+      });
+      const schoolName = settingsMap.school_name || settingsMap.schoolName || "SMKN KAWAL";
+
       // Format tanggal Indonesia (timezone-safe Jakarta)
       const formattedDate = targetDate.toLocaleDateString("id-ID", {
         weekday: "long",
@@ -139,13 +147,13 @@ Berikut ini daftar hadir murid kelas *${kelasInfo.nama}* pada hari *${formattedD
 ${detailSiswaText}
 
 Mohon perhatian dan tindak lanjutnya terhadap kehadiran siswa tersebut. Terima kasih.
-_SMKN KAWAL powered by Kawal_`;
+_${schoolName} powered by Kawal_`;
       } else {
         waMessage += `
 ✅ *Hadir Semua*
 
 Terima kasih atas kerja samanya.
-_SMKN KAWAL powered by Kawal_`;
+_${schoolName} powered by Kawal_`;
       }
 
       // Kirim via Helper WhatsApp di background tanpa membekukan response
