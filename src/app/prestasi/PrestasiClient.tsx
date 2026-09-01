@@ -1027,12 +1027,11 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                         <tr key={item.id} className="hover:bg-slate-900/60 transition-colors">
                           <td className="py-3.5 px-4 text-center font-bold text-slate-500">{idx + 1}</td>
 
-                          {/* Nama Prestasi (Diperpanjang, Pelapor Dihilangkan) */}
+                          {/* Nama Prestasi (Tanpa Icon Piala) */}
                           <td className="py-3.5 px-4 min-w-[260px] max-w-[400px] break-words">
                             <div className="space-y-1">
-                              <p className="font-bold text-white text-xs flex items-start gap-1.5 leading-snug">
-                                <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                                <span className="break-words">{item.namaPrestasi}</span>
+                              <p className="font-bold text-white text-xs leading-snug break-words">
+                                {item.namaPrestasi}
                               </p>
                               {item.catatan && (
                                 <p className="text-[10px] text-slate-400 italic break-words">"{item.catatan}"</p>
@@ -1040,7 +1039,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                             </div>
                           </td>
 
-                          {/* Anggota Siswa */}
+                          {/* Anggota Siswa (Tanpa Card, Kecuali Nama Tim) */}
                           <td className="py-3.5 px-4">
                             <div className="space-y-1">
                               {item.jenisKepesertaan === "TIM" && item.namaTim && (
@@ -1048,26 +1047,26 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                                   Tim: {item.namaTim}
                                 </span>
                               )}
-                              <div className="flex flex-wrap gap-1 pt-0.5">
-                                {item.anggota.map((a) => (
-                                  <span
-                                    key={a.id}
-                                    className="px-2 py-0.5 bg-slate-950 border border-slate-800 rounded text-[11px] font-medium text-slate-200"
-                                  >
-                                    {a.nama} ({a.kelasNama})
-                                  </span>
-                                ))}
-                              </div>
+                              <p className="text-xs font-medium text-slate-200 leading-relaxed">
+                                {item.anggota.map((a) => `${a.nama} (${a.kelasNama})`).join(", ")}
+                              </p>
                             </div>
                           </td>
 
-                          {/* Tingkat (Terpisah) */}
+                          {/* Tingkat (Tanpa Card & Tanpa Tulisan Tingkat) */}
                           <td className="py-3.5 px-4">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${badge.bg} ${badge.text} ${badge.border}`}
-                            >
-                              <IconComp className="w-3 h-3" />
-                              <span>Tingkat {item.tingkat}</span>
+                            <span className="text-xs font-semibold text-slate-200">
+                              {item.tingkat === "KOTA"
+                                ? "Kota/Kabupaten"
+                                : item.tingkat === "KECAMATAN"
+                                ? "Kecamatan"
+                                : item.tingkat === "PROVINSI"
+                                ? "Provinsi"
+                                : item.tingkat === "NASIONAL"
+                                ? "Nasional"
+                                : item.tingkat === "INTERNASIONAL"
+                                ? "Internasional"
+                                : item.tingkat}
                             </span>
                           </td>
 

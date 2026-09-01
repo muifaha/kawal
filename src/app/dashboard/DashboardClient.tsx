@@ -1683,7 +1683,19 @@ export default function DashboardClient({
                         <td className="py-3 px-4">
                           {item.anggota?.map((a: any) => `${a.nama} (${a.kelasNama})`).join(", ")}
                         </td>
-                        <td className="py-3 px-4 font-bold text-amber-400">Tingkat {item.tingkat}</td>
+                        <td className="py-3 px-4 font-bold text-amber-400">
+                          {item.tingkat === "KOTA"
+                            ? "Kota/Kabupaten"
+                            : item.tingkat === "KECAMATAN"
+                            ? "Kecamatan"
+                            : item.tingkat === "PROVINSI"
+                            ? "Provinsi"
+                            : item.tingkat === "NASIONAL"
+                            ? "Nasional"
+                            : item.tingkat === "INTERNASIONAL"
+                            ? "Internasional"
+                            : item.tingkat}
+                        </td>
                         <td className="py-3 px-4 text-slate-400">{item.penyelenggara}</td>
                       </tr>
                     ))}
