@@ -2374,48 +2374,6 @@ export default function DashboardClient({
       {/* 1. Tab Summary & Statistics */}
       {activeTab === "summary" && (
         <div className="space-y-8 animate-fade-in">
-          {/* Banner Jadwal Hari Ini Khusus Wali Kelas */}
-          {user.role === "WALAS" && (
-            <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/40 border border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-xl">
-              <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="px-2.5 py-1 bg-emerald-400/10 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                      <CalendarCheck className="w-3.5 h-3.5 text-emerald-400" />
-                      Jadwal Hari ini
-                    </span>
-                    <span className="text-xs text-slate-400 font-semibold">
-                      • {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" })}
-                    </span>
-                  </div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-white">
-                    Wali Kelas {classes.length > 0 ? classes[0].nama : "Perwalian"}
-                  </h2>
-                  <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
-                    Pantau statistik kehadiran harian siswa perwalian dan kelengkapan jurnal pencatatan kelas binaan Anda.
-                  </p>
-                </div>
-
-                <div className="shrink-0">
-                  {classesNotSubmittedToday.length === 0 ? (
-                    <div className="px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2 text-emerald-300 text-xs font-bold shadow-sm">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Absensi Hari Ini Sudah Diisi</span>
-                    </div>
-                  ) : (
-                    <Link
-                      href="/absensi"
-                      className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl flex items-center gap-2 text-xs transition-all shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer"
-                    >
-                      <AlertOctagon className="w-4 h-4 shrink-0" />
-                      <span>Catat Absensi Hari Ini</span>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
           {/* Stats Grid (Sembunyikan untuk Role WALAS di tab Jadwal Hari ini) */}
           {user.role !== "WALAS" && (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
