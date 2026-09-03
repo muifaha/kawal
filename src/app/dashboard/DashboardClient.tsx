@@ -2416,54 +2416,56 @@ export default function DashboardClient({
               </div>
             </div>
           )}
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Card Total Siswa */}
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 flex items-center gap-5">
-              <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/10">
-                <Users className="w-6 h-6 text-emerald-400" />
+          {/* Stats Grid (Sembunyikan untuk Role WALAS di tab Jadwal Hari ini) */}
+          {user.role !== "WALAS" && (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Card Total Siswa */}
+              <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 flex items-center gap-5">
+                <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/10">
+                  <Users className="w-6 h-6 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-400">Total Siswa Aktif</p>
+                  <p className="text-2xl font-semibold text-white mt-1">{stats.totalSiswa}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-slate-400">Total Siswa Aktif</p>
-                <p className="text-2xl font-semibold text-white mt-1">{stats.totalSiswa}</p>
-              </div>
-            </div>
 
-            {/* Card Persentase Kehadiran */}
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 flex items-center gap-5">
-              <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/10">
-                <Clock className="w-6 h-6 text-indigo-400" />
+              {/* Card Persentase Kehadiran */}
+              <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 flex items-center gap-5">
+                <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/10">
+                  <Clock className="w-6 h-6 text-indigo-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-400">Kehadiran (Hari Ini)</p>
+                  <p className={`font-semibold text-white mt-1 ${typeof stats.attendanceRate === "number" ? "text-2xl" : "text-lg"}`}>
+                    {typeof stats.attendanceRate === "number" ? `${stats.attendanceRate}%` : stats.attendanceRate}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-slate-400">Kehadiran (Hari Ini)</p>
-                <p className={`font-semibold text-white mt-1 ${typeof stats.attendanceRate === "number" ? "text-2xl" : "text-lg"}`}>
-                  {typeof stats.attendanceRate === "number" ? `${stats.attendanceRate}%` : stats.attendanceRate}
-                </p>
-              </div>
-            </div>
 
-            {/* Card Pelanggaran Bulan Ini */}
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 flex items-center gap-5">
-              <div className="p-3 bg-rose-500/10 rounded-xl border border-rose-500/10">
-                <AlertTriangle className="w-6 h-6 text-rose-400" />
+              {/* Card Pelanggaran Bulan Ini */}
+              <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 flex items-center gap-5">
+                <div className="p-3 bg-rose-500/10 rounded-xl border border-rose-500/10">
+                  <AlertTriangle className="w-6 h-6 text-rose-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-400">Pelanggaran (30 Hari Terakhir)</p>
+                  <p className="text-2xl font-semibold text-white mt-1">{stats.violationsMonthCount}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-slate-400">Pelanggaran (30 Hari Terakhir)</p>
-                <p className="text-2xl font-semibold text-white mt-1">{stats.violationsMonthCount}</p>
-              </div>
-            </div>
 
-            {/* Card Siswa Terancam */}
-            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 flex items-center gap-5">
-              <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/10">
-                <TrendingUp className="w-6 h-6 text-amber-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-400">Siswa Terancam (&ge;50 Poin)</p>
-                <p className="text-2xl font-semibold text-white mt-1">{stats.threatStudentsCount}</p>
+              {/* Card Siswa Terancam */}
+              <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 flex items-center gap-5">
+                <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/10">
+                  <TrendingUp className="w-6 h-6 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-400">Siswa Terancam (&ge;50 Poin)</p>
+                  <p className="text-2xl font-semibold text-white mt-1">{stats.threatStudentsCount}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             {/* Left/Middle Column (lg:col-span-2) */}
