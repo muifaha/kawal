@@ -3026,7 +3026,7 @@ export default function DashboardClient({
                           className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
                         >
                           <div className="flex items-center justify-center gap-1">
-                            Persentase Kehadiran Semester Ini
+                            Kehadiran
                             {sortField === "rate" ? (
                               sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
                             ) : (
@@ -3039,7 +3039,7 @@ export default function DashboardClient({
                           className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
                         >
                           <div className="flex items-center justify-center gap-1">
-                            Total Poin Pelanggaran
+                            Akumulasi Poin
                             {sortField === "netPoints" ? (
                               sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
                             ) : (
