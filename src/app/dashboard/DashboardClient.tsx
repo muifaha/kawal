@@ -2874,35 +2874,37 @@ export default function DashboardClient({
                   {user.role === "WALAS" ? "Wali Kelas - Rekapitulasi Siswa Perwalian" : "Rekapitulasi Kehadiran Siswa"}
                 </h3>
 
-                {/* View mode toggle */}
-                <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800 w-fit">
-                  <button
-                    onClick={() => {
-                      setAbsenViewMode("cumulative");
-                      setSearchQuery("");
-                    }}
-                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
-                      absenViewMode === "cumulative"
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                        : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    Kumulatif (Semester)
-                  </button>
-                  <button
-                    onClick={() => {
-                      setAbsenViewMode("monthly");
-                      setSearchQuery("");
-                    }}
-                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
-                      absenViewMode === "monthly"
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                        : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    Matriks Bulanan
-                  </button>
-                </div>
+                {/* View mode toggle (Sembunyikan untuk Role WALAS) */}
+                {user.role !== "WALAS" && (
+                  <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800 w-fit">
+                    <button
+                      onClick={() => {
+                        setAbsenViewMode("cumulative");
+                        setSearchQuery("");
+                      }}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                        absenViewMode === "cumulative"
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      Kumulatif (Semester)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAbsenViewMode("monthly");
+                        setSearchQuery("");
+                      }}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                        absenViewMode === "monthly"
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      Matriks Bulanan
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
