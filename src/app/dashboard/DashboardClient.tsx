@@ -2353,20 +2353,22 @@ export default function DashboardClient({
             >
               {user.role === "WALAS" ? "Wali Kelas" : "Rekap Absensi"}
             </button>
-            <button
-              onClick={() => {
-                setActiveTab("pelanggaran_rekap");
-                setSearchQuery("");
-                setSelectedClassId(classes.length === 1 ? classes[0].nama : "");
-              }}
-              className={`pb-4 px-1 text-sm font-semibold border-b-2 transition-all shrink-0 ${
-                activeTab === "pelanggaran_rekap"
-                  ? "border-emerald-500 text-emerald-400"
-                  : "border-transparent text-slate-400 hover:text-white"
-              }`}
-            >
-              Rekap Pelanggaran
-            </button>
+            {user.role !== "WALAS" && (
+              <button
+                onClick={() => {
+                  setActiveTab("pelanggaran_rekap");
+                  setSearchQuery("");
+                  setSelectedClassId(classes.length === 1 ? classes[0].nama : "");
+                }}
+                className={`pb-4 px-1 text-sm font-semibold border-b-2 transition-all shrink-0 ${
+                  activeTab === "pelanggaran_rekap"
+                    ? "border-emerald-500 text-emerald-400"
+                    : "border-transparent text-slate-400 hover:text-white"
+                }`}
+              >
+                Rekap Pelanggaran
+              </button>
+            )}
           </>
         )}
       </div>
@@ -3416,7 +3418,7 @@ export default function DashboardClient({
       )}
 
       {/* 3. Tab Rekap Pelanggaran Siswa */}
-      {activeTab === "pelanggaran_rekap" && isWakaOrBKOrWalas && (
+      {activeTab === "pelanggaran_rekap" && user.role !== "WALAS" && isWakaOrBKOrWalas && (
         <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl animate-fade-in space-y-6">
           {selectedStudentNis && selectedStudentInfo ? (
             /* Dedicated Student Profile Detail View */
