@@ -572,6 +572,11 @@ export default async function DashboardPage() {
     }
   });
 
+  const studentPointsMap: Record<string, number> = {};
+  studentRankings.forEach((sr) => {
+    studentPointsMap[sr.id] = sr.points;
+  });
+
   const attendanceRecap = studentsWithClass.map((s) => {
     const counts = attendanceMap[s.id];
     const totalHari = counts.H + counts.S + counts.I + counts.A + counts.D;
@@ -586,6 +591,7 @@ export default async function DashboardPage() {
       A: counts.A,
       D: counts.D,
       totalHari,
+      netPoints: studentPointsMap[s.id] || 0,
     };
   });
 

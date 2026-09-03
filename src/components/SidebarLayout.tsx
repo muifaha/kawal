@@ -157,7 +157,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       name: "Prestasi Siswa",
       href: "/prestasi?tab=list",
       icon: Trophy,
-      roles: ["WAKA", "BK", "WALAS", "GURU", "PEMBINA_OSIS"],
+      roles: ["WAKA", "BK", "GURU", "PEMBINA_OSIS"],
     },
     {
       name: "Bimbingan Konseling",

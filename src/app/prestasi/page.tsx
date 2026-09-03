@@ -19,7 +19,7 @@ export default async function PrestasiPage({
     redirect("/login");
   }
 
-  const allowedRoles = ["WAKA", "BK", "WALAS", "GURU", "PEMBINA_OSIS"];
+  const allowedRoles = ["WAKA", "BK", "GURU", "PEMBINA_OSIS"];
   if (!allowedRoles.includes(user.role)) {
     redirect("/dashboard?error=unauthorized");
   }

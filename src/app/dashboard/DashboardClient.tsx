@@ -108,6 +108,7 @@ interface AttendanceRecapItem {
   A: number;
   D: number;
   totalHari: number;
+  netPoints?: number;
 }
 
 interface ViolationRecapItem {
@@ -556,6 +557,9 @@ export default function DashboardClient({
       if (sortField === "rate") {
         valA = calculateAttendanceRate(a);
         valB = calculateAttendanceRate(b);
+      } else if (sortField === "netPoints") {
+        valA = a.netPoints ?? 0;
+        valB = b.netPoints ?? 0;
       }
 
       if (valA === undefined) valA = "";
@@ -2331,7 +2335,7 @@ export default function DashboardClient({
               : "border-transparent text-slate-400 hover:text-white"
           }`}
         >
-          Ringkasan
+          {user.role === "WALAS" ? "Jadwal Hari ini" : "Ringkasan"}
         </button>
         {isWakaOrBKOrWalas && (
           <>
@@ -2347,7 +2351,7 @@ export default function DashboardClient({
                   : "border-transparent text-slate-400 hover:text-white"
               }`}
             >
-              Rekap Absensi
+              {user.role === "WALAS" ? "Wali Kelas" : "Rekap Absensi"}
             </button>
             <button
               onClick={() => {
@@ -2370,6 +2374,48 @@ export default function DashboardClient({
       {/* 1. Tab Summary & Statistics */}
       {activeTab === "summary" && (
         <div className="space-y-8 animate-fade-in">
+          {/* Banner Jadwal Hari Ini Khusus Wali Kelas */}
+          {user.role === "WALAS" && (
+            <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/40 border border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-xl">
+              <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="px-2.5 py-1 bg-emerald-400/10 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                      <CalendarCheck className="w-3.5 h-3.5 text-emerald-400" />
+                      Jadwal Hari ini
+                    </span>
+                    <span className="text-xs text-slate-400 font-semibold">
+                      • {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" })}
+                    </span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white">
+                    Wali Kelas {classes.length > 0 ? classes[0].nama : "Perwalian"}
+                  </h2>
+                  <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
+                    Pantau statistik kehadiran harian siswa perwalian dan kelengkapan jurnal pencatatan kelas binaan Anda.
+                  </p>
+                </div>
+
+                <div className="shrink-0">
+                  {classesNotSubmittedToday.length === 0 ? (
+                    <div className="px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2 text-emerald-300 text-xs font-bold shadow-sm">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Absensi Hari Ini Sudah Diisi</span>
+                    </div>
+                  ) : (
+                    <Link
+                      href="/absensi"
+                      className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl flex items-center gap-2 text-xs transition-all shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer"
+                    >
+                      <AlertOctagon className="w-4 h-4 shrink-0" />
+                      <span>Catat Absensi Hari Ini</span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           {/* Stats Grid */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {/* Card Total Siswa */}
@@ -2863,7 +2909,7 @@ export default function DashboardClient({
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <CalendarCheck className="w-5 h-5 text-emerald-400" />
-                  Rekapitulasi Kehadiran Siswa
+                  {user.role === "WALAS" ? "Wali Kelas - Rekapitulasi Siswa Perwalian" : "Rekapitulasi Kehadiran Siswa"}
                 </h3>
 
                 {/* View mode toggle */}
@@ -3010,124 +3056,208 @@ export default function DashboardClient({
                         )}
                       </div>
                     </th>
-                    <th
-                      onClick={() => handleSort("H")}
-                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                    >
-                      <div className="flex items-center justify-center gap-1">
-                        Hadir
-                        {sortField === "H" ? (
-                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <ArrowUpDown className="w-3 h-3 opacity-30" />
-                        )}
-                      </div>
-                    </th>
-                    <th
-                      onClick={() => handleSort("S")}
-                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                    >
-                      <div className="flex items-center justify-center gap-1">
-                        Sakit
-                        {sortField === "S" ? (
-                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <ArrowUpDown className="w-3 h-3 opacity-30" />
-                        )}
-                      </div>
-                    </th>
-                    <th
-                      onClick={() => handleSort("I")}
-                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                    >
-                      <div className="flex items-center justify-center gap-1">
-                        Izin
-                        {sortField === "I" ? (
-                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <ArrowUpDown className="w-3 h-3 opacity-30" />
-                        )}
-                      </div>
-                    </th>
-                    <th
-                      onClick={() => handleSort("A")}
-                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                    >
-                      <div className="flex items-center justify-center gap-1">
-                        Alpha
-                        {sortField === "A" ? (
-                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <ArrowUpDown className="w-3 h-3 opacity-30" />
-                        )}
-                      </div>
-                    </th>
-                    <th
-                      onClick={() => handleSort("D")}
-                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                    >
-                      <div className="flex items-center justify-center gap-1">
-                        Disp
-                        {sortField === "D" ? (
-                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <ArrowUpDown className="w-3 h-3 opacity-30" />
-                        )}
-                      </div>
-                    </th>
-                    <th
-                      onClick={() => handleSort("rate")}
-                      className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                    >
-                      <div className="flex items-center justify-center gap-1">
-                        Persentase
-                        {sortField === "rate" ? (
-                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <ArrowUpDown className="w-3 h-3 opacity-30" />
-                        )}
-                      </div>
-                    </th>
+
+                    {user.role === "WALAS" ? (
+                      <>
+                        <th
+                          onClick={() => handleSort("rate")}
+                          className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Persentase Kehadiran Semester Ini
+                            {sortField === "rate" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleSort("netPoints")}
+                          className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Total Poin Pelanggaran
+                            {sortField === "netPoints" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                      </>
+                    ) : (
+                      <>
+                        <th
+                          onClick={() => handleSort("H")}
+                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Hadir
+                            {sortField === "H" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleSort("S")}
+                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Sakit
+                            {sortField === "S" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleSort("I")}
+                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Izin
+                            {sortField === "I" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleSort("A")}
+                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Alpha
+                            {sortField === "A" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleSort("D")}
+                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Disp
+                            {sortField === "D" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleSort("rate")}
+                          className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Persentase
+                            {sortField === "rate" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
-                  {sortedAttendance.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="text-center py-20 text-slate-500 text-sm">
-                        Tidak ada data rekapitulasi absensi siswa.
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedAttendance.map((item, index) => {
-                      const absoluteIndex = (absenCurrentPage - 1) * absenPageSize + index + 1;
-                      const rate = calculateAttendanceRate(item);
-                      return (
-                        <tr key={item.studentId} className="text-sm">
-                          <td className="py-3.5 px-3 text-slate-500 font-medium text-center whitespace-nowrap">{absoluteIndex}</td>
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            <div className="font-semibold text-white">{item.nama}</div>
-                            <div className="text-xs text-slate-400 font-mono">NIS: {item.nis}</div>
-                          </td>
-                          <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap">{item.kelasNama}</td>
-                          <td className="py-3.5 px-3 text-center text-emerald-400 font-bold whitespace-nowrap">{item.H}</td>
-                          <td className="py-3.5 px-3 text-center text-amber-400 font-bold whitespace-nowrap">{item.S === 0 ? "-" : item.S}</td>
-                          <td className="py-3.5 px-3 text-center text-sky-400 font-bold whitespace-nowrap">{item.I === 0 ? "-" : item.I}</td>
-                          <td className="py-3.5 px-3 text-center text-rose-400 font-bold whitespace-nowrap">{item.A === 0 ? "-" : item.A}</td>
-                          <td className="py-3.5 px-3 text-center text-purple-400 font-bold whitespace-nowrap">{item.D === 0 ? "-" : item.D}</td>
-                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                                rate >= 90
-                                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                  : rate >= 80
-                                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                                  : "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                              }`}
-                            >
-                              {rate}%
-                            </span>
-                          </td>
-                        </tr>
+                    {sortedAttendance.length === 0 ? (
+                      <tr>
+                        <td colSpan={user.role === "WALAS" ? 5 : 9} className="text-center py-20 text-slate-500 text-sm">
+                          Tidak ada data rekapitulasi absensi siswa perwalian.
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedAttendance.map((item, index) => {
+                        const absoluteIndex = (absenCurrentPage - 1) * absenPageSize + index + 1;
+                        const rate = calculateAttendanceRate(item);
+                        const points = item.netPoints ?? 0;
+                        return (
+                          <tr key={item.studentId} className="text-sm hover:bg-slate-900/40 transition-colors">
+                            <td className="py-3.5 px-3 text-slate-500 font-medium text-center whitespace-nowrap">{absoluteIndex}</td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="font-semibold text-white">{item.nama}</div>
+                              <div className="text-xs text-slate-400 font-mono">NIS: {item.nis}</div>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap">{item.kelasNama}</td>
+
+                            {user.role === "WALAS" ? (
+                              <>
+                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                  <div className="flex flex-col items-center gap-1">
+                                    <span
+                                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                                        rate >= 90
+                                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                          : rate >= 80
+                                          ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                          : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                      }`}
+                                    >
+                                      {rate}% Kehadiran
+                                    </span>
+                                    <div className="text-[10px] text-slate-400 flex items-center gap-1.5 font-mono">
+                                      <span className="text-emerald-400 font-bold">H:{item.H}</span>
+                                      <span>•</span>
+                                      <span className="text-amber-400 font-bold">S:{item.S}</span>
+                                      <span>•</span>
+                                      <span className="text-sky-400 font-bold">I:{item.I}</span>
+                                      <span>•</span>
+                                      <span className="text-rose-400 font-bold">A:{item.A}</span>
+                                      <span>•</span>
+                                      <span className="text-purple-400 font-bold">D:{item.D}</span>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                  <span
+                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${
+                                      points === 0
+                                        ? "bg-slate-950 text-slate-400 border-slate-800"
+                                        : points >= 50
+                                        ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
+                                        : points >= 20
+                                        ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                                        : "bg-sky-500/10 text-sky-400 border-sky-500/30"
+                                    }`}
+                                  >
+                                    {points} Poin
+                                  </span>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="py-3.5 px-3 text-center text-emerald-400 font-bold whitespace-nowrap">{item.H}</td>
+                                <td className="py-3.5 px-3 text-center text-amber-400 font-bold whitespace-nowrap">{item.S === 0 ? "-" : item.S}</td>
+                                <td className="py-3.5 px-3 text-center text-sky-400 font-bold whitespace-nowrap">{item.I === 0 ? "-" : item.I}</td>
+                                <td className="py-3.5 px-3 text-center text-rose-400 font-bold whitespace-nowrap">{item.A === 0 ? "-" : item.A}</td>
+                                <td className="py-3.5 px-3 text-center text-purple-400 font-bold whitespace-nowrap">{item.D === 0 ? "-" : item.D}</td>
+                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                  <span
+                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                                      rate >= 90
+                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                        : rate >= 80
+                                        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                        : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                    }`}
+                                  >
+                                    {rate}%
+                                  </span>
+                                </td>
+                              </>
+                            )}
+                          </tr>
                       );
                     })
                   )}
