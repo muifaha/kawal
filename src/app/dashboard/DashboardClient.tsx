@@ -2865,48 +2865,238 @@ export default function DashboardClient({
       {/* 2. Tab Rekap Absensi Siswa */}
       {activeTab === "absen_rekap" && isWakaOrBKOrWalas && (
         <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl animate-fade-in space-y-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            {/* View mode toggle & title */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <CalendarCheck className="w-5 h-5 text-emerald-400" />
-                  {user.role === "WALAS" ? "Wali Kelas - Rekapitulasi Siswa Perwalian" : "Rekapitulasi Kehadiran Siswa"}
-                </h3>
+          {selectedStudentNis && selectedStudentInfo ? (
+            /* Dedicated Student Profile Detail View */
+            <div className="space-y-6 animate-fade-in">
+              {/* Header with Back Button */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800/60">
+                <button
+                  onClick={() => setSelectedStudentNis(null)}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Kembali ke Rekapitulasi
+                </button>
+                <span className="text-xs text-slate-500 font-medium">Profil Detail & History Siswa</span>
+              </div>
 
-                {/* View mode toggle (Sembunyikan untuk Role WALAS) */}
-                {user.role !== "WALAS" && (
-                  <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800 w-fit">
-                    <button
-                      onClick={() => {
-                        setAbsenViewMode("cumulative");
-                        setSearchQuery("");
-                      }}
-                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
-                        absenViewMode === "cumulative"
-                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                          : "text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      Kumulatif (Semester)
-                    </button>
-                    <button
-                      onClick={() => {
-                        setAbsenViewMode("monthly");
-                        setSearchQuery("");
-                      }}
-                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
-                        absenViewMode === "monthly"
-                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                          : "text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      Matriks Bulanan
-                    </button>
+              {/* Two Column Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+                {/* Left Column: Student Stats Card */}
+                <div className="bg-slate-950/80 p-6 rounded-2xl border border-slate-900/80 space-y-6">
+                  {/* Initials & Name */}
+                  <div className="text-center space-y-3">
+                    <div className="inline-flex w-16 h-16 items-center justify-center rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xl font-bold uppercase">
+                      {selectedStudentInfo.nama.substring(0, 2)}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-base leading-tight">{selectedStudentInfo.nama}</h4>
+                      <p className="text-xs text-slate-500 mt-1">NIS: {selectedStudentInfo.nis}</p>
+                      <p className="text-xs text-slate-400 font-medium bg-slate-900/60 inline-block px-2.5 py-1 rounded-lg border border-slate-800/40 mt-2">
+                        Kelas {selectedStudentInfo.kelasNama}
+                      </p>
+                    </div>
                   </div>
-                )}
+
+                  {/* Active Points Badge */}
+                  <div className="p-4 bg-slate-900/40 border border-slate-800/40 rounded-xl text-center space-y-1">
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Akumulasi Poin Aktif</p>
+                    <p className={`text-2xl font-black ${
+                      selectedStudentInfo.totalPoin >= 50
+                        ? "text-rose-400"
+                        : selectedStudentInfo.totalPoin >= 20
+                        ? "text-amber-400"
+                        : "text-emerald-400"
+                    }`}>
+                      {selectedStudentInfo.totalPoin} Poin
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                      {selectedStudentInfo.countApproved} Pelanggaran Sah
+                    </p>
+                  </div>
+
+                  {/* Absence Summary (S, I, A, D) */}
+                  <div className="space-y-3 pt-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ringkasan Ketidakhadiran</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-amber-500/5 border border-amber-500/20 p-2.5 rounded-xl text-center">
+                        <p className="text-lg font-black text-amber-400">{selectedStudentInfo.S}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">Sakit</p>
+                      </div>
+                      <div className="bg-sky-500/5 border border-sky-500/20 p-2.5 rounded-xl text-center">
+                        <p className="text-lg font-black text-sky-400">{selectedStudentInfo.I}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">Izin</p>
+                      </div>
+                      <div className="bg-rose-500/5 border border-rose-500/20 p-2.5 rounded-xl text-center">
+                        <p className="text-lg font-black text-rose-400">{selectedStudentInfo.A}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">Alfa</p>
+                      </div>
+                      <div className="bg-purple-500/5 border border-purple-500/20 p-2.5 rounded-xl text-center">
+                        <p className="text-lg font-black text-purple-400">{selectedStudentInfo.D}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">Disp.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Right Column: Timeline Logs */}
+                <div className="bg-slate-950/20 p-6 rounded-2xl border border-slate-900 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <h4 className="text-sm font-bold text-white flex items-center gap-1.5 uppercase tracking-wide">
+                      <Clock className="w-4 h-4 text-rose-400" />
+                      Timeline Aktivitas & Laporan
+                    </h4>
+                    <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800">
+                      {[
+                        { value: "ALL", label: "Semua" },
+                        { value: "PELANGGARAN", label: "Pelanggaran" },
+                        { value: "REMISI", label: "Remisi" },
+                        { value: "PENANGANAN", label: "Penanganan" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setTimelineCategoryFilter(opt.value)}
+                          className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all ${
+                            timelineCategoryFilter === opt.value
+                              ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const filteredLogs = timelineCategoryFilter === "ALL"
+                      ? selectedStudentLogs
+                      : selectedStudentLogs.filter((item) => {
+                          if (timelineCategoryFilter === "PELANGGARAN") return item.kategoriNama !== "REMISI" && item.kategoriNama !== "PENANGANAN";
+                          return item.kategoriNama === timelineCategoryFilter;
+                        });
+                    return filteredLogs.length === 0 ? (
+                    <p className="text-slate-500 text-xs py-10 text-center">Tidak ada catatan {timelineCategoryFilter === "ALL" ? "pelanggaran, remisi, atau penanganan" : timelineCategoryFilter.toLowerCase()} siswa.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {filteredLogs.map((item) => {
+                        const isBKoWaka = user.role === "BK" || user.role === "WAKA";
+                        const isRevealed = revealedReports[item.id] || false;
+                        const shouldBlur = item.isCensored && (!isBKoWaka || !isRevealed);
+
+                        let nodeDotColor = "bg-rose-500";
+                        let nodeTitleColor = "text-rose-400";
+                        let nodeTypeLabel = "Pelanggaran";
+                        if (item.kategoriNama === "REMISI") {
+                          nodeDotColor = "bg-emerald-500";
+                          nodeTitleColor = "text-emerald-400";
+                          nodeTypeLabel = "Remisi";
+                        } else if (item.kategoriNama === "PENANGANAN") {
+                          nodeDotColor = "bg-indigo-500";
+                          nodeTitleColor = "text-indigo-400";
+                          nodeTypeLabel = "Penanganan";
+                        }
+
+                        return (
+                          <div key={item.id} className="space-y-1.5">
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${nodeDotColor}`} />
+                                <span className={`font-black uppercase tracking-wider text-[10px] ${nodeTitleColor}`}>
+                                  {nodeTypeLabel}
+                                </span>
+                                <span className="text-slate-600">&bull;</span>
+                                <span className="text-slate-400">
+                                  {new Date(item.tanggal).toLocaleDateString("id-ID", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                                <span className="text-slate-600">&bull;</span>
+                                <span className="text-slate-500">
+                                  {new Date(item.tanggal).toLocaleTimeString("id-ID", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-400 font-medium">Oleh: {item.pelaporName}</span>
+                                {item.poin !== 0 && (
+                                  <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${
+                                    item.poin > 0 ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                  }`}>
+                                    {item.poin > 0 ? `+${item.poin}` : item.poin} Poin
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1 relative overflow-hidden">
+                              <p className={`font-bold text-white text-xs ${shouldBlur ? "blur-sm select-none" : ""}`}>
+                                {item.violationName}
+                              </p>
+                              {item.notes && (
+                                <p className={`text-xs text-slate-400 leading-relaxed italic ${shouldBlur ? "blur-sm select-none" : ""}`}>
+                                  "{item.notes}"
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                  })()}
+                </div>
               </div>
             </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                {/* View mode toggle & title */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <CalendarCheck className="w-5 h-5 text-emerald-400" />
+                      {user.role === "WALAS" ? "Wali Kelas - Rekapitulasi Siswa Perwalian" : "Rekapitulasi Kehadiran Siswa"}
+                    </h3>
+
+                    {/* View mode toggle (Sembunyikan untuk Role WALAS) */}
+                    {user.role !== "WALAS" && (
+                      <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800 w-fit">
+                        <button
+                          onClick={() => {
+                            setAbsenViewMode("cumulative");
+                            setSearchQuery("");
+                          }}
+                          className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                            absenViewMode === "cumulative"
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          Kumulatif (Semester)
+                        </button>
+                        <button
+                          onClick={() => {
+                            setAbsenViewMode("monthly");
+                            setSearchQuery("");
+                          }}
+                          className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                            absenViewMode === "monthly"
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          Matriks Bulanan
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
             {/* Actions & Filters */}
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5 lg:justify-end">
@@ -3259,11 +3449,11 @@ export default function DashboardClient({
                                 <td className="py-3.5 px-4 text-center whitespace-nowrap">
                                   <button
                                     onClick={() => setSelectedStudentNis(item.nis)}
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-all cursor-pointer shadow-sm"
-                                    title="Lihat Riwayat & Detail Siswa"
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-bold text-emerald-300 hover:text-white transition-all cursor-pointer shadow-sm"
+                                    title="Lihat Detail & History Pelanggaran Siswa"
                                   >
-                                    <History className="w-3.5 h-3.5" />
-                                    <span>History</span>
+                                    <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span>Detail</span>
                                   </button>
                                 </td>
                               </>
@@ -3486,6 +3676,8 @@ export default function DashboardClient({
           )}
         </div>
       )}
+    </div>
+  )}
 
       {/* 3. Tab Rekap Pelanggaran Siswa */}
       {activeTab === "pelanggaran_rekap" && user.role !== "WALAS" && isWakaOrBKOrWalas && (
