@@ -3024,11 +3024,76 @@ export default function DashboardClient({
                     {user.role === "WALAS" ? (
                       <>
                         <th
+                          onClick={() => handleSort("H")}
+                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Hadir
+                            {sortField === "H" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleSort("S")}
+                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Sakit
+                            {sortField === "S" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleSort("I")}
+                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Izin
+                            {sortField === "I" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleSort("D")}
+                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Dispen
+                            {sortField === "D" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
+                          onClick={() => handleSort("A")}
+                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Alfa
+                            {sortField === "A" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
                           onClick={() => handleSort("rate")}
                           className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
                         >
                           <div className="flex items-center justify-center gap-1">
-                            Kehadiran
+                            Persentase
                             {sortField === "rate" ? (
                               sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
                             ) : (
@@ -3049,6 +3114,7 @@ export default function DashboardClient({
                             )}
                           </div>
                         </th>
+                        <th className="py-3 px-4 text-center whitespace-nowrap">Aksi</th>
                       </>
                     ) : (
                       <>
@@ -3137,7 +3203,7 @@ export default function DashboardClient({
                 <tbody className="divide-y divide-slate-800/60">
                     {sortedAttendance.length === 0 ? (
                       <tr>
-                        <td colSpan={user.role === "WALAS" ? 5 : 9} className="text-center py-20 text-slate-500 text-sm">
+                        <td colSpan={user.role === "WALAS" ? 11 : 9} className="text-center py-20 text-slate-500 text-sm">
                           Tidak ada data rekapitulasi absensi siswa perwalian.
                         </td>
                       </tr>
@@ -3157,31 +3223,23 @@ export default function DashboardClient({
 
                             {user.role === "WALAS" ? (
                               <>
+                                <td className="py-3.5 px-3 text-center text-emerald-400 font-bold whitespace-nowrap">{item.H}</td>
+                                <td className="py-3.5 px-3 text-center text-amber-400 font-bold whitespace-nowrap">{item.S === 0 ? "-" : item.S}</td>
+                                <td className="py-3.5 px-3 text-center text-sky-400 font-bold whitespace-nowrap">{item.I === 0 ? "-" : item.I}</td>
+                                <td className="py-3.5 px-3 text-center text-purple-400 font-bold whitespace-nowrap">{item.D === 0 ? "-" : item.D}</td>
+                                <td className="py-3.5 px-3 text-center text-rose-400 font-bold whitespace-nowrap">{item.A === 0 ? "-" : item.A}</td>
                                 <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                  <div className="flex flex-col items-center gap-1">
-                                    <span
-                                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                                        rate >= 90
-                                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                          : rate >= 80
-                                          ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                                          : "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                                      }`}
-                                    >
-                                      {rate}% Kehadiran
-                                    </span>
-                                    <div className="text-[10px] text-slate-400 flex items-center gap-1.5 font-mono">
-                                      <span className="text-emerald-400 font-bold">H:{item.H}</span>
-                                      <span>•</span>
-                                      <span className="text-amber-400 font-bold">S:{item.S}</span>
-                                      <span>•</span>
-                                      <span className="text-sky-400 font-bold">I:{item.I}</span>
-                                      <span>•</span>
-                                      <span className="text-rose-400 font-bold">A:{item.A}</span>
-                                      <span>•</span>
-                                      <span className="text-purple-400 font-bold">D:{item.D}</span>
-                                    </div>
-                                  </div>
+                                  <span
+                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                                      rate >= 90
+                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                        : rate >= 80
+                                        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                        : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                    }`}
+                                  >
+                                    {rate}%
+                                  </span>
                                 </td>
                                 <td className="py-3.5 px-4 text-center whitespace-nowrap">
                                   <span
@@ -3197,6 +3255,16 @@ export default function DashboardClient({
                                   >
                                     {points} Poin
                                   </span>
+                                </td>
+                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                  <button
+                                    onClick={() => setSelectedStudentNis(item.nis)}
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-all cursor-pointer shadow-sm"
+                                    title="Lihat Riwayat & Detail Siswa"
+                                  >
+                                    <History className="w-3.5 h-3.5" />
+                                    <span>History</span>
+                                  </button>
                                 </td>
                               </>
                             ) : (
