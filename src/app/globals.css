@@ -44,10 +44,10 @@
   --slate-600: #94a3b8;
   --slate-700: #cbd5e1;
   --slate-800: #cbd5e1;
-  --slate-900: #ffffff;
+  --slate-900: #e2e8f0;
   --slate-950: #f8fafc;
   
-  --text-white: #ffffff;
+  --text-white: #0f172a;
   
   --orange-300: #c2410c;
   --orange-400: #ea580c;
@@ -112,67 +112,30 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-/* Make sure text elements that use text-white turn dark in light mode */
+/* Make sure text elements that used text-white turn dark in light mode */
 .light .text-white {
-  color: #0f172a !important;
+  color: var(--slate-50) !important;
 }
 
-/* Keep text color white ONLY for solid background elements, buttons, badges, gradients, and their children */
-.light [class*="bg-emerald-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]),
-.light [class*="bg-indigo-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]),
-.light [class*="bg-rose-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]),
-.light [class*="bg-purple-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]),
-.light [class*="bg-sky-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]),
-.light [class*="bg-amber-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]),
-.light [class*="bg-orange-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]),
-.light [class*="bg-teal-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]),
-.light [class*="from-emerald-"],
-.light [class*="from-indigo-"],
-.light [class*="from-rose-"],
-.light [class*="from-purple-"],
-.light [class*="from-amber-"],
-.light [class*="from-sky-"],
-.light [class*="from-teal-"] {
+/* Keep text color white ONLY for solid background elements, alerts, and their children */
+.light [class*="bg-emerald-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-indigo-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-rose-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-purple-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-sky-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-amber-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-orange-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
+.light [class*="bg-emerald-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
+.light [class*="bg-indigo-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
+.light [class*="bg-rose-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
+.light [class*="bg-purple-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
+.light [class*="bg-sky-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
+.light [class*="bg-amber-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
+.light [class*="bg-orange-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) * {
   color: #ffffff !important;
 }
 
-.light [class*="bg-emerald-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]) .text-white,
-.light [class*="bg-indigo-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]) .text-white,
-.light [class*="bg-rose-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]) .text-white,
-.light [class*="bg-purple-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]) .text-white,
-.light [class*="bg-sky-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]) .text-white,
-.light [class*="bg-amber-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]) .text-white,
-.light [class*="bg-orange-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]) .text-white,
-.light [class*="bg-teal-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]):not([class*="/0"]) .text-white,
-.light [class*="from-emerald-"] .text-white,
-.light [class*="from-indigo-"] .text-white,
-.light [class*="from-rose-"] .text-white,
-.light [class*="from-purple-"] .text-white,
-.light [class*="from-amber-"] .text-white,
-.light [class*="from-sky-"] .text-white,
-.light [class*="from-teal-"] .text-white {
-  color: #ffffff !important;
-}
-
+/* Fix input placeholders in light mode */
 .light ::placeholder {
-  color: #64748b !important;
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.5);
+  color: #94a3b8 !important;
 }
