@@ -162,7 +162,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
         {
           name: "Rekap Pelanggaran",
           href: "/rekap-pelanggaran",
-          roles: ["BK", "WALAS", "GURU", "WAKA", "OSIS", "PIKET"],
+          roles: ["BK", "GURU", "WAKA", "OSIS", "PIKET"],
         },
         {
           name: "Tambah Pelanggaran",
