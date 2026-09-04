@@ -3255,19 +3255,6 @@ export default function DashboardClient({
                           </div>
                         </th>
                         <th
-                          onClick={() => handleSort("D")}
-                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Dispen
-                            {sortField === "D" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th
                           onClick={() => handleSort("A")}
                           className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
                         >
@@ -3281,11 +3268,24 @@ export default function DashboardClient({
                           </div>
                         </th>
                         <th
+                          onClick={() => handleSort("D")}
+                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Dispen
+                            {sortField === "D" ? (
+                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 opacity-30" />
+                            )}
+                          </div>
+                        </th>
+                        <th
                           onClick={() => handleSort("rate")}
                           className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
                         >
                           <div className="flex items-center justify-center gap-1">
-                            Persentase
+                            Kehadiran
                             {sortField === "rate" ? (
                               sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
                             ) : (
@@ -3298,7 +3298,7 @@ export default function DashboardClient({
                           className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
                         >
                           <div className="flex items-center justify-center gap-1">
-                            Akumulasi Poin
+                            Poin Pelanggaran
                             {sortField === "netPoints" ? (
                               sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
                             ) : (
@@ -3418,8 +3418,8 @@ export default function DashboardClient({
                                 <td className="py-3.5 px-3 text-center text-emerald-400 font-bold whitespace-nowrap">{item.H}</td>
                                 <td className="py-3.5 px-3 text-center text-amber-400 font-bold whitespace-nowrap">{item.S === 0 ? "-" : item.S}</td>
                                 <td className="py-3.5 px-3 text-center text-sky-400 font-bold whitespace-nowrap">{item.I === 0 ? "-" : item.I}</td>
-                                <td className="py-3.5 px-3 text-center text-purple-400 font-bold whitespace-nowrap">{item.D === 0 ? "-" : item.D}</td>
                                 <td className="py-3.5 px-3 text-center text-rose-400 font-bold whitespace-nowrap">{item.A === 0 ? "-" : item.A}</td>
+                                <td className="py-3.5 px-3 text-center text-purple-400 font-bold whitespace-nowrap">{item.D === 0 ? "-" : item.D}</td>
                                 <td className="py-3.5 px-4 text-center whitespace-nowrap">
                                   <span
                                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
