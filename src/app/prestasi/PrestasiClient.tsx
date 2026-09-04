@@ -462,22 +462,15 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 border border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-xl">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+      {user.role === "WALAS" ? (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="px-2.5 py-1 bg-amber-400/10 border border-amber-400/30 text-amber-300 text-[10px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                Modul Prestasi Siswa
-              </span>
-              <span className="text-xs text-slate-400 font-semibold">• Kawal Sekolahan</span>
-            </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
-              Pencatatan & Rekapitulasi Prestasi Siswa
+              <Trophy className="w-6 h-6 text-amber-400" />
+              Rekap Prestasi Siswa
             </h1>
-            <p className="text-xs text-slate-300 mt-1.5 max-w-2xl leading-relaxed">
-              Kelola pendokumentasian prestasi kejuaraan siswa, apresiasi sertifikat/piagam, serta integrasi pemotongan poin pelanggaran secara langsung.
+            <p className="text-sm text-slate-400 mt-1">
+              Tampilan rekapitulasi data prestasi kejuaraan siswa perwalian.
             </p>
           </div>
 
@@ -507,7 +500,54 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
             </button>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 border border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-xl">
+          <div className="absolute right-0 top-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="px-2.5 py-1 bg-amber-400/10 border border-amber-400/30 text-amber-300 text-[10px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                  Modul Prestasi Siswa
+                </span>
+                <span className="text-xs text-slate-400 font-semibold">• Kawal Sekolahan</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
+                Pencatatan & Rekapitulasi Prestasi Siswa
+              </h1>
+              <p className="text-xs text-slate-300 mt-1.5 max-w-2xl leading-relaxed">
+                Kelola pendokumentasian prestasi kejuaraan siswa, apresiasi sertifikat/piagam, serta integrasi pemotongan poin pelanggaran secara langsung.
+              </p>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 w-full sm:w-auto shrink-0 font-semibold text-xs">
+              <button
+                onClick={() => setActiveTab("input")}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  activeTab === "input"
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/20"
+                    : "text-slate-400 hover:text-white hover:bg-slate-900"
+                }`}
+              >
+                <PlusCircle className="w-4 h-4 shrink-0" />
+                <span>Input Prestasi</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("list")}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  activeTab === "list"
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/20"
+                    : "text-slate-400 hover:text-white hover:bg-slate-900"
+                }`}
+              >
+                <Trophy className="w-4 h-4 shrink-0" />
+                <span>Daftar & Riwayat ({prestasiList.length})</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Metric KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">

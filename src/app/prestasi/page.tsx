@@ -24,11 +24,17 @@ export default async function PrestasiPage({
     redirect("/dashboard?error=unauthorized");
   }
 
-  // 1. Ambil seluruh Kelas dan Siswa Aktif untuk tagging prestasi
+  // 1. Ambil Kelas dan Siswa Aktif
+  const classWhereFilter: any = {
+    tahunAjaran: { isActive: true },
+  };
+
+  if (user.role === "WALAS") {
+    classWhereFilter.walasId = user.id;
+  }
+
   const dbClasses = await prisma.kelas.findMany({
-    where: {
-      tahunAjaran: { isActive: true },
-    },
+    where: classWhereFilter,
     include: {
       siswaKelas: {
         where: {
@@ -53,7 +59,15 @@ export default async function PrestasiPage({
 
   // 2. Ambil riwayat/daftar prestasi siswa
   const resPrestasi = await getPrestasiListAction();
-  const initialPrestasiList = resPrestasi.success && resPrestasi.data ? resPrestasi.data : [];
+  let initialPrestasiList = resPrestasi.success && resPrestasi.data ? resPrestasi.data : [];
+
+  if (user.role === "WALAS") {
+    const walasClassNames = new Set(classes.map((c) => c.nama));
+    const walasStudentIds = new Set(classes.flatMap((c) => c.siswa.map((s) => s.id)));
+    initialPrestasiList = initialPrestasiList.filter((item: any) =>
+      item.anggota.some((a: any) => walasStudentIds.has(a.id) || walasClassNames.has(a.kelasNama))
+    );
+  }
 
   return (
     <SidebarLayout user={user}>
