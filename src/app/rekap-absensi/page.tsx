@@ -64,10 +64,10 @@ export default async function RekapAbsensiPage() {
     <SidebarLayout user={user}>
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white text-balance">
-          Rekap Matriks Kehadiran Bulanan
+          Rekap Kehadiran
         </h1>
         <p className="text-sm text-slate-400 mt-1">
-          Tampilan matriks tanggal (1 s.d. 31) beserta statistik kehadiran dan poin pelanggaran siswa.
+          Tampilan matriks kehadiran beserta statistik kehadiran siswa.
         </p>
       </div>
 
