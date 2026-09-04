@@ -44,10 +44,10 @@
   --slate-600: #94a3b8;
   --slate-700: #cbd5e1;
   --slate-800: #cbd5e1;
-  --slate-900: #e2e8f0;
+  --slate-900: #ffffff;
   --slate-950: #f8fafc;
   
-  --text-white: #0f172a;
+  --text-white: #ffffff;
   
   --orange-300: #c2410c;
   --orange-400: #ea580c;
@@ -112,30 +112,21 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-/* Make sure text elements that used text-white turn dark in light mode */
-.light .text-white {
-  color: var(--slate-50) !important;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-/* Keep text color white ONLY for solid background elements, alerts, and their children */
-.light [class*="bg-emerald-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
-.light [class*="bg-indigo-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
-.light [class*="bg-rose-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
-.light [class*="bg-purple-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
-.light [class*="bg-sky-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
-.light [class*="bg-amber-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
-.light [class*="bg-orange-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]),
-.light [class*="bg-emerald-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
-.light [class*="bg-indigo-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
-.light [class*="bg-rose-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
-.light [class*="bg-purple-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
-.light [class*="bg-sky-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
-.light [class*="bg-amber-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) *,
-.light [class*="bg-orange-"]:not([class*="/10"]):not([class*="/20"]):not([class*="/5"]) * {
-  color: #ffffff !important;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* Fix input placeholders in light mode */
-.light ::placeholder {
-  color: #94a3b8 !important;
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
 }
