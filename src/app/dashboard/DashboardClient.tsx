@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useTransition, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import SidebarLayout from "@/components/SidebarLayout";
 import Link from "next/link";
 import {
@@ -320,7 +321,15 @@ export default function DashboardClient({
   sekretarisWeeklyAbsent = [],
   pembinaOsisPrestasi = [],
 }: DashboardClientProps) {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<"summary" | "absen_rekap" | "pelanggaran_rekap">("summary");
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "pelanggaran_rekap" || tabParam === "absen_rekap" || tabParam === "summary") {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedExportType, setSelectedExportType] = useState<"cumulative" | "monthly">("cumulative");
   const [isCompletenessOpen, setIsCompletenessOpen] = useState(false);
@@ -3674,7 +3683,7 @@ export default function DashboardClient({
   )}
 
       {/* 3. Tab Rekap Pelanggaran Siswa */}
-      {activeTab === "pelanggaran_rekap" && user.role !== "WALAS" && isWakaOrBKOrWalas && (
+      {activeTab === "pelanggaran_rekap" && isWakaOrBKOrWalas && (
         <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl animate-fade-in space-y-6">
           {selectedStudentNis && selectedStudentInfo ? (
             /* Dedicated Student Profile Detail View */

@@ -24,6 +24,7 @@ import {
   Smartphone,
   Download,
   Trophy,
+  UserCheck,
 } from "lucide-react";
 
 interface SidebarLayoutProps {
@@ -121,10 +122,37 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       roles: ["SEKRETARIS", "WAKA", "BK"],
     },
     {
+      name: "Wali Kelas",
+      icon: UserCheck,
+      roles: ["WALAS"],
+      children: [
+        {
+          name: "Rekap Absensi",
+          href: "/rekap-absensi",
+          roles: ["WALAS"],
+        },
+        {
+          name: "Rekap Pelanggaran",
+          href: "/dashboard?tab=pelanggaran_rekap",
+          roles: ["WALAS"],
+        },
+        {
+          name: "Rekap Prestasi",
+          href: "/prestasi",
+          roles: ["WALAS"],
+        },
+        {
+          name: "Catatan BK",
+          href: "/bimbingan",
+          roles: ["WALAS"],
+        },
+      ],
+    },
+    {
       name: "Rekap Absensi",
       href: "/rekap-absensi",
       icon: ClipboardList,
-      roles: ["BK", "WALAS", "SEKRETARIS", "PIKET"],
+      roles: ["BK", "SEKRETARIS", "PIKET"],
     },
     {
       name: "Pelanggaran",
@@ -134,7 +162,12 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
         {
           name: "Tambah Pelanggaran",
           href: "/pelanggaran",
-          roles: ["BK", "WALAS", "GURU", "OSIS", "PIKET"],
+          roles: ["BK", "WALAS", "GURU", "OSIS", "PIKET", "WAKA"],
+        },
+        {
+          name: "Rujukan BK",
+          href: "/rujukan",
+          roles: ["BK", "WAKA", "WALAS", "GURU"],
         },
         {
           name: "Persetujuan Pelanggaran",
@@ -162,17 +195,17 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
     {
       name: "Bimbingan Konseling",
       icon: HeartHandshake,
-      roles: ["BK", "WAKA", "WALAS", "GURU"],
+      roles: ["BK", "WAKA", "GURU"],
       children: [
         {
           name: "Catatan BK",
           href: "/bimbingan",
-          roles: ["BK", "WAKA", "WALAS"],
+          roles: ["BK", "WAKA"],
         },
         {
           name: "Rujukan BK",
           href: "/rujukan",
-          roles: ["BK", "WAKA", "WALAS", "GURU"],
+          roles: ["BK", "WAKA", "GURU"],
         },
       ],
     },
