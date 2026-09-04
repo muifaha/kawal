@@ -5,7 +5,7 @@ import {
   getMonthlyAttendanceMatrixAction,
   getSemesterAttendanceMatrixAction,
 } from "@/app/actions/attendance";
-import { CalendarCheck, RefreshCw, BarChart2, CheckCircle2 } from "lucide-react";
+import { CalendarCheck, RefreshCw } from "lucide-react";
 
 interface ClassOption {
   id: string;
@@ -46,7 +46,6 @@ export default function RekapAbsensiClient({
   userRole,
 }: RekapAbsensiClientProps) {
   const [matrixMode, setMatrixMode] = useState<"monthly" | "semester">("monthly");
-  const [semesterDisplayMode, setSemesterDisplayMode] = useState<"chips" | "rate">("chips");
   const [selectedClassId, setSelectedClassId] = useState<string>(() => classes[0]?.id || "");
   const [selectedMonth, setSelectedMonth] = useState<number>(() => new Date().getMonth());
   const [selectedSemester, setSelectedSemester] = useState<1 | 2>(() => {
@@ -140,55 +139,27 @@ export default function RekapAbsensiClient({
       <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-4 sm:p-5 space-y-4">
         {/* Toggle Mode */}
         <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-slate-800/60">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800">
-              <button
-                onClick={() => setMatrixMode("monthly")}
-                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  matrixMode === "monthly"
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Matriks Bulanan
-              </button>
-              <button
-                onClick={() => setMatrixMode("semester")}
-                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  matrixMode === "semester"
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Matriks Semester
-              </button>
-            </div>
-
-            {/* Sub-mode switcher for Semester */}
-            {matrixMode === "semester" && (
-              <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800/80">
-                <button
-                  onClick={() => setSemesterDisplayMode("chips")}
-                  className={`px-3 py-1 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${
-                    semesterDisplayMode === "chips"
-                      ? "bg-slate-800 text-white shadow-sm"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  Chip Rincian (H/S/I/A/D)
-                </button>
-                <button
-                  onClick={() => setSemesterDisplayMode("rate")}
-                  className={`px-3 py-1 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${
-                    semesterDisplayMode === "rate"
-                      ? "bg-slate-800 text-white shadow-sm"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  Persentase Bulanan (%)
-                </button>
-              </div>
-            )}
+          <div className="inline-flex rounded-xl bg-slate-950 p-1 border border-slate-800">
+            <button
+              onClick={() => setMatrixMode("monthly")}
+              className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                matrixMode === "monthly"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Matriks Bulanan
+            </button>
+            <button
+              onClick={() => setMatrixMode("semester")}
+              className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                matrixMode === "semester"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Matriks Semester
+            </button>
           </div>
 
           {isPending && (
@@ -476,7 +447,7 @@ export default function RekapAbsensiClient({
                   {semesterData.months.map((m) => (
                     <th
                       key={m.index}
-                      className="py-3 text-center px-4 text-xs font-bold border-r border-slate-800/40 text-slate-200 min-w-[7.5rem]"
+                      className="py-3 text-center px-4 text-xs font-bold border-r border-slate-800/40 text-slate-200 min-w-[8.5rem]"
                     >
                       {m.label}
                     </th>
@@ -546,7 +517,6 @@ export default function RekapAbsensiClient({
                           const mStats = studentMatrix[m.index] || { H: 0, S: 0, I: 0, A: 0, D: 0 };
                           const totalM = mStats.H + mStats.S + mStats.I + mStats.A + mStats.D;
                           const hasData = totalM > 0;
-                          const isFullAttendance = hasData && mStats.S === 0 && mStats.I === 0 && mStats.A === 0 && mStats.D === 0;
 
                           if (!hasData) {
                             return (
@@ -556,65 +526,30 @@ export default function RekapAbsensiClient({
                             );
                           }
 
-                          if (semesterDisplayMode === "rate") {
-                            const mAbsenceWeight = mStats.A * 1.0 + mStats.I * 0.7 + mStats.S * 0.5;
-                            const mRate = Math.max(0, Math.min(100, Math.round((1 - mAbsenceWeight / totalM) * 100)));
-                            let mBadgeColor = "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
-                            if (mRate < 80) mBadgeColor = "text-rose-400 border-rose-500/30 bg-rose-500/10";
-                            else if (mRate < 90) mBadgeColor = "text-amber-400 border-amber-500/30 bg-amber-500/10";
-
-                            return (
-                              <td key={m.index} className="py-3 px-2 text-center border-r border-slate-800/40">
-                                <div className="flex flex-col items-center gap-1">
-                                  <span className={`px-2 py-0.5 rounded-md font-bold font-mono text-[10px] border ${mBadgeColor}`}>
-                                    {mRate}%
-                                  </span>
-                                  {!isFullAttendance && (
-                                    <div className="flex items-center gap-1 text-[9px] font-mono">
-                                      {mStats.S > 0 && <span className="text-amber-400 font-bold">{mStats.S}S</span>}
-                                      {mStats.I > 0 && <span className="text-sky-400 font-bold">{mStats.I}I</span>}
-                                      {mStats.A > 0 && <span className="text-rose-400 font-extrabold">{mStats.A}A</span>}
-                                      {mStats.D > 0 && <span className="text-purple-400 font-bold">{mStats.D}D</span>}
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                            );
-                          }
+                          const mAbsenceWeight = mStats.A * 1.0 + mStats.I * 0.7 + mStats.S * 0.5;
+                          const mRate = Math.max(0, Math.min(100, Math.round((1 - mAbsenceWeight / totalM) * 100)));
+                          let mBadgeColor = "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
+                          if (mRate < 80) mBadgeColor = "text-rose-400 border-rose-500/30 bg-rose-500/10";
+                          else if (mRate < 90) mBadgeColor = "text-amber-400 border-amber-500/30 bg-amber-500/10";
 
                           return (
                             <td key={m.index} className="py-3 px-2 text-center border-r border-slate-800/40">
-                              {isFullAttendance ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold font-mono text-[10px]">
-                                  {mStats.H}H (100%)
+                              <div className="flex flex-col items-center gap-1">
+                                <span className={`px-2 py-0.5 rounded-md font-bold font-mono text-[10px] border ${mBadgeColor}`}>
+                                  {mRate}%
                                 </span>
-                              ) : (
-                                <div className="flex flex-wrap items-center justify-center gap-1">
-                                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold font-mono text-[10px]">
-                                    {mStats.H}H
-                                  </span>
-                                  {mStats.S > 0 && (
-                                    <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold font-mono text-[10px]">
-                                      {mStats.S}S
-                                    </span>
-                                  )}
-                                  {mStats.I > 0 && (
-                                    <span className="px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 font-bold font-mono text-[10px]">
-                                      {mStats.I}I
-                                    </span>
-                                  )}
+                                <div className="flex flex-wrap items-center justify-center gap-1 text-[9.5px] font-mono leading-tight">
+                                  <span className="text-emerald-400 font-bold" title="Hadir">{mStats.H}H</span>
+                                  {mStats.S > 0 && <span className="text-amber-400 font-bold" title="Sakit">{mStats.S}S</span>}
+                                  {mStats.I > 0 && <span className="text-sky-400 font-bold" title="Izin">{mStats.I}I</span>}
+                                  {mStats.D > 0 && <span className="text-purple-400 font-bold" title="Dispen">{mStats.D}D</span>}
                                   {mStats.A > 0 && (
-                                    <span className="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/30 text-rose-400 font-extrabold font-mono text-[10px] animate-pulse">
+                                    <span className="text-rose-400 font-extrabold bg-rose-500/20 px-1 rounded border border-rose-500/30" title="Alfa">
                                       {mStats.A}A
                                     </span>
                                   )}
-                                  {mStats.D > 0 && (
-                                    <span className="px-1.5 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold font-mono text-[10px]">
-                                      {mStats.D}D
-                                    </span>
-                                  )}
                                 </div>
-                              )}
+                              </div>
                             </td>
                           );
                         })}
@@ -643,14 +578,14 @@ export default function RekapAbsensiClient({
           <div className="p-4 bg-slate-900/30 border border-slate-800 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
             <div className="flex items-center gap-4 flex-wrap">
               <span className="font-semibold text-white">Keterangan Status Matriks Semester:</span>
-              <span className="text-emerald-400 font-bold">H: Total Hadir Bulanan</span>
+              <span className="text-emerald-400 font-bold">H: Hadir</span>
               <span className="text-amber-400 font-bold">S: Sakit</span>
               <span className="text-sky-400 font-bold">I: Izin</span>
-              <span className="text-rose-400 font-bold">A: Alpha (Sangat Menonjol)</span>
+              <span className="text-rose-400 font-bold">A: Alpha</span>
               <span className="text-purple-400 font-bold">D: Dispensasi</span>
             </div>
             <div className="text-[11px] text-slate-500 italic">
-              * Rekapitulasi absensi per bulan disajikan untuk {semesterData.semester === 1 ? "Semester 1 / Ganjil (Juli - Desember)" : "Semester 2 / Genap (Januari - Juni)"}.
+              * Rincian absensi disajikan per bulan beserta % tingkat kehadiran untuk {semesterData.semester === 1 ? "Semester 1 / Ganjil (Juli - Desember)" : "Semester 2 / Genap (Januari - Juni)"}.
             </div>
           </div>
         </div>
