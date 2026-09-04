@@ -2161,8 +2161,7 @@ export default function DashboardClient({
             <h4 className="text-sm font-bold text-amber-300">Pemberitahuan Absensi Hari Ini</h4>
             {user.role === "WALAS" ? (
               <div className="text-xs text-amber-300 leading-relaxed">
-                Kelas Anda (<strong className="text-white font-bold">{classesNotSubmittedToday[0].nama}</strong>) belum melakukan pencatatan absensi harian untuk hari ini.
-                Silakan segera catat absensi kelas Anda di menu <Link href="/absensi" className="underline hover:text-white font-bold transition-all">Catat Absensi</Link>.
+                Kelas Anda (<strong className="text-white font-bold">{classesNotSubmittedToday[0].nama}</strong>) belum melakukan pencatatan absensi harian untuk hari ini. Silakan segera hubungi sekretaris kelas.
               </div>
             ) : (
               <div className="text-xs text-amber-300 leading-relaxed space-y-1.5">
