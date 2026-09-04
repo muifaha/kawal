@@ -322,12 +322,12 @@ export async function getMonthlyAttendanceMatrixAction(
 }
 
 /**
- * Mendapatkan data matriks absensi semesteran siswa untuk suatu kelas (Ganjil: Jul-Des, Genap: Jan-Jun)
+ * Mendapatkan data matriks absensi semesteran siswa untuk suatu kelas (Ganjil: Jul-Des, Genap: Jan-Jun, 0: Seluruh Semester 12 bulan)
  */
 export async function getSemesterAttendanceMatrixAction(
   classId: string,
-  semester: 1 | 2,
-  year: number
+  semester: 0 | 1 | 2,
+  year: number // Starting year of Academic Year (e.g. 2025 for TA 2025/2026)
 ) {
   const user = await getSessionUser();
   if (!user) {
@@ -368,11 +368,51 @@ export async function getSemesterAttendanceMatrixAction(
 
     const studentIds = students.map((s) => s.id);
 
-    const startMonth = semester === 1 ? 6 : 0;
-    const endMonth = semester === 1 ? 11 : 5;
+    let startDate: Date;
+    let endDate: Date;
+    let months: Array<{ key: string; label: string }>;
 
-    const startDate = new Date(Date.UTC(year, startMonth, 1, 0, 0, 0));
-    const endDate = new Date(Date.UTC(year, endMonth + 1, 0, 23, 59, 59, 999));
+    if (semester === 1) {
+      startDate = new Date(Date.UTC(year, 6, 1, 0, 0, 0));
+      endDate = new Date(Date.UTC(year, 12, 0, 23, 59, 59, 999));
+      months = [
+        { key: `${year}-6`, label: "Juli" },
+        { key: `${year}-7`, label: "Agustus" },
+        { key: `${year}-8`, label: "September" },
+        { key: `${year}-9`, label: "Oktober" },
+        { key: `${year}-10`, label: "November" },
+        { key: `${year}-11`, label: "Desember" },
+      ];
+    } else if (semester === 2) {
+      startDate = new Date(Date.UTC(year + 1, 0, 1, 0, 0, 0));
+      endDate = new Date(Date.UTC(year + 1, 6, 0, 23, 59, 59, 999));
+      months = [
+        { key: `${year + 1}-0`, label: "Januari" },
+        { key: `${year + 1}-1`, label: "Februari" },
+        { key: `${year + 1}-2`, label: "Maret" },
+        { key: `${year + 1}-3`, label: "April" },
+        { key: `${year + 1}-4`, label: "Mei" },
+        { key: `${year + 1}-5`, label: "Juni" },
+      ];
+    } else {
+      // semester === 0 (Seluruh Semester / 1 Tahun Ajaran Penuh: Jul - Jun)
+      startDate = new Date(Date.UTC(year, 6, 1, 0, 0, 0));
+      endDate = new Date(Date.UTC(year + 1, 6, 0, 23, 59, 59, 999));
+      months = [
+        { key: `${year}-6`, label: "Juli" },
+        { key: `${year}-7`, label: "Agustus" },
+        { key: `${year}-8`, label: "September" },
+        { key: `${year}-9`, label: "Oktober" },
+        { key: `${year}-10`, label: "November" },
+        { key: `${year}-11`, label: "Desember" },
+        { key: `${year + 1}-0`, label: "Januari" },
+        { key: `${year + 1}-1`, label: "Februari" },
+        { key: `${year + 1}-2`, label: "Maret" },
+        { key: `${year + 1}-3`, label: "April" },
+        { key: `${year + 1}-4`, label: "Mei" },
+        { key: `${year + 1}-5`, label: "Juni" },
+      ];
+    }
 
     const absensiList = await prisma.absensi.findMany({
       where: {
@@ -389,39 +429,24 @@ export async function getSemesterAttendanceMatrixAction(
       },
     });
 
-    const months = semester === 1
-      ? [
-          { index: 6, label: "Juli" },
-          { index: 7, label: "Agustus" },
-          { index: 8, label: "September" },
-          { index: 9, label: "Oktober" },
-          { index: 10, label: "November" },
-          { index: 11, label: "Desember" },
-        ]
-      : [
-          { index: 0, label: "Januari" },
-          { index: 1, label: "Februari" },
-          { index: 2, label: "Maret" },
-          { index: 3, label: "April" },
-          { index: 4, label: "Mei" },
-          { index: 5, label: "Juni" },
-        ];
-
-    // Structure: matrix[studentId][monthIndex] = { H, S, I, A, D }
-    const matrix: Record<string, Record<number, { H: number; S: number; I: number; A: number; D: number }>> = {};
+    // Structure: matrix[studentId][monthKey] = { H, S, I, A, D }
+    const matrix: Record<string, Record<string, { H: number; S: number; I: number; A: number; D: number }>> = {};
 
     absensiList.forEach((item) => {
       const dObj = new Date(item.tanggal);
+      const yr = dObj.getUTCFullYear();
       const mIdx = dObj.getUTCMonth();
+      const mKey = `${yr}-${mIdx}`;
+
       if (!matrix[item.siswaId]) {
         matrix[item.siswaId] = {};
       }
-      if (!matrix[item.siswaId][mIdx]) {
-        matrix[item.siswaId][mIdx] = { H: 0, S: 0, I: 0, A: 0, D: 0 };
+      if (!matrix[item.siswaId][mKey]) {
+        matrix[item.siswaId][mKey] = { H: 0, S: 0, I: 0, A: 0, D: 0 };
       }
       const st = item.status as "H" | "S" | "I" | "A" | "D";
-      if (st && matrix[item.siswaId][mIdx][st] !== undefined) {
-        matrix[item.siswaId][mIdx][st]++;
+      if (st && matrix[item.siswaId][mKey][st] !== undefined) {
+        matrix[item.siswaId][mKey][st]++;
       }
     });
 

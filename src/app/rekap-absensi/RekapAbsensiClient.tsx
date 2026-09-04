@@ -48,10 +48,7 @@ export default function RekapAbsensiClient({
   const [matrixMode, setMatrixMode] = useState<"monthly" | "semester">("monthly");
   const [selectedClassId, setSelectedClassId] = useState<string>(() => classes[0]?.id || "");
   const [selectedMonth, setSelectedMonth] = useState<number>(() => new Date().getMonth());
-  const [selectedSemester, setSelectedSemester] = useState<1 | 2>(() => {
-    const currentMonth = new Date().getMonth();
-    return currentMonth >= 6 ? 1 : 2;
-  });
+  const [selectedSemester, setSelectedSemester] = useState<0 | 1 | 2>(0);
   const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
   const [isPending, startTransition] = useTransition();
 
@@ -66,10 +63,10 @@ export default function RekapAbsensiClient({
   const [semesterData, setSemesterData] = useState<{
     className: string;
     students: any[];
-    semester: 1 | 2;
+    semester: 0 | 1 | 2;
     year: number;
-    months: Array<{ index: number; label: string }>;
-    matrix: Record<string, Record<number, { H: number; S: number; I: number; A: number; D: number }>>;
+    months: Array<{ key: string; label: string }>;
+    matrix: Record<string, Record<string, { H: number; S: number; I: number; A: number; D: number }>>;
   } | null>(null);
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -220,30 +217,39 @@ export default function RekapAbsensiClient({
               </label>
               <select
                 value={selectedSemester}
-                onChange={(e) => setSelectedSemester(parseInt(e.target.value, 10) as 1 | 2)}
+                onChange={(e) => setSelectedSemester(parseInt(e.target.value, 10) as 0 | 1 | 2)}
                 className="w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold cursor-pointer"
               >
+                <option value={0}>Seluruh Semester (Penuh 1 Tahun Ajaran)</option>
                 <option value={1}>Semester 1 / Ganjil (Juli - Des)</option>
                 <option value={2}>Semester 2 / Genap (Jan - Jun)</option>
               </select>
             </div>
           )}
 
-          {/* Filter Tahun */}
+          {/* Filter Tahun / Tahun Ajaran */}
           <div>
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Tahun
+              {matrixMode === "semester" ? "Tahun Ajaran" : "Tahun"}
             </label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
               className="w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold cursor-pointer"
             >
-              {[2025, 2026, 2027].map((yr) => (
-                <option key={yr} value={yr}>
-                  {yr}
-                </option>
-              ))}
+              {matrixMode === "semester" ? (
+                <>
+                  <option value={2025}>2025/2026</option>
+                  <option value={2026}>2026/2027</option>
+                  <option value={2027}>2027/2028</option>
+                </>
+              ) : (
+                [2025, 2026, 2027].map((yr) => (
+                  <option key={yr} value={yr}>
+                    {yr}
+                  </option>
+                ))
+              )}
             </select>
           </div>
         </div>
@@ -443,10 +449,10 @@ export default function RekapAbsensiClient({
                     Siswa
                   </th>
 
-                  {/* 6 Month Columns */}
+                  {/* Month Columns */}
                   {semesterData.months.map((m) => (
                     <th
-                      key={m.index}
+                      key={m.key}
                       className="py-3 text-center px-4 text-xs font-bold border-r border-slate-800/40 text-slate-200 min-w-[8.5rem]"
                     >
                       {m.label}
@@ -482,7 +488,7 @@ export default function RekapAbsensiClient({
                       totalD = 0;
 
                     semesterData.months.forEach((m) => {
-                      const mStats = studentMatrix[m.index] || { H: 0, S: 0, I: 0, A: 0, D: 0 };
+                      const mStats = studentMatrix[m.key] || { H: 0, S: 0, I: 0, A: 0, D: 0 };
                       totalH += mStats.H;
                       totalS += mStats.S;
                       totalI += mStats.I;
@@ -514,13 +520,13 @@ export default function RekapAbsensiClient({
 
                         {/* Month summary cells */}
                         {semesterData.months.map((m) => {
-                          const mStats = studentMatrix[m.index] || { H: 0, S: 0, I: 0, A: 0, D: 0 };
+                          const mStats = studentMatrix[m.key] || { H: 0, S: 0, I: 0, A: 0, D: 0 };
                           const totalM = mStats.H + mStats.S + mStats.I + mStats.A + mStats.D;
                           const hasData = totalM > 0;
 
                           if (!hasData) {
                             return (
-                              <td key={m.index} className="py-3 px-2 text-center border-r border-slate-800/40 text-slate-600 font-mono text-[11px]">
+                              <td key={m.key} className="py-3 px-2 text-center border-r border-slate-800/40 text-slate-600 font-mono text-[11px]">
                                 -
                               </td>
                             );
@@ -533,7 +539,7 @@ export default function RekapAbsensiClient({
                           else if (mRate < 90) mBadgeColor = "text-amber-400 border-amber-500/30 bg-amber-500/10";
 
                           return (
-                            <td key={m.index} className="py-3 px-2 text-center border-r border-slate-800/40">
+                            <td key={m.key} className="py-3 px-2 text-center border-r border-slate-800/40">
                               <div className="flex flex-col items-center gap-1">
                                 <span className={`px-2 py-0.5 rounded-md font-bold font-mono text-[10px] border ${mBadgeColor}`}>
                                   {mRate}%
@@ -585,7 +591,7 @@ export default function RekapAbsensiClient({
               <span className="text-purple-400 font-bold">D: Dispensasi</span>
             </div>
             <div className="text-[11px] text-slate-500 italic">
-              * Rincian absensi disajikan per bulan beserta % tingkat kehadiran untuk {semesterData.semester === 1 ? "Semester 1 / Ganjil (Juli - Desember)" : "Semester 2 / Genap (Januari - Juni)"}.
+              * Rincian absensi disajikan per bulan beserta % tingkat kehadiran untuk {semesterData.semester === 0 ? "Seluruh Semester (Penuh 1 Tahun Ajaran / 12 Bulan)" : semesterData.semester === 1 ? "Semester 1 / Ganjil (Juli - Desember)" : "Semester 2 / Genap (Januari - Juni)"}.
             </div>
           </div>
         </div>
