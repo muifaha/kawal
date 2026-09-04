@@ -31,16 +31,10 @@ function LoadingListenerContent() {
       }
     };
 
-    const handleFormSubmit = () => {
-      setIsLoading(true);
-    };
-
     document.addEventListener("click", handleAnchorClick);
-    document.addEventListener("submit", handleFormSubmit);
 
     return () => {
       document.removeEventListener("click", handleAnchorClick);
-      document.removeEventListener("submit", handleFormSubmit);
     };
   }, [pathname]);
 
