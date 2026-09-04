@@ -331,15 +331,11 @@ export default function DashboardClient({
     if (tabParam === "pelanggaran_rekap") {
       router.replace("/rekap-pelanggaran");
     } else if (tabParam === "absen_rekap") {
-      if (user.role === "WALAS") {
-        setActiveTab("absen_rekap");
-      } else {
-        router.replace("/rekap-absensi");
-      }
+      setActiveTab("absen_rekap");
     } else if (tabParam === "summary") {
       setActiveTab("summary");
     }
-  }, [searchParams, router, user.role]);
+  }, [searchParams, router]);
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedExportType, setSelectedExportType] = useState<"cumulative" | "monthly">("cumulative");
   const [isCompletenessOpen, setIsCompletenessOpen] = useState(false);
@@ -2359,7 +2355,7 @@ export default function DashboardClient({
         >
           {user.role === "WALAS" ? "Jadwal Hari ini" : "Ringkasan"}
         </button>
-        {user.role === "WALAS" ? (
+        {isWakaOrBKOrWalas && (
           <button
             onClick={() => {
               setActiveTab("absen_rekap");
@@ -2372,25 +2368,8 @@ export default function DashboardClient({
                 : "border-transparent text-slate-400 hover:text-white"
             }`}
           >
-            Wali Kelas
+            {user.role === "WALAS" ? "Wali Kelas" : "Rekap Absensi & Pelanggaran"}
           </button>
-        ) : (
-          isWakaOrBKOrWalas && (
-            <>
-              <Link
-                href="/rekap-absensi"
-                className="pb-4 px-1 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-white transition-all shrink-0"
-              >
-                Rekap Absensi
-              </Link>
-              <Link
-                href="/rekap-pelanggaran"
-                className="pb-4 px-1 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-white transition-all shrink-0"
-              >
-                Rekap Pelanggaran
-              </Link>
-            </>
-          )
         )}
       </div>
 
@@ -3101,7 +3080,7 @@ export default function DashboardClient({
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
                       <CalendarCheck className="w-5 h-5 text-emerald-400" />
-                      {user.role === "WALAS" ? "Wali Kelas - Rekapitulasi Siswa Perwalian" : "Rekapitulasi Kehadiran Siswa"}
+                      {user.role === "WALAS" ? "Wali Kelas - Rekapitulasi Siswa Perwalian" : "Rekap Absensi & Pelanggaran Siswa"}
                     </h3>
 
                     {/* View mode toggle (Sembunyikan untuk Role WALAS) */}
