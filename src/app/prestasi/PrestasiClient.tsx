@@ -102,7 +102,9 @@ const TINGKAT_BADGE_STYLE: Record<string, { bg: string; text: string; border: st
 };
 
 export default function PrestasiClient({ user, classes, initialPrestasiList, defaultTab = "list" }: PrestasiClientProps) {
-  const [activeTab, setActiveTab] = useState<"input" | "list">(defaultTab);
+  const [activeTab, setActiveTab] = useState<"input" | "list">(
+    user.role === "WALAS" ? "list" : defaultTab
+  );
   const [prestasiList, setPrestasiList] = useState<PrestasiItem[]>(initialPrestasiList);
 
   // Form States
@@ -463,42 +465,14 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
     <div className="space-y-6">
       {/* Header Banner */}
       {user.role === "WALAS" ? (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-amber-400" />
-              Rekap Prestasi Siswa
-            </h1>
-            <p className="text-sm text-slate-400 mt-1">
-              Tampilan rekapitulasi data prestasi kejuaraan siswa perwalian.
-            </p>
-          </div>
-
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 w-full sm:w-auto shrink-0 font-semibold text-xs">
-            <button
-              onClick={() => setActiveTab("input")}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                activeTab === "input"
-                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/20"
-                  : "text-slate-400 hover:text-white hover:bg-slate-900"
-              }`}
-            >
-              <PlusCircle className="w-4 h-4 shrink-0" />
-              <span>Input Prestasi</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("list")}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                activeTab === "list"
-                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/20"
-                  : "text-slate-400 hover:text-white hover:bg-slate-900"
-              }`}
-            >
-              <Trophy className="w-4 h-4 shrink-0" />
-              <span>Daftar & Riwayat ({prestasiList.length})</span>
-            </button>
-          </div>
+        <div className="pb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
+            <Trophy className="w-6 h-6 text-amber-400" />
+            Rekap Prestasi Siswa
+          </h1>
+          <p className="text-sm text-slate-400 mt-1">
+            Tampilan rekapitulasi data prestasi kejuaraan siswa perwalian.
+          </p>
         </div>
       ) : (
         <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 border border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-xl">
