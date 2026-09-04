@@ -540,22 +540,22 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
                 <p className="mt-1 text-[11px] text-slate-500">Pilih tanggal lahir sesuai data sekolah.</p>
               </div>
 
-              {/* Submit Button */}
+              {/* Submit Button - Identical to Login Page Button */}
               <div>
                 <button
                   type="submit"
                   disabled={isVerifying}
-                  className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98 cursor-pointer shadow-lg shadow-emerald-500/20"
+                  className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98 cursor-pointer shadow-lg shadow-emerald-500/20"
                 >
                   {isVerifying ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
-                      <span className="text-white">Memverifikasi...</span>
+                      <Loader2 className="w-4 h-4 animate-spin text-emerald-950" />
+                      <span className="text-emerald-950">Memverifikasi...</span>
                     </>
                   ) : (
                     <>
-                      <span className="text-white">Verifikasi</span>
-                      <ArrowRight className="w-4 h-4 text-white" />
+                      <span className="text-emerald-950">Verifikasi</span>
+                      <ArrowRight className="w-4 h-4 text-emerald-950" />
                     </>
                   )}
                 </button>
