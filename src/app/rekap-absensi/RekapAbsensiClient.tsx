@@ -313,7 +313,7 @@ export default function RekapAbsensiClient({
                   {showPoinColumn && (
                     <th className="py-3 text-center w-12 min-w-[3rem] text-amber-300 border-l border-slate-800 font-bold">Poin</th>
                   )}
-                  <th className="py-3 text-center w-16 min-w-[4rem] text-emerald-400 border-l border-slate-800 font-bold">Kehadiran</th>
+                  <th className="py-3 px-4 min-w-[6rem] text-center text-emerald-400 border-l border-slate-800 font-bold whitespace-nowrap">Kehadiran</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-900/60 text-xs">
@@ -465,7 +465,7 @@ export default function RekapAbsensiClient({
                   <th className="py-3 text-center w-10 min-w-[2.5rem] text-sky-400 border-l border-slate-800/40 font-bold">I</th>
                   <th className="py-3 text-center w-10 min-w-[2.5rem] text-rose-400 border-l border-slate-800/40 font-bold">A</th>
                   <th className="py-3 text-center w-10 min-w-[2.5rem] text-purple-400 border-l border-slate-800/40 font-bold">D</th>
-                  <th className="py-3 text-center w-16 min-w-[4rem] text-emerald-400 border-l border-slate-800 font-bold">Kehadiran</th>
+                  <th className="py-3 px-4 min-w-[6rem] text-center text-emerald-400 border-l border-slate-800 font-bold whitespace-nowrap">Kehadiran</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-900/60 text-xs">
