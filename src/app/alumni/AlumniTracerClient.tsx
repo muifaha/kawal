@@ -586,21 +586,20 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
           <form onSubmit={handleSubmitTracer} className="space-y-6 animate-fade-in pb-12">
             {/* Header Identity Card */}
             <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xl uppercase shrink-0">
-                  {verifiedSiswa.nama.substring(0, 2)}
+              <div>
+                <h2 className="text-lg font-extrabold text-white leading-tight">{verifiedSiswa.nama}</h2>
+                <div className="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-medium">
+                  <span>NISN : {verifiedSiswa.nisn || "-"}</span>
+                  <span className="text-slate-700 font-bold">&bull;</span>
+                  <span>NIS : {verifiedSiswa.nis || "-"}</span>
                 </div>
-                <div>
-                  <h2 className="text-lg font-extrabold text-white leading-tight">{verifiedSiswa.nama}</h2>
-                  <p className="text-xs text-slate-400 mt-0.5">NISN / NIS: {verifiedSiswa.nisn || verifiedSiswa.nis}</p>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-950 text-slate-300 border border-slate-800">
-                      Kelas Terakhir: {verifiedSiswa.kelasTerakhir}
-                    </span>
-                    <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">
-                      Status: {verifiedSiswa.status}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-950 text-slate-300 border border-slate-800">
+                    Kelas Terakhir: {verifiedSiswa.kelasTerakhir}
+                  </span>
+                  <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">
+                    Status: {verifiedSiswa.status}
+                  </span>
                 </div>
               </div>
               <button
@@ -608,7 +607,7 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
                 onClick={() => setStep("verify")}
                 className="text-xs text-slate-300 hover:text-white px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 w-fit transition-all cursor-pointer font-semibold"
               >
-                Ganti Siswa
+                Keluar
               </button>
             </div>
 
