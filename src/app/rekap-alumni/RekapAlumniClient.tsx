@@ -136,6 +136,11 @@ export default function RekapAlumniClient({ user, initialAlumniList }: RekapAlum
         "Kelas Terakhir": item.kelasTerakhir,
         "Status Tracer Study": t.statusUtama ? "Sudah Mengisi" : "Belum Mengisi",
         "Status Utama Saat Ini": t.statusUtama || "-",
+        // Kontak & Domisili
+        "Nomor HP / WA": t.nomorHp || "-",
+        Email: t.email || "-",
+        "Alamat Tempat Tinggal": t.alamat || "-",
+        "Bersedia Dihubungi (Career Day / Expo)": t.bersediaDihubungi === true ? "Ya" : t.bersediaDihubungi === false ? "Tidak" : "-",
         // Bekerja
         "Perusahaan / Tempat Kerja": t.namaPerusahaan || "-",
         "Posisi / Jabatan": t.posisiJabatan || "-",
@@ -417,14 +422,43 @@ export default function RekapAlumniClient({ user, initialAlumniList }: RekapAlum
                 </span>
               </div>
 
+              {/* Contact & Consent Card */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-slate-200 uppercase tracking-wider text-[10px]">Kontak & Domisili Alumni</h4>
+                  {selectedAlumniDetail.tracer.bersediaDihubungi && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                      Bersedia Dihubungi Career Day / Expo
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300">
+                  <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/60">
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">Nomor HP / WhatsApp</span>
+                    <span className="font-medium text-white">{selectedAlumniDetail.tracer.nomorHp || "-"}</span>
+                  </div>
+                  <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/60">
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">Email</span>
+                    <span className="font-medium text-white">{selectedAlumniDetail.tracer.email || "-"}</span>
+                  </div>
+                  <div className="sm:col-span-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/60">
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">Alamat Tempat Tinggal</span>
+                    <span className="font-medium text-white">{selectedAlumniDetail.tracer.alamat || "-"}</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Specific Details */}
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
                 <h4 className="font-bold text-slate-200 uppercase tracking-wider text-[10px]">Rincian Kuesioner Status</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300">
                   {Object.entries(selectedAlumniDetail.tracer).map(([key, val]) => {
                     if (
-                      !val ||
-                      ["id", "siswaId", "createdAt", "updatedAt", "statusUtama"].includes(key)
+                      val === null ||
+                      val === undefined ||
+                      val === "" ||
+                      ["id", "siswaId", "createdAt", "updatedAt", "statusUtama", "nomorHp", "email", "alamat", "bersediaDihubungi"].includes(key)
                     )
                       return null;
                     return (

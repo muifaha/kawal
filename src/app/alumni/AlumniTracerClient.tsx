@@ -19,6 +19,9 @@ import {
   FileCheck,
   Sun,
   Moon,
+  Phone,
+  Mail,
+  MapPin,
 } from "lucide-react";
 import { verifyAlumniAction, submitTracerStudyAction } from "@/app/actions/alumni";
 
@@ -43,8 +46,12 @@ export default function AlumniTracerClient() {
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [verifiedSiswa, setVerifiedSiswa] = useState<SiswaVerifyData | null>(null);
 
-  // Step 2: Main Status Choice
+  // Step 2: Main Status Choice & Contact Details
   const [statusUtama, setStatusUtama] = useState<string>("KULIAH");
+  const [nomorHp, setNomorHp] = useState("");
+  const [email, setEmail] = useState("");
+  const [alamat, setAlamat] = useState("");
+  const [bersediaDihubungi, setBersediaDihubungi] = useState(true);
 
   // Status Details: 1. BEKERJA
   const [namaPerusahaan, setNamaPerusahaan] = useState("");
@@ -239,6 +246,11 @@ export default function AlumniTracerClient() {
           setTargetSeleksi(t.targetSeleksi || "SNBT (Seleksi Nasional Berdasarkan Tes)");
           setAktivitasPengisi(t.aktivitasPengisi || "");
 
+          setNomorHp(t.nomorHp || "");
+          setEmail(t.email || "");
+          setAlamat(t.alamat || "");
+          setBersediaDihubungi(t.bersediaDihubungi ?? true);
+
           setRelevansiKurikulum(t.relevansiKurikulum || "RELEVAN");
           setPenilaianFasilitas(t.penilaianFasilitas || "BAIK");
           setPenilaianBKK(t.penilaianBKK || "BAIK");
@@ -300,6 +312,12 @@ export default function AlumniTracerClient() {
 
         targetSeleksi: statusUtama === "GAP_YEAR" ? targetSeleksi : undefined,
         aktivitasPengisi: statusUtama === "GAP_YEAR" ? aktivitasPengisi : undefined,
+
+        // Kontak & Domisili
+        nomorHp: nomorHp.trim() || undefined,
+        email: email.trim() || undefined,
+        alamat: alamat.trim() || undefined,
+        bersediaDihubungi,
 
         // Evaluasi
         relevansiKurikulum,
@@ -543,6 +561,71 @@ export default function AlumniTracerClient() {
                 <span>{submitError}</span>
               </div>
             )}
+
+            {/* SECTION INFORMASI KONTAK & DOMISILI */}
+            <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-5 backdrop-blur-xl shadow-xl">
+              <div className="border-b border-slate-800 pb-3">
+                <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                  <Phone className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                  Informasi Kontak & Domisili Alumni
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Isikan kontak aktif Anda agar sekolah & BKK dapat menginformasikan lowongan kerja, beasiswa, atau event alumni.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    Nomor HP / WhatsApp <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      required
+                      placeholder="Contoh: 081234567890"
+                      value={nomorHp}
+                      onChange={(e) => setNomorHp(e.target.value)}
+                      className="w-full pl-10 pr-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                    />
+                    <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    Alamat Email
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      placeholder="Contoh: nama@gmail.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-10 pr-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                    />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2 space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    Alamat Tempat Tinggal Saat Ini <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <textarea
+                      rows={2}
+                      required
+                      placeholder="Masukkan alamat domisili saat ini (Jalan, RT/RW, Desa/Kelurahan, Kecamatan, Kota/Kabupaten, Provinsi)..."
+                      value={alamat}
+                      onChange={(e) => setAlamat(e.target.value)}
+                      className="w-full pl-10 pr-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                    />
+                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-4 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* SECTION 1: STATUS UTAMA SAAT INI */}
             <div className="space-y-4">
@@ -1168,6 +1251,27 @@ export default function AlumniTracerClient() {
                     onChange={(e) => setSaranSekolah(e.target.value)}
                     className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
                   />
+                </div>
+
+                {/* CAREER DAY & CAMPUS EXPO CONSENT CHECKBOX */}
+                <div className="sm:col-span-3 pt-3 border-t border-slate-800">
+                  <label className="flex items-start gap-3 cursor-pointer group p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-emerald-500/50 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={bersediaDihubungi}
+                      onChange={(e) => setBersediaDihubungi(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-slate-700 text-emerald-600 focus:ring-emerald-500 bg-slate-900 accent-emerald-500 cursor-pointer"
+                    />
+                    <div className="space-y-1">
+                      <span className="text-xs font-bold text-slate-200 group-hover:text-emerald-400 transition-colors flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                        Bersedia dihubungi sekolah terkait kegiatan Career Day atau Campus Expo
+                      </span>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Sekolah dapat menghubungi Anda (melalui WhatsApp/Email) untuk mengundang sebagai narasumber, berbagi pengalaman karir/studi, atau pengisian booth alumni pada acara sekolah.
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>

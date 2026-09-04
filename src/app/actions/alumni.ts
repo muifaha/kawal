@@ -85,6 +85,11 @@ export async function submitTracerStudyAction(payload: {
   siswaId: string;
   statusUtama: string;
 
+  // KONTAK ALUMNI
+  nomorHp?: string;
+  email?: string;
+  alamat?: string;
+
   // 1. BEKERJA
   namaPerusahaan?: string;
   posisiJabatan?: string;
@@ -130,6 +135,7 @@ export async function submitTracerStudyAction(payload: {
   penilaianFasilitas?: string;
   penilaianBKK?: string;
   saranSekolah?: string;
+  bersediaDihubungi?: boolean;
 }) {
   try {
     const { siswaId, statusUtama, ...dataFields } = payload;
