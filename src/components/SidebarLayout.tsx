@@ -133,7 +133,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
         },
         {
           name: "Rekap Pelanggaran",
-          href: "/dashboard?tab=pelanggaran_rekap",
+          href: "/rekap-pelanggaran",
           roles: ["WALAS"],
         },
         {
@@ -159,6 +159,11 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       icon: AlertTriangle,
       roles: ["BK", "WALAS", "GURU", "WAKA", "OSIS", "PIKET"],
       children: [
+        {
+          name: "Rekap Pelanggaran",
+          href: "/rekap-pelanggaran",
+          roles: ["BK", "WALAS", "GURU", "WAKA", "OSIS", "PIKET"],
+        },
         {
           name: "Tambah Pelanggaran",
           href: "/pelanggaran",

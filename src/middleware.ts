@@ -71,6 +71,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard?error=unauthorized", request.url));
   }
 
+  // Halaman Rekap Pelanggaran (Dapat diakses oleh BK, WAKA, WALAS, GURU, SEKRETARIS, dan PIKET)
+  if (pathname.startsWith("/rekap-pelanggaran") && !["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS", "PIKET"].includes(role)) {
+    return NextResponse.redirect(new URL("/dashboard?error=unauthorized", request.url));
+  }
+
   // Halaman Prestasi Siswa (Dapat diakses oleh WAKA, BK, GURU, PEMBINA_OSIS, dan WALAS)
   if (pathname.startsWith("/prestasi") && !["WAKA", "BK", "GURU", "PEMBINA_OSIS", "WALAS"].includes(role)) {
     return NextResponse.redirect(new URL("/dashboard?error=unauthorized", request.url));
