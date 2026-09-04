@@ -3229,191 +3229,105 @@ export default function DashboardClient({
                         )}
                       </div>
                     </th>
-
-                    {user.role === "WALAS" ? (
-                      <>
-                        <th
-                          onClick={() => handleSort("H")}
-                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Hadir
-                            {sortField === "H" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("S")}
-                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Sakit
-                            {sortField === "S" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("I")}
-                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Izin
-                            {sortField === "I" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("A")}
-                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Alfa
-                            {sortField === "A" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("D")}
-                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Dispen
-                            {sortField === "D" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("rate")}
-                          className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Kehadiran
-                            {sortField === "rate" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("netPoints")}
-                          className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Poin Pelanggaran
-                            {sortField === "netPoints" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th className="py-3 px-4 text-center whitespace-nowrap">Aksi</th>
-                      </>
-                    ) : (
-                      <>
-                        <th
-                          onClick={() => handleSort("H")}
-                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Hadir
-                            {sortField === "H" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("S")}
-                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Sakit
-                            {sortField === "S" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("I")}
-                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Izin
-                            {sortField === "I" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("A")}
-                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Alpha
-                            {sortField === "A" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("D")}
-                          className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Disp
-                            {sortField === "D" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("rate")}
-                          className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
-                        >
-                          <div className="flex items-center justify-center gap-1">
-                            Persentase
-                            {sortField === "rate" ? (
-                              sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 opacity-30" />
-                            )}
-                          </div>
-                        </th>
-                      </>
-                    )}
+                    <th
+                      onClick={() => handleSort("H")}
+                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Hadir
+                        {sortField === "H" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("S")}
+                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Sakit
+                        {sortField === "S" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("I")}
+                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Izin
+                        {sortField === "I" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("A")}
+                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Alfa
+                        {sortField === "A" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("D")}
+                      className="py-3 px-3 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Dispen
+                        {sortField === "D" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("rate")}
+                      className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Kehadiran
+                        {sortField === "rate" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("netPoints")}
+                      className="py-3 px-4 cursor-pointer hover:text-white transition-all text-center whitespace-nowrap"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Poin Pelanggaran
+                        {sortField === "netPoints" ? (
+                          sortDirection === "asc" ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-3 px-4 text-center whitespace-nowrap">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                     {sortedAttendance.length === 0 ? (
                       <tr>
-                        <td colSpan={user.role === "WALAS" ? 11 : 9} className="text-center py-20 text-slate-500 text-sm">
-                          Tidak ada data rekapitulasi absensi siswa perwalian.
+                        <td colSpan={11} className="text-center py-20 text-slate-500 text-sm">
+                          Tidak ada data rekapitulasi absensi siswa.
                         </td>
                       </tr>
                     ) : (
@@ -3429,79 +3343,53 @@ export default function DashboardClient({
                               <div className="text-xs text-slate-400 font-mono">NIS: {item.nis}</div>
                             </td>
                             <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap">{item.kelasNama}</td>
-
-                            {user.role === "WALAS" ? (
-                              <>
-                                <td className="py-3.5 px-3 text-center text-emerald-400 font-bold whitespace-nowrap">{item.H}</td>
-                                <td className="py-3.5 px-3 text-center text-amber-400 font-bold whitespace-nowrap">{item.S === 0 ? "-" : item.S}</td>
-                                <td className="py-3.5 px-3 text-center text-sky-400 font-bold whitespace-nowrap">{item.I === 0 ? "-" : item.I}</td>
-                                <td className="py-3.5 px-3 text-center text-rose-400 font-bold whitespace-nowrap">{item.A === 0 ? "-" : item.A}</td>
-                                <td className="py-3.5 px-3 text-center text-purple-400 font-bold whitespace-nowrap">{item.D === 0 ? "-" : item.D}</td>
-                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                  <span
-                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                                      rate >= 90
-                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                        : rate >= 80
-                                        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                                        : "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                                    }`}
-                                  >
-                                    {rate}%
-                                  </span>
-                                </td>
-                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                  <span
-                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${
-                                      points === 0
-                                        ? "bg-slate-950 text-slate-400 border-slate-800"
-                                        : points >= 50
-                                        ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
-                                        : points >= 20
-                                        ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                                        : "bg-sky-500/10 text-sky-400 border-sky-500/30"
-                                    }`}
-                                  >
-                                    {points} Poin
-                                  </span>
-                                </td>
-                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                  <button
-                                    onClick={() => setSelectedStudentNis(item.nis)}
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-bold text-emerald-300 hover:text-white transition-all cursor-pointer shadow-sm"
-                                    title="Lihat Detail & History Pelanggaran Siswa"
-                                  >
-                                    <Eye className="w-3.5 h-3.5 text-emerald-400" />
-                                    <span>Detail</span>
-                                  </button>
-                                </td>
-                              </>
-                            ) : (
-                              <>
-                                <td className="py-3.5 px-3 text-center text-emerald-400 font-bold whitespace-nowrap">{item.H}</td>
-                                <td className="py-3.5 px-3 text-center text-amber-400 font-bold whitespace-nowrap">{item.S === 0 ? "-" : item.S}</td>
-                                <td className="py-3.5 px-3 text-center text-sky-400 font-bold whitespace-nowrap">{item.I === 0 ? "-" : item.I}</td>
-                                <td className="py-3.5 px-3 text-center text-rose-400 font-bold whitespace-nowrap">{item.A === 0 ? "-" : item.A}</td>
-                                <td className="py-3.5 px-3 text-center text-purple-400 font-bold whitespace-nowrap">{item.D === 0 ? "-" : item.D}</td>
-                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                  <span
-                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                                      rate >= 90
-                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                        : rate >= 80
-                                        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                                        : "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                                    }`}
-                                  >
-                                    {rate}%
-                                  </span>
-                                </td>
-                              </>
-                            )}
+                            <td className="py-3.5 px-3 text-center text-emerald-400 font-bold whitespace-nowrap">{item.H}</td>
+                            <td className="py-3.5 px-3 text-center text-amber-400 font-bold whitespace-nowrap">{item.S === 0 ? "-" : item.S}</td>
+                            <td className="py-3.5 px-3 text-center text-sky-400 font-bold whitespace-nowrap">{item.I === 0 ? "-" : item.I}</td>
+                            <td className="py-3.5 px-3 text-center text-rose-400 font-bold whitespace-nowrap">{item.A === 0 ? "-" : item.A}</td>
+                            <td className="py-3.5 px-3 text-center text-purple-400 font-bold whitespace-nowrap">{item.D === 0 ? "-" : item.D}</td>
+                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                                  rate >= 90
+                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                    : rate >= 80
+                                    ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                    : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                }`}
+                              >
+                                {rate}%
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                              <span
+                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${
+                                  points === 0
+                                    ? "bg-slate-950 text-slate-400 border-slate-800"
+                                    : points >= 50
+                                    ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
+                                    : points >= 20
+                                    ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                                    : "bg-sky-500/10 text-sky-400 border-sky-500/30"
+                                }`}
+                              >
+                                {points} Poin
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                              <button
+                                onClick={() => setSelectedStudentNis(item.nis)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-bold text-emerald-300 hover:text-white transition-all cursor-pointer shadow-sm"
+                                title="Lihat Detail & History Pelanggaran Siswa"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Detail</span>
+                              </button>
+                            </td>
                           </tr>
-                      );
-                    })
-                  )}
+                        );
+                      })
+                    )}
                 </tbody>
               </table>
               {renderDashboardPagination(
