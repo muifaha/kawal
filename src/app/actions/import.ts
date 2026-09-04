@@ -233,8 +233,11 @@ export async function importClassesAction(rows: ClassImportRow[]) {
 // 3. IMPORT SISWA
 export interface StudentImportRow {
   nis: string;
+  nisn?: string;
   nama: string;
   kelasNama: string;
+  tanggalLahir?: string;
+  status?: string;
 }
 
 export async function importStudentsAction(rows: StudentImportRow[]) {
@@ -249,21 +252,46 @@ export async function importStudentsAction(rows: StudentImportRow[]) {
       return { error: "Tidak ada Tahun Ajaran aktif saat ini." };
     }
 
-    const studentsToCreate: { id?: string; nis: string; nama: string; kelasId: string }[] = [];
+    const studentsToCreate: {
+      id?: string;
+      nis: string;
+      nisn?: string | null;
+      nama: string;
+      kelasId: string;
+      tanggalLahir?: Date | null;
+      status: any;
+    }[] = [];
     const seenNis = new Set<string>();
 
     // Cache Kelas untuk kecepatan query
     const kelasMap = new Map<string, string>(); // name -> id
 
     for (const row of rows) {
-      const { nis, nama, kelasNama } = row;
+      const { nis, nisn, nama, kelasNama, tanggalLahir, status } = row;
 
       if (!nis || !nama || !kelasNama) {
         return { error: `Data siswa "${nama || 'Tanpa Nama'}" tidak valid. NIS, Nama, dan Kelas wajib diisi.` };
       }
 
       const cleanNis = String(nis).trim();
+      const cleanNisn = nisn ? String(nisn).trim() : null;
       const cleanKelasNama = kelasNama.trim();
+
+      let parsedTanggalLahir: Date | null = null;
+      if (tanggalLahir) {
+        const d = new Date(tanggalLahir);
+        if (!isNaN(d.getTime())) {
+          parsedTanggalLahir = d;
+        }
+      }
+
+      let parsedStatus = "AKTIF";
+      if (status) {
+        const upperSt = String(status).trim().toUpperCase();
+        if (["AKTIF", "LULUS", "MUTASI", "DROP_OUT"].includes(upperSt)) {
+          parsedStatus = upperSt;
+        }
+      }
 
       if (seenNis.has(cleanNis)) {
         return { error: `NIS "${cleanNis}" ganda di dalam file Excel yang diunggah.` };
@@ -291,8 +319,11 @@ export async function importStudentsAction(rows: StudentImportRow[]) {
       studentsToCreate.push({
         id: existingStudent ? existingStudent.id : undefined,
         nis: cleanNis,
+        nisn: cleanNisn,
         nama: nama.trim(),
         kelasId,
+        tanggalLahir: parsedTanggalLahir,
+        status: parsedStatus,
       });
     }
 
@@ -301,12 +332,14 @@ export async function importStudentsAction(rows: StudentImportRow[]) {
       for (const s of studentsToCreate) {
         let studentId = s.id;
         if (studentId) {
-          // Update siswa yang sudah ada (pastikan statusnya AKTIF)
+          // Update siswa yang sudah ada
           await tx.siswa.update({
             where: { id: studentId },
             data: {
               nama: s.nama,
-              status: "AKTIF",
+              nisn: s.nisn !== undefined ? s.nisn : undefined,
+              tanggalLahir: s.tanggalLahir !== undefined ? s.tanggalLahir : undefined,
+              status: s.status,
             },
           });
         } else {
@@ -314,8 +347,10 @@ export async function importStudentsAction(rows: StudentImportRow[]) {
           const dbSiswa = await tx.siswa.create({
             data: {
               nis: s.nis,
+              nisn: s.nisn || null,
               nama: s.nama,
-              status: "AKTIF",
+              tanggalLahir: s.tanggalLahir || null,
+              status: s.status,
             },
           });
           studentId = dbSiswa.id;

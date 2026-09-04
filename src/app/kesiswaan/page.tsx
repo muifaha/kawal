@@ -38,16 +38,8 @@ export default async function KesiswaanPage() {
   });
   classes.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
 
-  // 3. Ambil data Siswa aktif di tahun ajaran aktif
+  // 3. Ambil data Siswa di tahun ajaran aktif (semua status: AKTIF, LULUS, MUTASI, DROP_OUT)
   const dbStudents = await prisma.siswa.findMany({
-    where: {
-      status: "AKTIF",
-      riwayatKelas: {
-        some: {
-          tahunAjaran: { isActive: true },
-        },
-      },
-    },
     include: {
       riwayatKelas: {
         where: {
@@ -64,8 +56,10 @@ export default async function KesiswaanPage() {
   const students = dbStudents.map((s) => ({
     id: s.id,
     nis: s.nis,
+    nisn: s.nisn || "",
     nama: s.nama,
     status: s.status,
+    tanggalLahir: s.tanggalLahir ? s.tanggalLahir.toISOString().split("T")[0] : null,
     kelasId: s.riwayatKelas[0]?.kelas.id || "",
     kelas: s.riwayatKelas[0]?.kelas
       ? { id: s.riwayatKelas[0].kelas.id, nama: s.riwayatKelas[0].kelas.nama }

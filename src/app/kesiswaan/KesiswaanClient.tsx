@@ -120,7 +120,10 @@ interface KelasType {
 interface SiswaType {
   id: string;
   nis: string;
+  nisn?: string | null;
   nama: string;
+  status?: string | null;
+  tanggalLahir?: string | Date | null;
   kelasId: string;
   kelas: { nama: string };
 }
@@ -1477,7 +1480,7 @@ export default function KesiswaanClient({
                     className="py-3.5 px-4 cursor-pointer select-none hover:text-white transition-colors"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>NIS</span>
+                      <span>NIS / NISN</span>
                       {studentSortField === "nis" ? (
                         studentSortOrder === "asc" ? <ArrowUp className="w-3.5 h-3.5 text-emerald-400" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
                       ) : (
@@ -1498,13 +1501,15 @@ export default function KesiswaanClient({
                       )}
                     </div>
                   </th>
+                  <th className="py-3.5 px-4">Tgl Lahir</th>
+                  <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4 text-center w-28">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
                 {filteredAndSortedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-500">
+                    <td colSpan={8} className="py-8 text-center text-slate-500">
                       {initialStudents.length === 0 ? "Belum ada data siswa." : "Tidak ada siswa yang sesuai dengan filter/pencarian."}
                     </td>
                   </tr>
@@ -1513,6 +1518,15 @@ export default function KesiswaanClient({
                     return paginatedStudents.map((s, index) => {
                       const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
                       const isSelected = selectedStudentIds.includes(s.id);
+                      const st = s.status || "AKTIF";
+                      const statusStyle =
+                        st === "LULUS"
+                          ? "bg-sky-500/10 text-sky-400 border-sky-500/20"
+                          : st === "MUTASI"
+                          ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                          : st === "DROP_OUT"
+                          ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                          : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
                       return (
                         <tr key={s.id} className={`hover:bg-slate-900/25 transition-all ${isSelected ? "bg-slate-900/40" : ""}`}>
                           <td className="py-3 px-4 text-center">
@@ -1525,8 +1539,17 @@ export default function KesiswaanClient({
                           </td>
                           <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
                           <td className="py-3 px-4 font-semibold text-white">{s.nama}</td>
-                          <td className="py-3 px-4 font-mono text-slate-400">{s.nis}</td>
+                          <td className="py-3 px-4 font-mono text-slate-400">
+                            <div>{s.nis}</div>
+                            {s.nisn && <div className="text-[10px] text-slate-500">NISN: {s.nisn}</div>}
+                          </td>
                           <td className="py-3 px-4 text-emerald-400 font-semibold">{s.kelas?.nama || "-"}</td>
+                          <td className="py-3 px-4 text-slate-400">{formatDate(s.tanggalLahir)}</td>
+                          <td className="py-3 px-4">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusStyle}`}>
+                              {st}
+                            </span>
+                          </td>
                           <td className="py-3 px-4 text-center">
                             <div className="flex items-center justify-center gap-1.5">
                               <button
@@ -2505,9 +2528,15 @@ export default function KesiswaanClient({
               </button>
             </div>
             <form key={editingSiswa ? editingSiswa.id : "new"} onSubmit={handleSiswaSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nomor Induk Siswa (NIS)</label>
-                <input required name="nis" type="text" defaultValue={editingSiswa?.nis || ""} placeholder="Contoh: 10295" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">NIS (Wajib)</label>
+                  <input required name="nis" type="text" defaultValue={editingSiswa?.nis || ""} placeholder="Contoh: 10295" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">NISN (Opsional)</label>
+                  <input name="nisn" type="text" defaultValue={editingSiswa?.nisn || ""} placeholder="Contoh: 0099927510" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nama Lengkap</label>
@@ -2521,6 +2550,21 @@ export default function KesiswaanClient({
                     <option key={c.id} value={c.id}>{c.nama}</option>
                   ))}
                 </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Tanggal Lahir</label>
+                  <input name="tanggalLahir" type="date" defaultValue={formatDateInput(editingSiswa?.tanggalLahir)} className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Status Siswa</label>
+                  <select name="status" defaultValue={editingSiswa?.status || "AKTIF"} className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs font-semibold">
+                    <option value="AKTIF">AKTIF (Siswa)</option>
+                    <option value="LULUS">LULUS (Alumni)</option>
+                    <option value="MUTASI">MUTASI</option>
+                    <option value="DROP_OUT">DROP OUT</option>
+                  </select>
+                </div>
               </div>
               <div className="flex gap-2 pt-2">
                 <button type="submit" disabled={isPending} className="flex-1 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all text-xs cursor-pointer">{isPending ? "Memproses..." : editingSiswa ? "Simpan Perubahan" : "Daftarkan Siswa"}</button>

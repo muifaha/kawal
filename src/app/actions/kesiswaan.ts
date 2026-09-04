@@ -169,8 +169,11 @@ export async function createSiswaAction(formData: FormData) {
   try {
     await assertWaka();
     const nis = formData.get("nis") as string;
+    const nisn = (formData.get("nisn") as string) || null;
     const nama = formData.get("nama") as string;
     const kelasId = formData.get("kelasId") as string;
+    const tanggalLahir = (formData.get("tanggalLahir") as string) || null;
+    const status = (formData.get("status") as any) || "AKTIF";
 
     if (!nis || !nama || !kelasId) {
       return { error: "NIS, Nama, dan Kelas wajib diisi." };
@@ -187,8 +190,10 @@ export async function createSiswaAction(formData: FormData) {
       const newSiswa = await tx.siswa.create({
         data: {
           nis,
+          nisn: nisn ? nisn.trim() : null,
           nama,
-          status: "AKTIF",
+          tanggalLahir: tanggalLahir ? new Date(tanggalLahir) : null,
+          status,
         },
       });
 
@@ -207,7 +212,7 @@ export async function createSiswaAction(formData: FormData) {
   } catch (error: any) {
     console.error("Create siswa error:", error);
     if (error.code === "P2002") {
-      return { error: "NIS sudah digunakan oleh siswa lain." };
+      return { error: "NIS atau NISN sudah digunakan oleh siswa lain." };
     }
     return { error: error.message || "Gagal mendaftarkan siswa." };
   }
@@ -722,8 +727,11 @@ export async function updateSiswaAction(siswaId: string, formData: FormData) {
   try {
     await assertWaka();
     const nis = formData.get("nis") as string;
+    const nisn = (formData.get("nisn") as string) || null;
     const nama = formData.get("nama") as string;
     const kelasId = formData.get("kelasId") as string;
+    const tanggalLahir = (formData.get("tanggalLahir") as string) || null;
+    const status = (formData.get("status") as any) || "AKTIF";
 
     if (!nis || !nama || !kelasId) {
       return { error: "NIS, Nama, dan Kelas wajib diisi." };
@@ -741,7 +749,10 @@ export async function updateSiswaAction(siswaId: string, formData: FormData) {
         where: { id: siswaId },
         data: {
           nis,
+          nisn: nisn ? nisn.trim() : null,
           nama,
+          tanggalLahir: tanggalLahir ? new Date(tanggalLahir) : null,
+          status,
         },
       });
 

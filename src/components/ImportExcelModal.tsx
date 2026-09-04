@@ -70,9 +70,9 @@ export default function ImportExcelModal({
         return {
           filename: "template_siswa.xlsx",
           headers: [
-            ["NIS", "Nama Lengkap", "Nama Kelas"],
-            ["10295", "Eka Saputra", "XI RPL 2"],
-            ["10296", "Farhan Maulana", "XI RPL 2"],
+            ["NIS", "NISN (Optional)", "Nama Lengkap", "Nama Kelas", "Tanggal Lahir (YYYY-MM-DD Optional)", "Status (AKTIF/LULUS/MUTASI/DROP_OUT Optional)"],
+            ["10295", "0099927510", "Eka Saputra", "XI RPL 2", "2006-05-12", "AKTIF"],
+            ["10296", "0099927511", "Farhan Maulana", "XI RPL 2", "2005-11-20", "LULUS"],
           ],
         };
       case "violations":
@@ -236,13 +236,19 @@ export default function ImportExcelModal({
       }
 
       const nisIdx = headers.indexOf("nis");
+      const nisnIdx = headers.findIndex((h) => h.includes("nisn"));
       const namaIdx = headers.indexOf("nama lengkap");
       const kelasIdx = headers.indexOf("nama kelas");
+      const tglIdx = headers.findIndex((h) => h.includes("tanggal lahir") || h.includes("tgl lahir"));
+      const statusIdx = headers.findIndex((h) => h === "status" || h.includes("status siswa"));
 
       const mappedRows = cleanRows.map((r) => ({
         nis: String(r[nisIdx] || "").trim(),
+        nisn: nisnIdx !== -1 ? String(r[nisnIdx] || "").trim() : undefined,
         nama: String(r[namaIdx] || "").trim(),
         kelasNama: String(r[kelasIdx] || "").trim(),
+        tanggalLahir: tglIdx !== -1 ? String(r[tglIdx] || "").trim() : undefined,
+        status: statusIdx !== -1 ? String(r[statusIdx] || "").trim() : undefined,
       }));
       return { mappedRows };
     }
