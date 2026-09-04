@@ -476,7 +476,7 @@ export default function DashboardClient({
 
   // Pagination states for Cumulative Attendance Recap
   const [absenCurrentPage, setAbsenCurrentPage] = useState(1);
-  const [absenPageSize, setAbsenPageSize] = useState(20);
+  const [absenPageSize, setAbsenPageSize] = useState(() => (user.role === "WALAS" ? 50 : 20));
 
   // Pagination states for Violation Akumulasi Poin
   const [violationSummaryCurrentPage, setViolationSummaryCurrentPage] = useState(1);
@@ -1354,7 +1354,7 @@ export default function DashboardClient({
     setCurrentPage: (p: number) => void,
     setPageSize: (s: number) => void
   ) => {
-    if (totalItems <= 20 && pageSize === 20) return null;
+    if (totalItems <= pageSize && (pageSize === 20 || pageSize === 50)) return null;
 
     const totalPages = Math.ceil(totalItems / pageSize);
     const startItem = (currentPage - 1) * pageSize + 1;
