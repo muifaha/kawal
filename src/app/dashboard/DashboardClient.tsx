@@ -331,11 +331,15 @@ export default function DashboardClient({
     if (tabParam === "pelanggaran_rekap") {
       router.replace("/rekap-pelanggaran");
     } else if (tabParam === "absen_rekap") {
-      router.replace("/rekap-absensi");
+      if (user.role === "WALAS") {
+        setActiveTab("absen_rekap");
+      } else {
+        router.replace("/rekap-absensi");
+      }
     } else if (tabParam === "summary") {
       setActiveTab("summary");
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, user.role]);
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectedExportType, setSelectedExportType] = useState<"cumulative" | "monthly">("cumulative");
   const [isCompletenessOpen, setIsCompletenessOpen] = useState(false);
@@ -2355,21 +2359,38 @@ export default function DashboardClient({
         >
           {user.role === "WALAS" ? "Jadwal Hari ini" : "Ringkasan"}
         </button>
-        {isWakaOrBKOrWalas && (
-          <>
-            <Link
-              href="/rekap-absensi"
-              className="pb-4 px-1 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-white transition-all shrink-0"
-            >
-              Rekap Absensi
-            </Link>
-            <Link
-              href="/rekap-pelanggaran"
-              className="pb-4 px-1 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-white transition-all shrink-0"
-            >
-              Rekap Pelanggaran
-            </Link>
-          </>
+        {user.role === "WALAS" ? (
+          <button
+            onClick={() => {
+              setActiveTab("absen_rekap");
+              setSearchQuery("");
+              setSelectedClassId(classes.length === 1 ? classes[0].nama : "");
+            }}
+            className={`pb-4 px-1 text-sm font-semibold border-b-2 transition-all shrink-0 ${
+              activeTab === "absen_rekap"
+                ? "border-emerald-500 text-emerald-400"
+                : "border-transparent text-slate-400 hover:text-white"
+            }`}
+          >
+            Wali Kelas
+          </button>
+        ) : (
+          isWakaOrBKOrWalas && (
+            <>
+              <Link
+                href="/rekap-absensi"
+                className="pb-4 px-1 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-white transition-all shrink-0"
+              >
+                Rekap Absensi
+              </Link>
+              <Link
+                href="/rekap-pelanggaran"
+                className="pb-4 px-1 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-white transition-all shrink-0"
+              >
+                Rekap Pelanggaran
+              </Link>
+            </>
+          )
         )}
       </div>
 
