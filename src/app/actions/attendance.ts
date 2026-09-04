@@ -24,7 +24,7 @@ export async function saveAttendanceAction(
     return { error: "Silakan login terlebih dahulu." };
   }
 
-  const allowedRoles = ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS", "PIKET"];
+  const allowedRoles = ["SEKRETARIS", "WAKA", "BK"];
   if (!allowedRoles.includes(user.role)) {
     return { error: "Akses ditolak. Peran Anda tidak memiliki wewenang untuk mencatat absensi." };
   }
@@ -56,10 +56,6 @@ export async function saveAttendanceAction(
     } else if (user.role === "BK") {
       if (targetClass.bkId && targetClass.bkId !== user.id) {
         // Guru BK diizinkan mengampu atau memperbarui absensi kelas yang relevan
-      }
-    } else if (user.role === "WALAS") {
-      if (targetClass.walasId !== user.id) {
-        return { error: "Akses ditolak. Anda hanya dapat mencatat absensi untuk kelas binaan Anda." };
       }
     }
 

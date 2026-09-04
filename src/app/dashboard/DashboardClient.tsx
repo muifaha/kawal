@@ -1771,13 +1771,15 @@ export default function DashboardClient({
               </p>
             </div>
             <div className="mt-4 md:mt-0 flex items-center gap-2">
-              <Link
-                href="/absensi"
-                className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-950 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-98 cursor-pointer shadow-lg shadow-emerald-400/10"
-              >
-                <CalendarCheck className="w-4 h-4" />
-                <span>Input / Catat Absensi Siswa</span>
-              </Link>
+              {["SEKRETARIS", "WAKA", "BK"].includes(user.role) && (
+                <Link
+                  href="/absensi"
+                  className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-950 px-4 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-98 cursor-pointer shadow-lg shadow-emerald-400/10"
+                >
+                  <CalendarCheck className="w-4 h-4" />
+                  <span>Input / Catat Absensi Siswa</span>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -2283,7 +2285,7 @@ export default function DashboardClient({
                 <span className="truncate">Kesiswaan</span>
               </Link>
             )}
-            {(user.role === "BK" || user.role === "GURU" || user.role === "WALAS") && (
+            {["SEKRETARIS", "WAKA", "BK"].includes(user.role) && (
               <Link
                 href="/absensi"
                 className="flex items-center justify-center gap-2 p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-xl active:scale-95 transition-all text-center"

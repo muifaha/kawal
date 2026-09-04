@@ -18,7 +18,7 @@ export default async function AbsensiPage({
     redirect("/login");
   }
 
-  const allowedRoles = ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS", "PIKET"];
+  const allowedRoles = ["SEKRETARIS", "WAKA", "BK"];
   if (!user || !allowedRoles.includes(user.role)) {
     redirect("/dashboard?error=unauthorized");
   }
@@ -34,8 +34,6 @@ export default async function AbsensiPage({
     classWhereFilter.sekretarisId = user.id;
   } else if (user.role === "BK") {
     classWhereFilter.bkId = user.id;
-  } else if (user.role === "WALAS") {
-    classWhereFilter.walasId = user.id;
   }
 
   // Ambil kelas aktif di tahun ajaran berjalan yang ditugaskan ke user beserta daftar siswanya
