@@ -322,6 +322,127 @@ export async function getMonthlyAttendanceMatrixAction(
 }
 
 /**
+ * Mendapatkan data matriks absensi semesteran siswa untuk suatu kelas (Ganjil: Jul-Des, Genap: Jan-Jun)
+ */
+export async function getSemesterAttendanceMatrixAction(
+  classId: string,
+  semester: 1 | 2,
+  year: number
+) {
+  const user = await getSessionUser();
+  if (!user) {
+    return { error: "Silakan login terlebih dahulu." };
+  }
+
+  const allowedRoles = ["BK", "WAKA", "WALAS", "GURU", "SEKRETARIS", "PIKET"];
+  if (!allowedRoles.includes(user.role)) {
+    return { error: "Akses ditolak." };
+  }
+
+  try {
+    const targetClass = await prisma.kelas.findUnique({
+      where: { id: classId },
+      include: {
+        siswaKelas: {
+          where: {
+            siswa: { status: "AKTIF" },
+          },
+          include: {
+            siswa: true,
+          },
+        },
+      },
+    });
+
+    if (!targetClass) {
+      return { error: "Kelas tidak ditemukan." };
+    }
+
+    if (user.role === "SEKRETARIS" && targetClass.sekretarisId !== user.id) {
+      return { error: "Akses ditolak. Anda tidak memiliki akses ke kelas ini." };
+    }
+
+    const students = targetClass.siswaKelas
+      .map((sk) => sk.siswa)
+      .sort((a, b) => a.nama.localeCompare(b.nama));
+
+    const studentIds = students.map((s) => s.id);
+
+    const startMonth = semester === 1 ? 6 : 0;
+    const endMonth = semester === 1 ? 11 : 5;
+
+    const startDate = new Date(Date.UTC(year, startMonth, 1, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, endMonth + 1, 0, 23, 59, 59, 999));
+
+    const absensiList = await prisma.absensi.findMany({
+      where: {
+        siswaId: { in: studentIds },
+        tanggal: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      select: {
+        siswaId: true,
+        tanggal: true,
+        status: true,
+      },
+    });
+
+    const months = semester === 1
+      ? [
+          { index: 6, label: "Juli" },
+          { index: 7, label: "Agustus" },
+          { index: 8, label: "September" },
+          { index: 9, label: "Oktober" },
+          { index: 10, label: "November" },
+          { index: 11, label: "Desember" },
+        ]
+      : [
+          { index: 0, label: "Januari" },
+          { index: 1, label: "Februari" },
+          { index: 2, label: "Maret" },
+          { index: 3, label: "April" },
+          { index: 4, label: "Mei" },
+          { index: 5, label: "Juni" },
+        ];
+
+    // Structure: matrix[studentId][monthIndex] = { H, S, I, A, D }
+    const matrix: Record<string, Record<number, { H: number; S: number; I: number; A: number; D: number }>> = {};
+
+    absensiList.forEach((item) => {
+      const dObj = new Date(item.tanggal);
+      const mIdx = dObj.getUTCMonth();
+      if (!matrix[item.siswaId]) {
+        matrix[item.siswaId] = {};
+      }
+      if (!matrix[item.siswaId][mIdx]) {
+        matrix[item.siswaId][mIdx] = { H: 0, S: 0, I: 0, A: 0, D: 0 };
+      }
+      const st = item.status as "H" | "S" | "I" | "A" | "D";
+      if (st && matrix[item.siswaId][mIdx][st] !== undefined) {
+        matrix[item.siswaId][mIdx][st]++;
+      }
+    });
+
+    return {
+      success: true,
+      data: {
+        className: targetClass.nama,
+        students,
+        semester,
+        year,
+        months,
+        matrix,
+      },
+    };
+  } catch (error: any) {
+    console.error("Get semester attendance matrix error:", error);
+    return { error: "Gagal memuat matriks absensi semester." };
+  }
+}
+
+/**
  * Mengirimkan rekapitulasi harian absensi seluruh kelas ke Grup WA Sekolah (120363411290554371@g.us).
  * Hanya dapat dipanggil oleh WAKA / BK.
  */
