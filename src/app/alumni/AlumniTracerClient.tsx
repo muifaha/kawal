@@ -37,9 +37,18 @@ interface SiswaVerifyData {
   tanggalLahir?: string | null;
 }
 
-export default function AlumniTracerClient() {
+interface AlumniTracerClientProps {
+  schoolName?: string;
+  schoolLogo?: string;
+}
+
+export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", schoolLogo = "" }: AlumniTracerClientProps) {
   const [step, setStep] = useState<"verify" | "form" | "success">("verify");
   const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  // School Identity State
+  const [currentSchoolName, setCurrentSchoolName] = useState(schoolName);
+  const [currentSchoolLogo, setCurrentSchoolLogo] = useState(schoolLogo);
 
   // Step 1: Verification State
   const [identifierInput, setIdentifierInput] = useState("");
@@ -116,7 +125,7 @@ export default function AlumniTracerClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Sync Theme with LocalStorage & Document Root
+  // Sync Theme & Fetch Settings
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     const activeTheme = savedTheme || "light";
@@ -126,6 +135,25 @@ export default function AlumniTracerClient() {
     } else {
       document.documentElement.classList.remove("light");
     }
+
+    const localName = localStorage.getItem("cachedSchoolName");
+    const localLogo = localStorage.getItem("cachedSchoolLogo");
+    if (localName) setCurrentSchoolName(localName);
+    if (localLogo) setCurrentSchoolLogo(localLogo);
+
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.schoolName) {
+          setCurrentSchoolName(data.schoolName);
+          localStorage.setItem("cachedSchoolName", data.schoolName);
+        }
+        if (data.schoolLogo) {
+          setCurrentSchoolLogo(data.schoolLogo);
+          localStorage.setItem("cachedSchoolLogo", data.schoolLogo);
+        }
+      })
+      .catch((err) => console.error("Error fetching settings:", err));
   }, []);
 
   const toggleTheme = () => {
@@ -194,6 +222,10 @@ export default function AlumniTracerClient() {
       setVerifyError("Silakan masukkan NISN atau NIS Anda.");
       return;
     }
+    if (!tanggalLahirInput) {
+      setVerifyError("Silakan masukkan tanggal lahir Anda (wajib).");
+      return;
+    }
 
     setIsVerifying(true);
     setVerifyError(null);
@@ -201,7 +233,7 @@ export default function AlumniTracerClient() {
     try {
       const res = await verifyAlumniAction({
         identifier: identifierInput.trim(),
-        tanggalLahir: tanggalLahirInput || undefined,
+        tanggalLahir: tanggalLahirInput,
       });
 
       if (res.error || !res.siswa) {
@@ -407,31 +439,174 @@ export default function AlumniTracerClient() {
     },
   ];
 
+  // STEP 1: VERIFIKASI - Centered Login Layout (NO HEADER, NO FOOTER)
+  if (step === "verify") {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+        {/* Theme Toggle Button - Identical to Login Page (Top Right) */}
+        <div className="absolute top-4 right-4 z-20">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all focus:outline-none cursor-pointer"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <Sun className="w-5 h-5 text-amber-400" />
+            ) : (
+              <Moon className="w-5 h-5 text-indigo-400" />
+            )}
+          </button>
+        </div>
+
+        {/* Background Gradient Orbs - Identical to Login Page */}
+        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* School Logo + Name + Powered by KAWAL - Identical to Login Page Header */}
+        <div className="sm:mx-auto sm:w-full sm:max-w-md z-10 flex items-center justify-center gap-4 px-4">
+          {currentSchoolLogo ? (
+            <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-xl">
+              <img src={currentSchoolLogo} alt="Logo Sekolah" className="max-w-full max-h-full object-contain" />
+            </div>
+          ) : (
+            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-extrabold text-2xl shrink-0 shadow-xl">
+              <School className="w-8 h-8 text-emerald-400" />
+            </div>
+          )}
+          <div className="text-left flex flex-col justify-center min-w-0">
+            <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl leading-tight">
+              {currentSchoolName}
+            </h1>
+            <p className="mt-0.5 text-xs text-slate-500 font-bold tracking-widest uppercase">
+              powered by KAWAL
+            </p>
+          </div>
+        </div>
+
+        {/* Form Card Container - Identical to Login Page Card */}
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md z-10 px-4">
+          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 py-8 px-4 rounded-2xl sm:px-10 shadow-2xl space-y-6">
+            <div className="text-center space-y-1">
+              <h2 className="text-lg font-bold text-white tracking-tight flex items-center justify-center gap-2">
+                <UserCheck className="w-5 h-5 text-emerald-400" /> Tracer Study Alumni
+              </h2>
+              <p className="text-xs text-slate-400">
+                Masukkan NISN / NIS dan tanggal lahir Anda untuk mengisi survei.
+              </p>
+            </div>
+
+            <form onSubmit={handleVerify} className="space-y-6">
+              {verifyError && (
+                <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-4 rounded-xl text-sm flex items-start gap-3">
+                  <ShieldAlert className="w-5 h-5 shrink-0 text-rose-400" />
+                  <span>{verifyError}</span>
+                </div>
+              )}
+
+              {/* Input 1: NISN / NIS */}
+              <div>
+                <label htmlFor="identifier" className="block text-sm font-medium text-slate-300">
+                  NISN / NIS Siswa <span className="text-rose-500">*</span>
+                </label>
+                <div className="mt-1 relative rounded-md">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <UserIcon className="h-5 w-5 text-slate-500" aria-hidden="true" />
+                  </div>
+                  <input
+                    id="identifier"
+                    name="identifier"
+                    type="text"
+                    required
+                    placeholder="Masukkan NISN atau NIS Anda"
+                    value={identifierInput}
+                    onChange={(e) => setIdentifierInput(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all font-mono"
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-slate-500">Nomor Induk Siswa Nasional atau NIS saat sekolah.</p>
+              </div>
+
+              {/* Input 2: Tanggal Lahir (WAJIB) */}
+              <div>
+                <label htmlFor="tanggalLahir" className="block text-sm font-medium text-slate-300">
+                  Tanggal Lahir <span className="text-rose-500">*</span>
+                </label>
+                <div className="mt-1 relative rounded-md">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Calendar className="h-5 w-5 text-slate-500" aria-hidden="true" />
+                  </div>
+                  <input
+                    id="tanggalLahir"
+                    name="tanggalLahir"
+                    type="date"
+                    required
+                    value={tanggalLahirInput}
+                    onChange={(e) => setTanggalLahirInput(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all cursor-pointer"
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-slate-500">Pilih tanggal lahir sesuai data sekolah.</p>
+              </div>
+
+              {/* Submit Button */}
+              <div>
+                <button
+                  type="submit"
+                  disabled={isVerifying}
+                  className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98 cursor-pointer shadow-lg shadow-emerald-500/20"
+                >
+                  {isVerifying ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-emerald-950" />
+                      <span>Memverifikasi...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Verifikasi & Lanjutkan</span>
+                      <ArrowRight className="w-4 h-4 text-emerald-950" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // STEP 2 & 3: FORM TRACER STUDY & SUCCESS CONFIRMATION
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-between py-6 sm:px-6 lg:px-8 relative overflow-hidden font-sans transition-colors duration-300">
-      {/* Background Gradient Orbs - Matching Login Page */}
+      {/* Background Gradient Orbs */}
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Header Bar - Matching Login Header Branding */}
+      {/* Top Header Bar for Form Mode */}
       <header className="sm:mx-auto sm:w-full sm:max-w-4xl z-20 px-4 py-2">
         <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400 font-extrabold text-xl shrink-0 shadow-lg">
-              <School className="w-6 h-6 text-emerald-400" />
-            </div>
+            {currentSchoolLogo ? (
+              <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
+                <img src={currentSchoolLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-extrabold text-xl shrink-0 shadow-lg">
+                <School className="w-6 h-6 text-emerald-400" />
+              </div>
+            )}
             <div className="text-left flex flex-col justify-center min-w-0">
               <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl leading-tight flex items-center gap-2">
                 Tracer Study Alumni <Sparkles className="w-4 h-4 text-emerald-400" />
               </h1>
               <p className="mt-0.5 text-xs text-slate-500 font-bold tracking-widest uppercase">
-                powered by KAWAL
+                {currentSchoolName} &bull; powered by KAWAL
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Theme Toggle Button - Identical to Login Page */}
             <button
               type="button"
               onClick={toggleTheme}
@@ -451,89 +626,6 @@ export default function AlumniTracerClient() {
 
       {/* Main Content Area */}
       <main className="sm:mx-auto sm:w-full sm:max-w-4xl z-10 px-4 py-6 flex-1">
-        {/* STEP 1: VERIFIKASI ALUMNI */}
-        {step === "verify" && (
-          <div className="max-w-md mx-auto space-y-6 animate-fade-in py-6">
-            <div className="text-center space-y-2">
-              <div className="inline-flex p-3.5 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-1">
-                <UserCheck className="w-8 h-8 text-emerald-400" />
-              </div>
-              <h2 className="text-2xl font-extrabold text-white tracking-tight">Verifikasi Data Alumni</h2>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Masukkan NISN (atau NIS) dan tanggal lahir Anda untuk mengonfirmasi identitas alumni sebelum melengkapi survei.
-              </p>
-            </div>
-
-            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 py-8 px-4 rounded-2xl sm:px-10 shadow-2xl">
-              <form onSubmit={handleVerify} className="space-y-6">
-                {verifyError && (
-                  <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-4 rounded-xl text-sm flex items-start gap-3">
-                    <ShieldAlert className="w-5 h-5 shrink-0 text-rose-400" />
-                    <span>{verifyError}</span>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300">
-                    NISN / NIS SISWA <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="mt-1 relative rounded-md">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <UserIcon className="h-5 w-5 text-slate-500" aria-hidden="true" />
-                    </div>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: 0099927510"
-                      value={identifierInput}
-                      onChange={(e) => setIdentifierInput(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all font-mono"
-                    />
-                  </div>
-                  <p className="mt-1 text-[11px] text-slate-500">Nomor Induk Siswa Nasional atau NIS saat bersekolah.</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300">
-                    TANGGAL LAHIR (OPSIONAL)
-                  </label>
-                  <div className="mt-1 relative rounded-md">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Calendar className="h-5 w-5 text-slate-500" aria-hidden="true" />
-                    </div>
-                    <input
-                      type="date"
-                      value={tanggalLahirInput}
-                      onChange={(e) => setTanggalLahirInput(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <button
-                    type="submit"
-                    disabled={isVerifying}
-                    className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98 cursor-pointer shadow-lg shadow-emerald-500/20"
-                  >
-                    {isVerifying ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin text-emerald-950" />
-                        <span>Memverifikasi...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Verifikasi & Lanjutkan</span>
-                        <ArrowRight className="w-4 h-4 text-emerald-950" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
         {/* STEP 2: FORM TRACER STUDY */}
         {step === "form" && verifiedSiswa && (
           <form onSubmit={handleSubmitTracer} className="space-y-6 animate-fade-in pb-12">
@@ -1342,11 +1434,6 @@ export default function AlumniTracerClient() {
           </div>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-800/80 py-6 text-center text-slate-500 text-xs z-20">
-        <p>&copy; {new Date().getFullYear()} KAWAL Sekolahan &bull; Sistem Informasi Kesiswaan & Alumni</p>
-      </footer>
     </div>
   );
 }
