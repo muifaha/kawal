@@ -466,11 +466,11 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
         {/* School Logo + Name + Powered by KAWAL - Identical to Login Page Header */}
         <div className="sm:mx-auto sm:w-full sm:max-w-md z-10 flex items-center justify-center gap-4 px-4">
           {currentSchoolLogo ? (
-            <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-xl">
+            <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
               <img src={currentSchoolLogo} alt="Logo Sekolah" className="max-w-full max-h-full object-contain" />
             </div>
           ) : (
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-extrabold text-2xl shrink-0 shadow-xl">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-extrabold text-2xl shrink-0">
               <School className="w-8 h-8 text-emerald-400" />
             </div>
           )}
@@ -558,50 +558,26 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
   // STEP 2 & 3: FORM TRACER STUDY & SUCCESS CONFIRMATION
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-between py-6 sm:px-6 lg:px-8 relative overflow-hidden font-sans transition-colors duration-300">
+      {/* Theme Toggle Button - Top Right */}
+      <div className="absolute top-4 right-4 z-20">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all focus:outline-none cursor-pointer"
+          aria-label="Toggle theme"
+          title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {theme === "dark" ? (
+            <Sun className="w-5 h-5 text-amber-400" />
+          ) : (
+            <Moon className="w-5 h-5 text-indigo-400" />
+          )}
+        </button>
+      </div>
+
       {/* Background Gradient Orbs */}
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Top Header Bar for Form Mode */}
-      <header className="sm:mx-auto sm:w-full sm:max-w-4xl z-20 px-4 py-2">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
-          <div className="flex items-center gap-4">
-            {currentSchoolLogo ? (
-              <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
-                <img src={currentSchoolLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
-              </div>
-            ) : (
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-extrabold text-xl shrink-0 shadow-lg">
-                <School className="w-6 h-6 text-emerald-400" />
-              </div>
-            )}
-            <div className="text-left flex flex-col justify-center min-w-0">
-              <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl leading-tight flex items-center gap-2">
-                Tracer Study Alumni <Sparkles className="w-4 h-4 text-emerald-400" />
-              </h1>
-              <p className="mt-0.5 text-xs text-slate-500 font-bold tracking-widest uppercase">
-                {currentSchoolName} &bull; powered by KAWAL
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all focus:outline-none cursor-pointer"
-              aria-label="Toggle theme"
-              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              {theme === "dark" ? (
-                <Sun className="w-5 h-5 text-amber-400" />
-              ) : (
-                <Moon className="w-5 h-5 text-indigo-400" />
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
 
       {/* Main Content Area */}
       <main className="sm:mx-auto sm:w-full sm:max-w-4xl z-10 px-4 py-6 flex-1">
@@ -609,7 +585,7 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
         {step === "form" && verifiedSiswa && (
           <form onSubmit={handleSubmitTracer} className="space-y-6 animate-fade-in pb-12">
             {/* Header Identity Card */}
-            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xl">
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xl uppercase shrink-0">
                   {verifiedSiswa.nama.substring(0, 2)}
@@ -644,7 +620,7 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
             )}
 
             {/* SECTION INFORMASI KONTAK & DOMISILI */}
-            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-5 shadow-2xl">
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-5">
               <div className="border-b border-slate-800 pb-3">
                 <h3 className="text-base font-extrabold text-white flex items-center gap-2">
                   <Phone className="w-5 h-5 text-emerald-400" />
@@ -737,7 +713,7 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
                       onClick={() => setStatusUtama(opt.id)}
                       className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${
                         isSelected
-                          ? `bg-gradient-to-br ${opt.accentBg} ${opt.accentBorder} ring-2 ring-emerald-500 shadow-xl`
+                          ? `bg-gradient-to-br ${opt.accentBg} ${opt.accentBorder} ring-2 ring-emerald-500`
                           : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-900/50"
                       }`}
                     >
@@ -758,7 +734,7 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
             </div>
 
             {/* SECTION 2: RINCIAN BERDASARKAN STATUS */}
-            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6">
               <div className="border-b border-slate-800 pb-4">
                 <h3 className="text-base font-extrabold text-white flex items-center gap-2">
                   <FileCheck className="w-5 h-5 text-emerald-400" />
@@ -796,7 +772,7 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
                     </div>
 
                     {showPtDropdown && (
-                      <div className="absolute left-0 right-0 top-full mt-1 bg-slate-950 border border-slate-800 rounded-xl max-h-52 overflow-y-auto z-50 shadow-2xl divide-y divide-slate-800">
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-slate-950 border border-slate-800 rounded-xl max-h-52 overflow-y-auto z-50 divide-y divide-slate-800">
                         {ptResults.length > 0 ? (
                           ptResults.map((item, idx) => (
                             <button
@@ -866,7 +842,7 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
                     </div>
 
                     {showProdiDropdown && (
-                      <div className="absolute left-0 right-0 top-full mt-1 bg-slate-950 border border-slate-800 rounded-xl max-h-52 overflow-y-auto z-50 shadow-2xl divide-y divide-slate-800">
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-slate-950 border border-slate-800 rounded-xl max-h-52 overflow-y-auto z-50 divide-y divide-slate-800">
                         {prodiResults.length > 0 ? (
                           prodiResults.map((item, idx) => (
                             <button
@@ -1261,7 +1237,7 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
             </div>
 
             {/* SECTION 3: EVALUASI SEKOLAH & UMPAN BALIK */}
-            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6">
               <div className="border-b border-slate-800 pb-4">
                 <h3 className="text-base font-extrabold text-white flex items-center gap-2">
                   <Heart className="w-5 h-5 text-pink-400" />
@@ -1362,7 +1338,7 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full sm:w-auto flex justify-center items-center gap-2 py-3.5 px-8 border border-transparent rounded-xl text-sm font-semibold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98 cursor-pointer shadow-lg shadow-emerald-500/20"
+                className="w-full sm:w-auto flex justify-center items-center gap-2 py-3.5 px-8 border border-transparent rounded-xl text-sm font-semibold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -1383,7 +1359,7 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
         {/* STEP 3: SUCCESS CONFIRMATION */}
         {step === "success" && verifiedSiswa && (
           <div className="max-w-md mx-auto text-center space-y-6 py-12 animate-fade-in">
-            <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-2xl">
+            <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <div className="space-y-2">
@@ -1393,7 +1369,7 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 text-left space-y-2.5 text-xs shadow-2xl">
+            <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 text-left space-y-2.5 text-xs">
               <div className="flex justify-between border-b border-slate-800 pb-2">
                 <span className="text-slate-400 font-medium">Status Utama:</span>
                 <span className="font-bold text-emerald-400">{statusOptions.find((o) => o.id === statusUtama)?.title}</span>
