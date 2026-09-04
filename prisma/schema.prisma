@@ -103,26 +103,86 @@ model Kelas {
 }
 
 model Siswa {
-  id        String   @id @default(uuid())
-  nis       String   @unique
-  nama      String
-  status    String   @default("AKTIF") // AKTIF, LULUS, PINDAH
+  id           String    @id @default(uuid())
+  nis          String    @unique
+  nisn         String?   @unique
+  tanggalLahir DateTime? @db.Date
+  nama         String
+  status       String    @default("AKTIF") // AKTIF, LULUS, PINDAH
 
   riwayatKelas SiswaKelas[]
 
-  absensi     Absensi[]
-  pelanggaran LaporanPelanggaran[]
-  remisi      TransaksiRemisi[]
-  pemanggilan PemanggilanSiswa[]
-  penanganan  PenangananSiswa[]
-  rujukan     RujukanSiswa[]
-  bimbingan   BimbinganKonseling[]
+  absensi         Absensi[]
+  pelanggaran     LaporanPelanggaran[]
+  remisi          TransaksiRemisi[]
+  pemanggilan     PemanggilanSiswa[]
+  penanganan      PenangananSiswa[]
+  rujukan         RujukanSiswa[]
+  bimbingan       BimbinganKonseling[]
   jurnalAbsensi   JurnalAbsensi[]
   jurnalPenilaian JurnalPenilaian[]
   prestasiAnggota PrestasiSiswaAnggota[]
+  tracerStudy     TracerStudy?
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model TracerStudy {
+  id                String   @id @default(uuid())
+  siswaId           String   @unique
+  siswa             Siswa    @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  
+  statusUtama       String   // BEKERJA, KULIAH, WIRAUSAHA, PELATIHAN, MENCARI_KERJA, MENGURUS_KELUARGA, GAP_YEAR
+
+  // 1. BEKERJA
+  namaPerusahaan    String?
+  posisiJabatan     String?
+  bidangPekerjaan   String?
+  waktuTungguKerja  String?  // < 1 bulan, 1-3 bulan, 3-6 bulan, > 6 bulan
+  kisaranPendapatan String?  // Opsional
+
+  // 2. KULIAH / KEDINASAN
+  namaPerguruanTinggi String?
+  jenjangPendidikan   String?  // D3, D4, S1, KEDINASAN, dll
+  fakultasProdi       String?
+  jalurMasuk          String?  // SNBP, SNBT, MANDIRI, KEDINASAN, dll
+  statusPembiayaan    String?  // MANDIRI, BEASISWA_KIP, dll
+
+  // 3. BERWIRAUSAHA
+  namaUsaha         String?
+  bidangUsaha       String?
+  statusKepemilikan String?  // SENDIRI, KEMITRAAN, KELUARGA
+  jumlahKaryawan    String?
+
+  // 4. PELATIHAN / KURSUS / BLK
+  namaLembaga       String?
+  bidangKeahlian    String?
+  durasiProgram     String?  // < 3 bulan, 3-6 bulan, > 6 bulan
+  rencanaPasca      String?  // MENCARI_KERJA, BERWIRAUSAHA, KULIAH
+
+  // 5. SEDANG MENCARI PEKERJAAN
+  lamaMencariKerja  String?
+  saluranPencarian  String?
+  kendalaUtama      String?
+  bantuanSekolah    String?
+
+  // 6. MENGURUS KELUARGA / ALASAN PRIBADI
+  alasanUtamaKeluarga String?
+  rencanaMasaDepan    String?
+
+  // 7. GAP YEAR / PERSIAPAN SELEKSI
+  targetSeleksi     String?
+  aktivitasPengisi  String?
+
+  // EVALUASI SEKOLAH & UMPAN BALIK
+  relevansiKurikulum String? // SANGAT_RELEVAN, RELEVAN, KURANG_RELEVAN, TIDAK_RELEVAN
+  penilaianFasilitas String? // SANGAT_BAIK, BAIK, CUKUP, KURANG
+  penilaianBKK       String? // SANGAT_BAIK, BAIK, CUKUP, KURANG
+  saranSekolah       String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model SiswaKelas {

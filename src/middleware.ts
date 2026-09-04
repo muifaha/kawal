@@ -2,17 +2,19 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Halaman publik yang tidak memerlukan login
-const PUBLIC_PATHS = ["/login", "/api/auth/login"];
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/alumni"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Lewati file statis, aset, gambar, dan internal nextjs
+  // Lewati file statis, aset, gambar, API alumni public, dan internal nextjs
   if (
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/api/auth/") || // Lewati endpoint auth jika kustom
-    pathname.includes(".") || // Lewati file statis (favicon.ico, png, dll)
-    pathname === "/" // Halaman utama akan di-redirect
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/api/pddikti/") ||
+    pathname.startsWith("/alumni") ||
+    pathname.includes(".") ||
+    pathname === "/"
   ) {
     if (pathname === "/") {
       return NextResponse.redirect(new URL("/login", request.url));
@@ -78,6 +80,11 @@ export function middleware(request: NextRequest) {
 
   // Halaman Prestasi Siswa (Dapat diakses oleh WAKA, BK, GURU, PEMBINA_OSIS, dan WALAS)
   if (pathname.startsWith("/prestasi") && !["WAKA", "BK", "GURU", "PEMBINA_OSIS", "WALAS"].includes(role)) {
+    return NextResponse.redirect(new URL("/dashboard?error=unauthorized", request.url));
+  }
+
+  // Halaman Rekap Alumni & Tracer Study (Dapat diakses oleh WAKA, BK, WALAS, dan GURU)
+  if (pathname.startsWith("/rekap-alumni") && !["WAKA", "BK", "WALAS", "GURU"].includes(role)) {
     return NextResponse.redirect(new URL("/dashboard?error=unauthorized", request.url));
   }
 

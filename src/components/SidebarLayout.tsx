@@ -25,6 +25,7 @@ import {
   Download,
   Trophy,
   UserCheck,
+  GraduationCap,
 } from "lucide-react";
 
 interface SidebarLayoutProps {
@@ -242,6 +243,12 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       href: "/kesiswaan",
       icon: Settings,
       roles: ["WAKA"],
+    },
+    {
+      name: "Alumni & Tracer Study",
+      href: "/rekap-alumni",
+      icon: GraduationCap,
+      roles: ["WAKA", "BK", "WALAS", "GURU"],
     },
   ];
 
