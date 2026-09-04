@@ -487,15 +487,6 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
         {/* Form Card Container - Identical to Login Page Card */}
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md z-10 px-4">
           <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 py-8 px-4 rounded-2xl sm:px-10 shadow-2xl space-y-6">
-            <div className="text-center space-y-1">
-              <h2 className="text-lg font-bold text-white tracking-tight flex items-center justify-center gap-2">
-                <UserCheck className="w-5 h-5 text-emerald-400" /> Tracer Study Alumni
-              </h2>
-              <p className="text-xs text-slate-400">
-                Masukkan NISN / NIS dan tanggal lahir Anda untuk mengisi survei.
-              </p>
-            </div>
-
             <form onSubmit={handleVerify} className="space-y-6">
               {verifyError && (
                 <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-4 rounded-xl text-sm flex items-start gap-3">
@@ -554,17 +545,17 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
                 <button
                   type="submit"
                   disabled={isVerifying}
-                  className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98 cursor-pointer shadow-lg shadow-emerald-500/20"
+                  className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98 cursor-pointer shadow-lg shadow-emerald-500/20"
                 >
                   {isVerifying ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-emerald-950" />
-                      <span>Memverifikasi...</span>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span className="text-white">Memverifikasi...</span>
                     </>
                   ) : (
                     <>
-                      <span>Verifikasi & Lanjutkan</span>
-                      <ArrowRight className="w-4 h-4 text-emerald-950" />
+                      <span className="text-white">Verifikasi</span>
+                      <ArrowRight className="w-4 h-4 text-white" />
                     </>
                   )}
                 </button>
