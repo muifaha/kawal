@@ -116,10 +116,27 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       roles: ["WAKA", "BK", "WALAS", "GURU", "OSIS", "SEKRETARIS", "PIKET", "PEMBINA_OSIS"],
     },
     {
+      name: "Absensi Siswa",
+      icon: CalendarCheck,
+      roles: ["BK", "WAKA"],
+      children: [
+        {
+          name: "Absensi Harian",
+          href: "/absensi",
+          roles: ["BK", "WAKA"],
+        },
+        {
+          name: "Rekap Absensi",
+          href: "/rekap-absensi",
+          roles: ["BK", "WAKA"],
+        },
+      ],
+    },
+    {
       name: "Absensi Harian",
       href: "/absensi",
       icon: CalendarCheck,
-      roles: ["SEKRETARIS", "WAKA", "BK"],
+      roles: ["SEKRETARIS"],
     },
     {
       name: "Wali Kelas",
@@ -152,7 +169,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       name: "Rekap Absensi",
       href: "/rekap-absensi",
       icon: ClipboardList,
-      roles: ["BK", "SEKRETARIS", "PIKET"],
+      roles: ["SEKRETARIS", "PIKET"],
     },
     {
       name: "Pelanggaran",
