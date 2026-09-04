@@ -1244,10 +1244,11 @@ export default function DashboardClient({
     if (!selectedStudentNis) return null;
     const summary = studentViolationSummaries.find((s) => s.nis === selectedStudentNis);
     const attendance = attendanceRecap.find((a) => a.nis === selectedStudentNis);
+    const attendanceRate = attendance ? calculateAttendanceRate(attendance) : 100;
     return {
       nis: selectedStudentNis,
       id: attendance?.studentId || "",
-      nama: summary?.nama || attendance?.nama || "Tidak Dikhawatirkan",
+      nama: summary?.nama || attendance?.nama || "Siswa",
       kelasNama: summary?.kelasNama || attendance?.kelasNama || "-",
       totalPoin: summary?.totalPoin ?? 0,
       countApproved: summary?.countApproved ?? 0,
@@ -1256,6 +1257,7 @@ export default function DashboardClient({
       I: attendance?.I ?? 0,
       A: attendance?.A ?? 0,
       D: attendance?.D ?? 0,
+      attendanceRate,
     };
   }, [selectedStudentNis, studentViolationSummaries, attendanceRecap]);
 
@@ -2918,6 +2920,23 @@ export default function DashboardClient({
                     </p>
                   </div>
 
+                  {/* Attendance Rate Badge */}
+                  <div className="p-4 bg-slate-900/40 border border-slate-800/40 rounded-xl text-center space-y-1">
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Persentase Kehadiran</p>
+                    <p className={`text-2xl font-black ${
+                      selectedStudentInfo.attendanceRate >= 90
+                        ? "text-emerald-400"
+                        : selectedStudentInfo.attendanceRate >= 80
+                        ? "text-amber-400"
+                        : "text-rose-400"
+                    }`}>
+                      {selectedStudentInfo.attendanceRate}%
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                      Tingkat Kehadiran Semester Ini
+                    </p>
+                  </div>
+
                   {/* Absence Summary (S, I, A, D) */}
                   <div className="space-y-3 pt-2">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ringkasan Ketidakhadiran</p>
@@ -3732,6 +3751,23 @@ export default function DashboardClient({
                     </p>
                     <p className="text-[10px] text-slate-500 font-medium mt-0.5">
                       {selectedStudentInfo.countApproved} Pelanggaran Sah
+                    </p>
+                  </div>
+
+                  {/* Attendance Rate Badge */}
+                  <div className="p-4 bg-slate-900/40 border border-slate-800/40 rounded-xl text-center space-y-1">
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Persentase Kehadiran</p>
+                    <p className={`text-2xl font-black ${
+                      selectedStudentInfo.attendanceRate >= 90
+                        ? "text-emerald-400"
+                        : selectedStudentInfo.attendanceRate >= 80
+                        ? "text-amber-400"
+                        : "text-rose-400"
+                    }`}>
+                      {selectedStudentInfo.attendanceRate}%
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                      Tingkat Kehadiran Semester Ini
                     </p>
                   </div>
 
