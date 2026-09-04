@@ -2685,89 +2685,91 @@ export default function DashboardClient({
               )}
 
               {/* Siswa Berisiko Tinggi Section (Consolidated) */}
-              <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
-                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-rose-400" />
-                  Siswa Berisiko Tinggi
-                </h3>
-                {highRiskStudents.length === 0 ? (
-                  <p className="text-slate-500 text-sm">Tidak ada siswa berisiko terdeteksi saat ini.</p>
-                ) : (
-                  <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
-                    <table className="min-w-[600px] w-full divide-y divide-slate-800">
-                      <thead className="bg-slate-900/60">
-                        <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                          <th className="py-3 px-4">Siswa</th>
-                          <th className="py-3 px-4">Kelas</th>
-                          <th className="py-3 px-4 text-center">Akumulasi Poin</th>
-                          <th className="py-3 px-4 text-center">Jumlah Alfa</th>
-                          <th className="py-3 px-4 text-right">Tingkat Risiko</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60">
-                        {(showAllHighRisk ? highRiskStudents : highRiskStudents.slice(0, 10)).map((student) => (
-                          <tr key={student.studentId} className="text-sm">
-                            <td className="py-3.5 px-4 whitespace-nowrap">
-                              <div className="font-semibold text-white">{student.nama}</div>
-                              <div className="text-xs text-slate-400 font-mono">NIS: {student.nis}</div>
-                            </td>
-                            <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap">{student.kelasNama}</td>
-                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                                  student.points >= 50
-                                    ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                                    : student.points >= 20
-                                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                                    : "bg-slate-800 text-slate-300"
-                                }`}
-                              >
-                                {Math.round(student.points * 100) / 100} Poin
-                              </span>
-                            </td>
-                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                                  student.alphaCount >= 3
-                                    ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                                    : student.alphaCount >= 1
-                                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                                    : "bg-slate-800 text-slate-300"
-                                }`}
-                              >
-                                {student.alphaCount} Hari
-                              </span>
-                            </td>
-                            <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-black uppercase tracking-wider ${
-                                  student.riskScore >= 50
-                                    ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                                    : student.riskScore >= 20
-                                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                                    : "bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
-                                }`}
-                              >
-                                {student.riskScore >= 50 ? "Tinggi" : student.riskScore >= 20 ? "Sedang" : "Rendah"}
-                              </span>
-                            </td>
+              {user.role !== "WALAS" && (
+                <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
+                  <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-rose-400" />
+                    Siswa Berisiko Tinggi
+                  </h3>
+                  {highRiskStudents.length === 0 ? (
+                    <p className="text-slate-500 text-sm">Tidak ada siswa berisiko terdeteksi saat ini.</p>
+                  ) : (
+                    <div className="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20">
+                      <table className="min-w-[600px] w-full divide-y divide-slate-800">
+                        <thead className="bg-slate-900/60">
+                          <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            <th className="py-3 px-4">Siswa</th>
+                            <th className="py-3 px-4">Kelas</th>
+                            <th className="py-3 px-4 text-center">Akumulasi Poin</th>
+                            <th className="py-3 px-4 text-center">Jumlah Alfa</th>
+                            <th className="py-3 px-4 text-right">Tingkat Risiko</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-                {highRiskStudents.length > 10 && (
-                  <div className="text-center pt-4 border-t border-slate-800/60 mt-4">
-                    <button
-                      onClick={() => setShowAllHighRisk(!showAllHighRisk)}
-                      className="text-xs font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
-                    >
-                      {showAllHighRisk ? "Tampilkan Lebih Sedikit (Maks 10)" : `Lihat Semua (${highRiskStudents.length} Siswa) »`}
-                    </button>
-                  </div>
-                )}
-              </div>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60">
+                          {(showAllHighRisk ? highRiskStudents : highRiskStudents.slice(0, 10)).map((student) => (
+                            <tr key={student.studentId} className="text-sm">
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <div className="font-semibold text-white">{student.nama}</div>
+                                <div className="text-xs text-slate-400 font-mono">NIS: {student.nis}</div>
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap">{student.kelasNama}</td>
+                              <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                                    student.points >= 50
+                                      ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                                      : student.points >= 20
+                                      ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                      : "bg-slate-800 text-slate-300"
+                                  }`}
+                                >
+                                  {Math.round(student.points * 100) / 100} Poin
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                                    student.alphaCount >= 3
+                                      ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                                      : student.alphaCount >= 1
+                                      ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                      : "bg-slate-800 text-slate-300"
+                                  }`}
+                                >
+                                  {student.alphaCount} Hari
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-black uppercase tracking-wider ${
+                                    student.riskScore >= 50
+                                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                                      : student.riskScore >= 20
+                                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                      : "bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                                  }`}
+                                >
+                                  {student.riskScore >= 50 ? "Tinggi" : student.riskScore >= 20 ? "Sedang" : "Rendah"}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {highRiskStudents.length > 10 && (
+                    <div className="text-center pt-4 border-t border-slate-800/60 mt-4">
+                      <button
+                        onClick={() => setShowAllHighRisk(!showAllHighRisk)}
+                        className="text-xs font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
+                      >
+                        {showAllHighRisk ? "Tampilkan Lebih Sedikit (Maks 10)" : `Lihat Semua (${highRiskStudents.length} Siswa) »`}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Right Column (lg:col-span-1) */}
