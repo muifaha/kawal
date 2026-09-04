@@ -14,7 +14,7 @@ import {
   School,
   Clock,
   Heart,
-  AlertCircle,
+  ShieldAlert,
   Loader2,
   FileCheck,
   Sun,
@@ -22,6 +22,8 @@ import {
   Phone,
   Mail,
   MapPin,
+  User as UserIcon,
+  Calendar,
 } from "lucide-react";
 import { verifyAlumniAction, submitTracerStudyAction } from "@/app/actions/alumni";
 
@@ -406,141 +408,149 @@ export default function AlumniTracerClient() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-emerald-500 selection:text-white relative overflow-hidden font-sans transition-colors duration-300">
-      {/* Background Decorative Glow Orbs */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-[128px] pointer-events-none" />
-      <div className="absolute top-1/2 -right-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-[128px] pointer-events-none" />
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-between py-6 sm:px-6 lg:px-8 relative overflow-hidden font-sans transition-colors duration-300">
+      {/* Background Gradient Orbs - Matching Login Page */}
+      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Header Bar */}
-      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-40 px-4 py-4 sm:px-8">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
-              <School className="w-5 h-5 text-white" />
+      {/* Header Bar - Matching Login Header Branding */}
+      <header className="sm:mx-auto sm:w-full sm:max-w-4xl z-20 px-4 py-2">
+        <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400 font-extrabold text-xl shrink-0 shadow-lg">
+              <School className="w-6 h-6 text-emerald-400" />
             </div>
-            <div>
-              <h1 className="font-extrabold text-base tracking-tight text-slate-100 flex items-center gap-2">
-                Tracer Study Alumni <Sparkles className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+            <div className="text-left flex flex-col justify-center min-w-0">
+              <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl leading-tight flex items-center gap-2">
+                Tracer Study Alumni <Sparkles className="w-4 h-4 text-emerald-400" />
               </h1>
-              <p className="text-[11px] text-slate-400">Portal Penelusuran Lulusan & Karir Sekolah</p>
+              <p className="mt-0.5 text-xs text-slate-500 font-bold tracking-widest uppercase">
+                powered by KAWAL
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Theme Toggle Button */}
+            {/* Theme Toggle Button - Identical to Login Page */}
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2.5 rounded-xl text-slate-300 hover:text-slate-100 hover:bg-slate-900/60 border border-slate-800 transition-all focus:outline-none cursor-pointer"
+              className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all focus:outline-none cursor-pointer"
               aria-label="Toggle theme"
               title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
               {theme === "dark" ? (
-                <Sun className="w-4.5 h-4.5 text-amber-400" />
+                <Sun className="w-5 h-5 text-amber-400" />
               ) : (
-                <Moon className="w-4.5 h-4.5 text-indigo-400" />
+                <Moon className="w-5 h-5 text-indigo-400" />
               )}
             </button>
-
-            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider hidden sm:inline-block">
-              KAWAL Sekolahan
-            </span>
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 z-10">
+      {/* Main Content Area */}
+      <main className="sm:mx-auto sm:w-full sm:max-w-4xl z-10 px-4 py-6 flex-1">
         {/* STEP 1: VERIFIKASI ALUMNI */}
         {step === "verify" && (
           <div className="max-w-md mx-auto space-y-6 animate-fade-in py-6">
             <div className="text-center space-y-2">
-              <div className="inline-flex p-3.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 mb-1">
-                <UserCheck className="w-8 h-8" />
+              <div className="inline-flex p-3.5 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-1">
+                <UserCheck className="w-8 h-8 text-emerald-400" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-100 tracking-tight">Verifikasi Data Alumni</h2>
+              <h2 className="text-2xl font-extrabold text-white tracking-tight">Verifikasi Data Alumni</h2>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Masukkan NISN (atau NIS) dan tanggal lahir Anda untuk mengonfirmasi identitas alumni sebelum melengkapi survei.
               </p>
             </div>
 
-            <form onSubmit={handleVerify} className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-5 backdrop-blur-xl shadow-2xl">
-              {verifyError && (
-                <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-300 text-xs font-semibold flex items-center gap-2.5">
-                  <AlertCircle className="w-4.5 h-4.5 text-rose-500 shrink-0" />
-                  <span>{verifyError}</span>
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  NISN / NIS SISWA <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: 0099927510"
-                    value={identifierInput}
-                    onChange={(e) => setIdentifierInput(e.target.value)}
-                    className="w-full pl-3.5 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-mono"
-                  />
-                </div>
-                <p className="text-[10px] text-slate-400">Nomor Induk Siswa Nasional atau NIS saat bersekolah.</p>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  TANGGAL LAHIR (OPSIONAL)
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={tanggalLahirInput}
-                    onChange={(e) => setTanggalLahirInput(e.target.value)}
-                    className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isVerifying}
-                className="w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
-              >
-                {isVerifying ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    <span className="text-white">Memverifikasi Identitas...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-white">Verifikasi & Lanjutkan</span>
-                    <ArrowRight className="w-4 h-4 text-white" />
-                  </>
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 py-8 px-4 rounded-2xl sm:px-10 shadow-2xl">
+              <form onSubmit={handleVerify} className="space-y-6">
+                {verifyError && (
+                  <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-4 rounded-xl text-sm flex items-start gap-3">
+                    <ShieldAlert className="w-5 h-5 shrink-0 text-rose-400" />
+                    <span>{verifyError}</span>
+                  </div>
                 )}
-              </button>
-            </form>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300">
+                    NISN / NIS SISWA <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="mt-1 relative rounded-md">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <UserIcon className="h-5 w-5 text-slate-500" aria-hidden="true" />
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: 0099927510"
+                      value={identifierInput}
+                      onChange={(e) => setIdentifierInput(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all font-mono"
+                    />
+                  </div>
+                  <p className="mt-1 text-[11px] text-slate-500">Nomor Induk Siswa Nasional atau NIS saat bersekolah.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300">
+                    TANGGAL LAHIR (OPSIONAL)
+                  </label>
+                  <div className="mt-1 relative rounded-md">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Calendar className="h-5 w-5 text-slate-500" aria-hidden="true" />
+                    </div>
+                    <input
+                      type="date"
+                      value={tanggalLahirInput}
+                      onChange={(e) => setTanggalLahirInput(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <button
+                    type="submit"
+                    disabled={isVerifying}
+                    className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98 cursor-pointer shadow-lg shadow-emerald-500/20"
+                  >
+                    {isVerifying ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-emerald-950" />
+                        <span>Memverifikasi...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Verifikasi & Lanjutkan</span>
+                        <ArrowRight className="w-4 h-4 text-emerald-950" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
         {/* STEP 2: FORM TRACER STUDY */}
         {step === "form" && verifiedSiswa && (
-          <form onSubmit={handleSubmitTracer} className="space-y-8 animate-fade-in pb-12">
+          <form onSubmit={handleSubmitTracer} className="space-y-6 animate-fade-in pb-12">
             {/* Header Identity Card */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xl">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xl uppercase shrink-0">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xl uppercase shrink-0">
                   {verifiedSiswa.nama.substring(0, 2)}
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-100 leading-tight">{verifiedSiswa.nama}</h2>
+                  <h2 className="text-lg font-extrabold text-white leading-tight">{verifiedSiswa.nama}</h2>
                   <p className="text-xs text-slate-400 mt-0.5">NISN / NIS: {verifiedSiswa.nisn || verifiedSiswa.nis}</p>
                   <div className="flex items-center gap-2 mt-1.5">
                     <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-950 text-slate-300 border border-slate-800">
                       Kelas Terakhir: {verifiedSiswa.kelasTerakhir}
                     </span>
-                    <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase">
+                    <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">
                       Status: {verifiedSiswa.status}
                     </span>
                   </div>
@@ -549,24 +559,24 @@ export default function AlumniTracerClient() {
               <button
                 type="button"
                 onClick={() => setStep("verify")}
-                className="text-xs text-slate-300 hover:text-slate-100 px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 w-fit transition-all cursor-pointer font-semibold"
+                className="text-xs text-slate-300 hover:text-white px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 w-fit transition-all cursor-pointer font-semibold"
               >
                 Ganti Siswa
               </button>
             </div>
 
             {submitError && (
-              <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-300 text-xs font-semibold flex items-center gap-2.5">
-                <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
+              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-4 rounded-xl text-sm flex items-start gap-3">
+                <ShieldAlert className="w-5 h-5 shrink-0 text-rose-400" />
                 <span>{submitError}</span>
               </div>
             )}
 
             {/* SECTION INFORMASI KONTAK & DOMISILI */}
-            <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-5 backdrop-blur-xl shadow-xl">
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-5 shadow-2xl">
               <div className="border-b border-slate-800 pb-3">
-                <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                  <Phone className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <Phone className="w-5 h-5 text-emerald-400" />
                   Informasi Kontak & Domisili Alumni
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
@@ -575,53 +585,59 @@ export default function AlumniTracerClient() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300">
                     Nomor HP / WhatsApp <span className="text-rose-500">*</span>
                   </label>
-                  <div className="relative">
+                  <div className="mt-1 relative rounded-md">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Phone className="h-5 w-5 text-slate-500" />
+                    </div>
                     <input
                       type="tel"
                       required
                       placeholder="Contoh: 081234567890"
                       value={nomorHp}
                       onChange={(e) => setNomorHp(e.target.value)}
-                      className="w-full pl-10 pr-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all font-medium"
                     />
-                    <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300">
                     Alamat Email
                   </label>
-                  <div className="relative">
+                  <div className="mt-1 relative rounded-md">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-slate-500" />
+                    </div>
                     <input
                       type="email"
                       placeholder="Contoh: nama@gmail.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all font-medium"
                     />
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
                   </div>
                 </div>
 
-                <div className="sm:col-span-2 space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-slate-300">
                     Alamat Tempat Tinggal Saat Ini <span className="text-rose-500">*</span>
                   </label>
-                  <div className="relative">
+                  <div className="mt-1 relative rounded-md">
+                    <div className="absolute top-3 left-3 flex items-center pointer-events-none">
+                      <MapPin className="h-5 w-5 text-slate-500" />
+                    </div>
                     <textarea
                       rows={2}
                       required
                       placeholder="Masukkan alamat domisili saat ini (Jalan, RT/RW, Desa/Kelurahan, Kecamatan, Kota/Kabupaten, Provinsi)..."
                       value={alamat}
                       onChange={(e) => setAlamat(e.target.value)}
-                      className="w-full pl-10 pr-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all font-medium"
                     />
-                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-4 pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -630,8 +646,8 @@ export default function AlumniTracerClient() {
             {/* SECTION 1: STATUS UTAMA SAAT INI */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                  <Sparkles className="w-4.5 h-4.5 text-emerald-500 dark:text-emerald-400" />
+                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <Sparkles className="w-4.5 h-4.5 text-emerald-400" />
                   Status Utama Saat Ini <span className="text-rose-500">*</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
@@ -648,20 +664,20 @@ export default function AlumniTracerClient() {
                       key={opt.id}
                       type="button"
                       onClick={() => setStatusUtama(opt.id)}
-                      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${
+                      className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${
                         isSelected
                           ? `bg-gradient-to-br ${opt.accentBg} ${opt.accentBorder} ring-2 ring-emerald-500 shadow-xl`
-                          : "bg-slate-900/40 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-900/70"
+                          : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-900/50"
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <div className={`p-2.5 rounded-xl bg-slate-950 border border-slate-800 ${isSelected ? opt.accentText : "text-slate-400"}`}>
+                        <div className={`p-2.5 rounded-xl bg-slate-900 border border-slate-800 ${isSelected ? opt.accentText : "text-slate-400"}`}>
                           <Icon className="w-5 h-5" />
                         </div>
-                        {isSelected && <CheckCircle2 className="w-5.5 h-5.5 text-emerald-500 dark:text-emerald-400" />}
+                        {isSelected && <CheckCircle2 className="w-5.5 h-5.5 text-emerald-400" />}
                       </div>
                       <div>
-                        <h4 className="font-bold text-sm text-slate-100">{opt.title}</h4>
+                        <h4 className="font-extrabold text-sm text-white">{opt.title}</h4>
                         <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{opt.desc}</p>
                       </div>
                     </button>
@@ -671,10 +687,10 @@ export default function AlumniTracerClient() {
             </div>
 
             {/* SECTION 2: RINCIAN BERDASARKAN STATUS */}
-            <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 backdrop-blur-xl shadow-xl">
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
               <div className="border-b border-slate-800 pb-4">
-                <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                  <FileCheck className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <FileCheck className="w-5 h-5 text-emerald-400" />
                   Rincian Detail (
                   {statusOptions.find((o) => o.id === statusUtama)?.title})
                 </h3>
@@ -683,12 +699,11 @@ export default function AlumniTracerClient() {
               {/* 1. KULIAH / KEDINASAN */}
               {statusUtama === "KULIAH" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  {/* Nama Perguruan Tinggi (Live Autocomplete PDDIKTI) */}
-                  <div className="sm:col-span-2 space-y-1.5 relative">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div className="sm:col-span-2 space-y-1 relative">
+                    <label className="block text-sm font-medium text-slate-300">
                       Nama Perguruan Tinggi / Universitas (Pencarian Live PDDIKTI Kemdikbud) <span className="text-rose-500">*</span>
                     </label>
-                    <div className="relative">
+                    <div className="relative mt-1">
                       <input
                         type="text"
                         required
@@ -700,18 +715,17 @@ export default function AlumniTracerClient() {
                           setShowPtDropdown(true);
                         }}
                         onFocus={() => setShowPtDropdown(true)}
-                        className="w-full pl-3.5 pr-10 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                        className="block w-full pl-3.5 pr-10 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm transition-all font-medium"
                       />
                       {isSearchingPt ? (
-                        <Loader2 className="w-4 h-4 text-emerald-500 animate-spin absolute right-3.5 top-3.5" />
+                        <Loader2 className="w-4 h-4 text-emerald-400 animate-spin absolute right-3.5 top-3.5" />
                       ) : (
-                        <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />
+                        <Search className="w-4 h-4 text-slate-500 absolute right-3.5 top-3.5 pointer-events-none" />
                       )}
                     </div>
 
-                    {/* Autocomplete Dropdown */}
                     {showPtDropdown && (
-                      <div className="absolute left-0 right-0 top-full mt-1 bg-slate-950 border border-slate-800 rounded-2xl max-h-52 overflow-y-auto z-50 shadow-2xl divide-y divide-slate-800">
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-slate-950 border border-slate-800 rounded-xl max-h-52 overflow-y-auto z-50 shadow-2xl divide-y divide-slate-800">
                         {ptResults.length > 0 ? (
                           ptResults.map((item, idx) => (
                             <button
@@ -722,9 +736,9 @@ export default function AlumniTracerClient() {
                                 setNamaPerguruanTinggi(item);
                                 setShowPtDropdown(false);
                               }}
-                              className="w-full text-left px-4 py-2.5 text-xs text-slate-200 hover:bg-emerald-500/10 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors flex items-center gap-2 cursor-pointer font-medium"
+                              className="w-full text-left px-4 py-2.5 text-xs text-slate-200 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors flex items-center gap-2 cursor-pointer font-medium"
                             >
-                              <School className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                              <School className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                               <span>{item}</span>
                             </button>
                           ))
@@ -735,18 +749,17 @@ export default function AlumniTracerClient() {
                         )}
                       </div>
                     )}
-                    <p className="text-[10px] text-slate-400">Pencarian terintegrasi otomatis dengan API PDDIKTI Kemdikbud.</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Pencarian terintegrasi otomatis dengan API PDDIKTI Kemdikbud.</p>
                   </div>
 
-                  {/* Jenjang Pendidikan */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Jenjang Studi <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={jenjangPendidikan}
                       onChange={(e) => setJenjangPendidikan(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     >
                       <option value="D3 (Diploma 3)">D3 (Diploma 3)</option>
                       <option value="D4 (Sarjana Terapan)">D4 (Sarjana Terapan)</option>
@@ -756,16 +769,15 @@ export default function AlumniTracerClient() {
                     </select>
                   </div>
 
-                  {/* Fakultas & Prodi (Live Autocomplete PDDIKTI) */}
-                  <div className="space-y-1.5 relative">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div className="relative">
+                    <label className="block text-sm font-medium text-slate-300">
                       Fakultas & Program Studi (Pencarian PDDIKTI) <span className="text-rose-500">*</span>
                     </label>
-                    <div className="relative">
+                    <div className="relative mt-1">
                       <input
                         type="text"
                         required
-                        placeholder="Ketik nama prodi (contoh: Teknik Informatika / Manajemen)..."
+                        placeholder="Ketik nama prodi (contoh: Teknik Informatika)..."
                         value={prodiQuery}
                         onChange={(e) => {
                           setProdiQuery(e.target.value);
@@ -773,17 +785,17 @@ export default function AlumniTracerClient() {
                           setShowProdiDropdown(true);
                         }}
                         onFocus={() => setShowProdiDropdown(true)}
-                        className="w-full pl-3.5 pr-10 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                        className="block w-full pl-3.5 pr-10 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm transition-all font-medium"
                       />
                       {isSearchingProdi ? (
-                        <Loader2 className="w-4 h-4 text-emerald-500 animate-spin absolute right-3.5 top-3.5" />
+                        <Loader2 className="w-4 h-4 text-emerald-400 animate-spin absolute right-3.5 top-3.5" />
                       ) : (
-                        <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />
+                        <Search className="w-4 h-4 text-slate-500 absolute right-3.5 top-3.5 pointer-events-none" />
                       )}
                     </div>
 
                     {showProdiDropdown && (
-                      <div className="absolute left-0 right-0 top-full mt-1 bg-slate-950 border border-slate-800 rounded-2xl max-h-52 overflow-y-auto z-50 shadow-2xl divide-y divide-slate-800">
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-slate-950 border border-slate-800 rounded-xl max-h-52 overflow-y-auto z-50 shadow-2xl divide-y divide-slate-800">
                         {prodiResults.length > 0 ? (
                           prodiResults.map((item, idx) => (
                             <button
@@ -794,9 +806,9 @@ export default function AlumniTracerClient() {
                                 setFakultasProdi(item);
                                 setShowProdiDropdown(false);
                               }}
-                              className="w-full text-left px-4 py-2.5 text-xs text-slate-200 hover:bg-emerald-500/10 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors flex items-center gap-2 cursor-pointer font-medium"
+                              className="w-full text-left px-4 py-2.5 text-xs text-slate-200 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors flex items-center gap-2 cursor-pointer font-medium"
                             >
-                              <BookOpen className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                              <BookOpen className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                               <span>{item}</span>
                             </button>
                           ))
@@ -809,15 +821,14 @@ export default function AlumniTracerClient() {
                     )}
                   </div>
 
-                  {/* Jalur Masuk */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Jalur Masuk <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={jalurMasuk}
                       onChange={(e) => setJalurMasuk(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     >
                       <option value="SNBP (Seleksi Nasional Berdasarkan Prestasi)">SNBP (Seleksi Nasional Berdasarkan Prestasi)</option>
                       <option value="SNBT (Seleksi Nasional Berdasarkan Tes)">SNBT (Seleksi Nasional Berdasarkan Tes)</option>
@@ -827,15 +838,14 @@ export default function AlumniTracerClient() {
                     </select>
                   </div>
 
-                  {/* Status Pembiayaan */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Status Pembiayaan <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={statusPembiayaan}
                       onChange={(e) => setStatusPembiayaan(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     >
                       <option value="Mandiri">Mandiri</option>
                       <option value="Beasiswa / KIP Kuliah">Beasiswa / KIP Kuliah</option>
@@ -849,8 +859,8 @@ export default function AlumniTracerClient() {
               {/* 2. BEKERJA */}
               {statusUtama === "BEKERJA" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="sm:col-span-2 space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-slate-300">
                       Nama Perusahaan / Instansi / Tempat Kerja <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -859,12 +869,12 @@ export default function AlumniTracerClient() {
                       placeholder="Contoh: PT Telekomunikasi Indonesia (Telkom)"
                       value={namaPerusahaan}
                       onChange={(e) => setNamaPerusahaan(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Posisi / Jabatan <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -873,12 +883,12 @@ export default function AlumniTracerClient() {
                       placeholder="Contoh: Junior Software Engineer"
                       value={posisiJabatan}
                       onChange={(e) => setPosisiJabatan(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Bidang Pekerjaan <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -887,18 +897,18 @@ export default function AlumniTracerClient() {
                       placeholder="Contoh: Teknologi Informasi & Software"
                       value={bidangPekerjaan}
                       onChange={(e) => setBidangPekerjaan(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Estimasi Waktu Tunggu Hingga Dapat Kerja <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={waktuTungguKerja}
                       onChange={(e) => setWaktuTungguKerja(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     >
                       <option value="< 1 bulan">&lt; 1 bulan</option>
                       <option value="1 - 3 bulan">1 - 3 bulan</option>
@@ -907,8 +917,8 @@ export default function AlumniTracerClient() {
                     </select>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Kisaran Pendapatan Bulanan (Opsional)
                     </label>
                     <input
@@ -916,7 +926,7 @@ export default function AlumniTracerClient() {
                       placeholder="Contoh: Rp 4.500.000 - Rp 6.000.000"
                       value={kisaranPendapatan}
                       onChange={(e) => setKisaranPendapatan(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
                 </div>
@@ -925,8 +935,8 @@ export default function AlumniTracerClient() {
               {/* 3. BERWIRAUSAHA */}
               {statusUtama === "WIRAUSAHA" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Nama Usaha / Merek <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -935,12 +945,12 @@ export default function AlumniTracerClient() {
                       placeholder="Contoh: Coffee Shop Kawal / Creative Studio"
                       value={namaUsaha}
                       onChange={(e) => setNamaUsaha(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Bidang Usaha <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -949,18 +959,18 @@ export default function AlumniTracerClient() {
                       placeholder="Kuliner, Fashion, Agribisnis, Jasa Digital, Retail, dll."
                       value={bidangUsaha}
                       onChange={(e) => setBidangUsaha(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Status Kepemilikan <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={statusKepemilikan}
                       onChange={(e) => setStatusKepemilikan(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     >
                       <option value="Usaha Sendiri">Usaha Sendiri</option>
                       <option value="Kemitraan / Franchise">Kemitraan / Franchise</option>
@@ -968,8 +978,8 @@ export default function AlumniTracerClient() {
                     </select>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Jumlah Karyawan (Jika Ada)
                     </label>
                     <input
@@ -977,7 +987,7 @@ export default function AlumniTracerClient() {
                       placeholder="Contoh: 3 Orang"
                       value={jumlahKaryawan}
                       onChange={(e) => setJumlahKaryawan(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
                 </div>
@@ -986,8 +996,8 @@ export default function AlumniTracerClient() {
               {/* 4. PELATIHAN / KURSUS / BLK */}
               {statusUtama === "PELATIHAN" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Nama Lembaga Pelatihan / BLK <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -996,12 +1006,12 @@ export default function AlumniTracerClient() {
                       placeholder="Contoh: BLK Kota / Digitalent Scholarship"
                       value={namaLembaga}
                       onChange={(e) => setNamaLembaga(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Bidang Keahlian <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -1010,18 +1020,18 @@ export default function AlumniTracerClient() {
                       placeholder="Bahasa Asing, IT/Coding, Otomotif, Tata Boga, dll."
                       value={bidangKeahlian}
                       onChange={(e) => setBidangKeahlian(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Durasi Program <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={durasiProgram}
                       onChange={(e) => setDurasiProgram(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     >
                       <option value="< 3 bulan">&lt; 3 bulan</option>
                       <option value="3 - 6 bulan">3 - 6 bulan</option>
@@ -1029,14 +1039,14 @@ export default function AlumniTracerClient() {
                     </select>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Rencana Pasca Pelatihan <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={rencanaPasca}
                       onChange={(e) => setRencanaPasca(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     >
                       <option value="Langsung mencari kerja">Langsung mencari kerja</option>
                       <option value="Membuka usaha mandiri">Membuka usaha mandiri</option>
@@ -1049,14 +1059,14 @@ export default function AlumniTracerClient() {
               {/* 5. SEDANG MENCARI PEKERJAAN */}
               {statusUtama === "MENCARI_KERJA" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Lama Waktu Mencari Kerja <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={lamaMencariKerja}
                       onChange={(e) => setLamaMencariKerja(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     >
                       <option value="< 1 bulan">&lt; 1 bulan</option>
                       <option value="1 - 3 bulan">1 - 3 bulan</option>
@@ -1065,14 +1075,14 @@ export default function AlumniTracerClient() {
                     </select>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Saluran Pencarian Kerja Utama <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={saluranPencarian}
                       onChange={(e) => setSaluranPencarian(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     >
                       <option value="Portal Kerja (Jobstreet/LinkedIn)">Portal Kerja (Jobstreet/LinkedIn)</option>
                       <option value="Bursa Kerja Khusus (BKK) Sekolah">Bursa Kerja Khusus (BKK) Sekolah</option>
@@ -1081,8 +1091,8 @@ export default function AlumniTracerClient() {
                     </select>
                   </div>
 
-                  <div className="sm:col-span-2 space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-slate-300">
                       Kendala Utama yang Dihadapi
                     </label>
                     <input
@@ -1090,12 +1100,12 @@ export default function AlumniTracerClient() {
                       placeholder="Contoh: Minim pengalaman kerja, butuh sertifikasi khusus"
                       value={kendalaUtama}
                       onChange={(e) => setKendalaUtama(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
 
-                  <div className="sm:col-span-2 space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-slate-300">
                       Bantuan yang Diharapkan dari Sekolah
                     </label>
                     <input
@@ -1103,7 +1113,7 @@ export default function AlumniTracerClient() {
                       placeholder="Contoh: Info bursa kerja alumni, pelatihan pembuatan CV & wawancara"
                       value={bantuanSekolah}
                       onChange={(e) => setBantuanSekolah(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
                 </div>
@@ -1112,8 +1122,8 @@ export default function AlumniTracerClient() {
               {/* 6. MENGURUS KELUARGA */}
               {statusUtama === "MENGURUS_KELUARGA" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="sm:col-span-2 space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-slate-300">
                       Alasan Utama <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -1122,18 +1132,18 @@ export default function AlumniTracerClient() {
                       placeholder="Contoh: Membantu usaha keluarga, merawat keluarga"
                       value={alasanUtamaKeluarga}
                       onChange={(e) => setAlasanUtamaKeluarga(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Rencana Masa Depan <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={rencanaMasaDepan}
                       onChange={(e) => setRencanaMasaDepan(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     >
                       <option value="Berencana bekerja nanti">Berencana bekerja nanti</option>
                       <option value="Berencana membuka usaha nanti">Berencana membuka usaha nanti</option>
@@ -1146,14 +1156,14 @@ export default function AlumniTracerClient() {
               {/* 7. GAP YEAR / PERSIAPAN SELEKSI */}
               {statusUtama === "GAP_YEAR" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Target Seleksi Berikutnya <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={targetSeleksi}
                       onChange={(e) => setTargetSeleksi(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     >
                       <option value="SNBT (Seleksi Nasional Berdasarkan Tes)">SNBT (Seleksi Nasional Berdasarkan Tes)</option>
                       <option value="Sekolah Kedinasan">Sekolah Kedinasan</option>
@@ -1163,8 +1173,8 @@ export default function AlumniTracerClient() {
                     </select>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
                       Aktivitas Pengisi Waktu
                     </label>
                     <input
@@ -1172,7 +1182,7 @@ export default function AlumniTracerClient() {
                       placeholder="Contoh: Belajar intensif bimbel, magang singkat"
                       value={aktivitasPengisi}
                       onChange={(e) => setAktivitasPengisi(e.target.value)}
-                      className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                      className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                     />
                   </div>
                 </div>
@@ -1180,10 +1190,10 @@ export default function AlumniTracerClient() {
             </div>
 
             {/* SECTION 3: EVALUASI SEKOLAH & UMPAN BALIK */}
-            <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 backdrop-blur-xl shadow-xl">
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
               <div className="border-b border-slate-800 pb-4">
-                <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-pink-500 dark:text-pink-400" />
+                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-pink-400" />
                   Evaluasi Sekolah & Umpan Balik
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
@@ -1192,14 +1202,14 @@ export default function AlumniTracerClient() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300">
                     Relevansi Kurikulum <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={relevansiKurikulum}
                     onChange={(e) => setRelevansiKurikulum(e.target.value)}
-                    className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                    className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                   >
                     <option value="SANGAT_RELEVAN">Sangat Relevan</option>
                     <option value="RELEVAN">Relevan</option>
@@ -1208,14 +1218,14 @@ export default function AlumniTracerClient() {
                   </select>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300">
                     Penilaian Fasilitas <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={penilaianFasilitas}
                     onChange={(e) => setPenilaianFasilitas(e.target.value)}
-                    className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                    className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                   >
                     <option value="SANGAT_BAIK">Sangat Baik</option>
                     <option value="BAIK">Baik</option>
@@ -1224,14 +1234,14 @@ export default function AlumniTracerClient() {
                   </select>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300">
                     Layanan BKK / Karir <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={penilaianBKK}
                     onChange={(e) => setPenilaianBKK(e.target.value)}
-                    className="w-full px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                    className="mt-1 block w-full px-3.5 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                   >
                     <option value="SANGAT_BAIK">Sangat Baik</option>
                     <option value="BAIK">Baik</option>
@@ -1240,8 +1250,8 @@ export default function AlumniTracerClient() {
                   </select>
                 </div>
 
-                <div className="sm:col-span-3 space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <div className="sm:col-span-3">
+                  <label className="block text-sm font-medium text-slate-300">
                     Masukan & Saran untuk Sekolah
                   </label>
                   <textarea
@@ -1249,22 +1259,22 @@ export default function AlumniTracerClient() {
                     placeholder="Tuliskan masukan atau saran pengembangan sekolah..."
                     value={saranSekolah}
                     onChange={(e) => setSaranSekolah(e.target.value)}
-                    className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                    className="mt-1 block w-full p-3.5 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm font-medium"
                   />
                 </div>
 
                 {/* CAREER DAY & CAMPUS EXPO CONSENT CHECKBOX */}
                 <div className="sm:col-span-3 pt-3 border-t border-slate-800">
-                  <label className="flex items-start gap-3 cursor-pointer group p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-emerald-500/50 transition-all">
+                  <label className="flex items-start gap-3 cursor-pointer group p-4 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-emerald-500/50 transition-all">
                     <input
                       type="checkbox"
                       checked={bersediaDihubungi}
                       onChange={(e) => setBersediaDihubungi(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 rounded border-slate-700 text-emerald-600 focus:ring-emerald-500 bg-slate-900 accent-emerald-500 cursor-pointer"
+                      className="mt-0.5 w-4 h-4 rounded border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-slate-900 accent-emerald-500 cursor-pointer"
                     />
                     <div className="space-y-1">
                       <span className="text-xs font-bold text-slate-200 group-hover:text-emerald-400 transition-colors flex items-center gap-2">
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
                         Bersedia dihubungi sekolah terkait kegiatan Career Day atau Campus Expo
                       </span>
                       <p className="text-[11px] text-slate-400 leading-relaxed">
@@ -1276,22 +1286,22 @@ export default function AlumniTracerClient() {
               </div>
             </div>
 
-            {/* Submit Action Button */}
+            {/* Submit Action Button - Identical to Login Button */}
             <div className="flex items-center justify-end gap-4 pt-2">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="py-4 px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-xl shadow-emerald-500/20 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                className="w-full sm:w-auto flex justify-center items-center gap-2 py-3.5 px-8 border border-transparent rounded-xl text-sm font-semibold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98 cursor-pointer shadow-lg shadow-emerald-500/20"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin text-white" />
-                    <span className="text-white">Menyimpan Tracer Study...</span>
+                    <Loader2 className="w-5 h-5 animate-spin text-emerald-950" />
+                    <span>Menyimpan Tracer...</span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-5 h-5 text-white" />
-                    <span className="text-white">Kirim Data Tracer Study</span>
+                    <CheckCircle2 className="w-5 h-5 text-emerald-950" />
+                    <span>Kirim Data Tracer Study</span>
                   </>
                 )}
               </button>
@@ -1302,30 +1312,30 @@ export default function AlumniTracerClient() {
         {/* STEP 3: SUCCESS CONFIRMATION */}
         {step === "success" && verifiedSiswa && (
           <div className="max-w-md mx-auto text-center space-y-6 py-12 animate-fade-in">
-            <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-500 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-2xl">
+            <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-2xl">
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-slate-100 tracking-tight">Survei Tracer Study Berhasil Dikirim!</h2>
+              <h2 className="text-2xl font-extrabold text-white tracking-tight">Survei Tracer Study Berhasil Dikirim!</h2>
               <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
-                Terima kasih kepada <strong className="text-slate-100">{verifiedSiswa.nama}</strong> telah berkontribusi mengisi data Tracer Study. Sukses selalu untuk karir & studi Anda!
+                Terima kasih kepada <strong className="text-white">{verifiedSiswa.nama}</strong> telah berkontribusi mengisi data Tracer Study. Sukses selalu untuk karir & studi Anda!
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-left space-y-2.5 text-xs backdrop-blur-xl shadow-xl">
+            <div className="p-4 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 text-left space-y-2.5 text-xs shadow-2xl">
               <div className="flex justify-between border-b border-slate-800 pb-2">
-                <span className="text-slate-400">Status Utama:</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">{statusOptions.find((o) => o.id === statusUtama)?.title}</span>
+                <span className="text-slate-400 font-medium">Status Utama:</span>
+                <span className="font-bold text-emerald-400">{statusOptions.find((o) => o.id === statusUtama)?.title}</span>
               </div>
               <div className="flex justify-between pt-1">
-                <span className="text-slate-400">Kelas Terakhir:</span>
-                <span className="text-slate-100 font-medium">{verifiedSiswa.kelasTerakhir}</span>
+                <span className="text-slate-400 font-medium">Kelas Terakhir:</span>
+                <span className="text-white font-medium">{verifiedSiswa.kelasTerakhir}</span>
               </div>
             </div>
 
             <button
               onClick={() => setStep("verify")}
-              className="py-3 px-6 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-100 font-bold text-xs transition-all cursor-pointer"
+              className="py-3 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white font-semibold text-xs transition-all cursor-pointer"
             >
               Pengisian Baru / Siswa Lain
             </button>
@@ -1334,7 +1344,7 @@ export default function AlumniTracerClient() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 py-6 text-center text-slate-400 text-xs">
+      <footer className="border-t border-slate-800/80 py-6 text-center text-slate-500 text-xs z-20">
         <p>&copy; {new Date().getFullYear()} KAWAL Sekolahan &bull; Sistem Informasi Kesiswaan & Alumni</p>
       </footer>
     </div>
