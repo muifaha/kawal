@@ -484,9 +484,9 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
           </div>
         </div>
 
-        {/* Form Card Container - Identical to Login Page Card */}
+        {/* Form Card Container - 100% Identical to Login Page Card */}
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md z-10 px-4">
-          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 py-8 px-4 rounded-2xl sm:px-10 shadow-2xl space-y-6">
+          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 py-8 px-4 rounded-2xl sm:px-10">
             <form onSubmit={handleVerify} className="space-y-6">
               {verifyError && (
                 <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-4 rounded-xl text-sm flex items-start gap-3">
@@ -498,7 +498,7 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
               {/* Input 1: NISN / NIS */}
               <div>
                 <label htmlFor="identifier" className="block text-sm font-medium text-slate-300">
-                  NISN / NIS Siswa <span className="text-rose-500">*</span>
+                  NISN / NIS
                 </label>
                 <div className="mt-1 relative rounded-md">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -512,16 +512,15 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
                     placeholder="Masukkan NISN atau NIS Anda"
                     value={identifierInput}
                     onChange={(e) => setIdentifierInput(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all font-mono"
+                    className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all"
                   />
                 </div>
-                <p className="mt-1 text-[11px] text-slate-500">Nomor Induk Siswa Nasional atau NIS saat sekolah.</p>
               </div>
 
               {/* Input 2: Tanggal Lahir (WAJIB) */}
               <div>
                 <label htmlFor="tanggalLahir" className="block text-sm font-medium text-slate-300">
-                  Tanggal Lahir <span className="text-rose-500">*</span>
+                  Tanggal Lahir
                 </label>
                 <div className="mt-1 relative rounded-md">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -534,30 +533,19 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
                     required
                     value={tanggalLahirInput}
                     onChange={(e) => setTanggalLahirInput(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all cursor-pointer"
+                    className="block w-full pl-10 pr-3 py-3 border border-slate-800 rounded-xl bg-slate-950/60 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all font-sans"
                   />
                 </div>
-                <p className="mt-1 text-[11px] text-slate-500">Pilih tanggal lahir sesuai data sekolah.</p>
               </div>
 
-              {/* Submit Button */}
+              {/* Submit Button - 100% Identical to Login Page Button */}
               <div>
                 <button
                   type="submit"
                   disabled={isVerifying}
-                  className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98 cursor-pointer shadow-lg shadow-emerald-500/20"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-98"
                 >
-                  {isVerifying ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
-                      <span className="text-white">Memverifikasi...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-white">Verifikasi</span>
-                      <ArrowRight className="w-4 h-4 text-white" />
-                    </>
-                  )}
+                  {isVerifying ? "Memverifikasi..." : "Verifikasi"}
                 </button>
               </div>
             </form>
