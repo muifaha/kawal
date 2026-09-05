@@ -7,11 +7,13 @@ const PUBLIC_PATHS = ["/login", "/api/auth/login", "/alumni", "/ppid"];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Lewati file statis, aset, gambar, API alumni public, ppid, dan internal nextjs
+  // Lewati file statis, aset, gambar, API alumni public, ppid, public api data, dan internal nextjs
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/pddikti/") ||
+    pathname.startsWith("/api/get_public_data") ||
+    pathname.startsWith("/api/public_data") ||
     pathname.startsWith("/alumni") ||
     pathname.startsWith("/ppid") ||
     pathname.includes(".") ||
