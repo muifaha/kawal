@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Trophy,
   PlusCircle,
@@ -105,6 +105,13 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
   const [activeTab, setActiveTab] = useState<"input" | "list">(
     user.role === "WALAS" ? "list" : defaultTab
   );
+
+  useEffect(() => {
+    if (user.role !== "WALAS") {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab, user.role]);
+
   const [prestasiList, setPrestasiList] = useState<PrestasiItem[]>(initialPrestasiList);
 
   // Form States

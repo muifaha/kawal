@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
 import { ToastProvider } from "./Toast";
 import {
@@ -42,6 +42,8 @@ let cachedSettings: { schoolName: string; schoolLogo: string } | null = null;
 
 export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab");
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -53,7 +55,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
 
   useEffect(() => {
     setIsNavigating(false);
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     const localName = localStorage.getItem("cachedSchoolName");
@@ -95,6 +97,18 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
     } else {
       document.documentElement.classList.remove("light");
     }
+  };
+
+  const checkIsChildActive = (childHref: string) => {
+    if (childHref.includes("?")) {
+      const [path, query] = childHref.split("?");
+      if (pathname !== path) return false;
+      const params = new URLSearchParams(query);
+      const expectedTab = params.get("tab");
+      const activeTab = currentTab || "list";
+      return activeTab === expectedTab;
+    }
+    return pathname === childHref;
   };
 
   interface NavigationItem {
@@ -211,9 +225,20 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
     },
     {
       name: "Prestasi Siswa",
-      href: "/prestasi?tab=list",
       icon: Trophy,
-      roles: ["WAKA", "GURU", "PEMBINA_OSIS"],
+      roles: ["WAKA", "BK", "GURU", "PEMBINA_OSIS", "WALAS"],
+      children: [
+        {
+          name: "Daftar Prestasi",
+          href: "/prestasi?tab=list",
+          roles: ["WAKA", "BK", "GURU", "PEMBINA_OSIS", "WALAS"],
+        },
+        {
+          name: "Tambah Prestasi",
+          href: "/prestasi?tab=input",
+          roles: ["WAKA", "BK", "GURU", "PEMBINA_OSIS"],
+        },
+      ],
     },
     {
       name: "Bimbingan Konseling",
@@ -321,7 +346,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
                     </div>
                     <div className="pl-4 space-y-1 border-l border-slate-800 ml-6">
                       {item.children.map((child) => {
-                        const isChildActive = pathname === child.href;
+                        const isChildActive = checkIsChildActive(child.href);
                         return (
                           <Link
                             key={child.name}
@@ -457,7 +482,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
                       </div>
                       <div className="pl-4 space-y-1 border-l border-slate-800 ml-6">
                         {item.children.map((child) => {
-                          const isChildActive = pathname === child.href;
+                          const isChildActive = checkIsChildActive(child.href);
                           return (
                             <Link
                               key={child.name}
