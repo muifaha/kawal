@@ -20,7 +20,11 @@ export function middleware(request: NextRequest) {
     if (pathname === "/") {
       return NextResponse.redirect(new URL("/login", request.url));
     }
-    return NextResponse.next();
+    const res = NextResponse.next();
+    if (pathname.startsWith("/alumni") || pathname.startsWith("/ppid")) {
+      res.headers.set("Content-Security-Policy", "frame-ancestors *;");
+    }
+    return res;
   }
 
   // Ambil token sesi dari cookie
