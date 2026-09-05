@@ -150,6 +150,30 @@ export default function AlumniTracerClient({ schoolName = "KAWAL Sekolahan", sch
       .catch((err) => console.error("Error fetching settings:", err));
   }, []);
 
+  // Auto-resize postMessage for WordPress iframe embedding without scrollbar
+  useEffect(() => {
+    const sendHeight = () => {
+      if (typeof window !== "undefined" && window.parent) {
+        const height = Math.max(
+          document.documentElement.scrollHeight,
+          document.body.scrollHeight
+        );
+        window.parent.postMessage({ type: "kawal-iframe-resize", height }, "*");
+      }
+    };
+
+    sendHeight();
+    const timer = setTimeout(sendHeight, 300);
+    const interval = setInterval(sendHeight, 1000);
+    window.addEventListener("resize", sendHeight);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+      window.removeEventListener("resize", sendHeight);
+    };
+  }, [step, statusUtama]);
+
   // Debounced Search for PDDIKTI PT
   useEffect(() => {
     if (!ptQuery || ptQuery.trim().length < 2) {
