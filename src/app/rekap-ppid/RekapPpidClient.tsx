@@ -113,6 +113,36 @@ export default function RekapPpidClient({
     setFeedbackMsg(null);
   };
 
+  const handleDownloadFile = (fileData: string, fileName: string) => {
+    try {
+      if (fileData.startsWith("data:")) {
+        const parts = fileData.split(",");
+        const mimeMatch = parts[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+        const bstr = atob(parts[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        const blob = new Blob([u8arr], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      } else {
+        window.open(fileData, "_blank");
+      }
+    } catch (err) {
+      console.error("Download error:", err);
+      alert("Gagal mengunduh file.");
+    }
+  };
+
   const handleSaveStatus = async () => {
     if (!selectedItem) return;
     setIsSubmittingUpdate(true);
@@ -575,32 +605,75 @@ export default function RekapPpidClient({
                 </div>
 
                 {/* Uploaded Attachment */}
-                {selectedItem.type === "permohonan" && (selectedItem.data as PermohonanItem).fileIdentitas && (
-                  <div className="pt-2 border-t border-slate-800">
-                    <span className="text-slate-500 block text-[10px] mb-1">Lampiran Identitas (KTP/KTM/SIM)</span>
-                    <a
-                      href={(selectedItem.data as PermohonanItem).fileIdentitas!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition text-xs"
-                    >
-                      <Download className="w-3.5 h-3.5" /> Lihat / Unduh Dokumen Identitas
-                    </a>
-                  </div>
-                )}
-                {selectedItem.type === "keberatan" && (selectedItem.data as KeberatanItem).fileBuktiAwal && (
-                  <div className="pt-2 border-t border-slate-800">
-                    <span className="text-slate-500 block text-[10px] mb-1">Lampiran Bukti Permohonan Awal</span>
-                    <a
-                      href={(selectedItem.data as KeberatanItem).fileBuktiAwal!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 transition text-xs"
-                    >
-                      <Download className="w-3.5 h-3.5" /> Lihat / Unduh Bukti Awal
-                    </a>
-                  </div>
-                )}
+                {selectedItem.type === "permohonan" && (selectedItem.data as PermohonanItem).fileIdentitas && (() => {
+                  const fileData = (selectedItem.data as PermohonanItem).fileIdentitas!;
+                  const isImage = fileData.startsWith("data:image/") || fileData.match(/\.(jpg|jpeg|png|gif|webp)/i);
+                  const isPdf = fileData.startsWith("data:application/pdf") || fileData.endsWith(".pdf");
+                  return (
+                    <div className="pt-3 border-t border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 font-medium text-[11px]">Lampiran Identitas (KTP/KTM/SIM)</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadFile(fileData, `Identitas_${selectedItem.data.nomorRegistrasi.replace(/\//g, "_")}`)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition text-xs font-medium"
+                        >
+                          <Download className="w-3.5 h-3.5" /> Unduh Berkas
+                        </button>
+                      </div>
+
+                      {/* Visual Preview */}
+                      {isImage ? (
+                        <div className="bg-slate-900 border border-slate-800 rounded-xl p-2 max-h-72 overflow-hidden flex justify-center items-center">
+                          <img
+                            src={fileData}
+                            alt="Identitas Pemohon"
+                            className="max-h-64 object-contain rounded-lg"
+                          />
+                        </div>
+                      ) : isPdf ? (
+                        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden h-64">
+                          <iframe src={fileData} className="w-full h-full border-none" title="PDF Preview" />
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })()}
+
+                {selectedItem.type === "keberatan" && (selectedItem.data as KeberatanItem).fileBuktiAwal && (() => {
+                  const fileData = (selectedItem.data as KeberatanItem).fileBuktiAwal!;
+                  const isImage = fileData.startsWith("data:image/") || fileData.match(/\.(jpg|jpeg|png|gif|webp)/i);
+                  const isPdf = fileData.startsWith("data:application/pdf") || fileData.endsWith(".pdf");
+                  return (
+                    <div className="pt-3 border-t border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 font-medium text-[11px]">Lampiran Bukti Permohonan Awal</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadFile(fileData, `Bukti_${selectedItem.data.nomorRegistrasi.replace(/\//g, "_")}`)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 transition text-xs font-medium"
+                        >
+                          <Download className="w-3.5 h-3.5" /> Unduh Berkas Bukti
+                        </button>
+                      </div>
+
+                      {/* Visual Preview */}
+                      {isImage ? (
+                        <div className="bg-slate-900 border border-slate-800 rounded-xl p-2 max-h-72 overflow-hidden flex justify-center items-center">
+                          <img
+                            src={fileData}
+                            alt="Bukti Permohonan Awal"
+                            className="max-h-64 object-contain rounded-lg"
+                          />
+                        </div>
+                      ) : isPdf ? (
+                        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden h-64">
+                          <iframe src={fileData} className="w-full h-full border-none" title="PDF Preview" />
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Rincian Permohonan / Keberatan */}
