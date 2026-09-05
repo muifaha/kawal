@@ -85,14 +85,8 @@ export default function PpidClient({
 
   // Sync Theme & Fetch Settings
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    const activeTheme = savedTheme || "light";
-    setTheme(activeTheme);
-    if (activeTheme === "light") {
-      document.documentElement.classList.add("light");
-    } else {
-      document.documentElement.classList.remove("light");
-    }
+    setTheme("light");
+    document.documentElement.classList.add("light");
 
     const localName = localStorage.getItem("cachedSchoolName");
     const localLogo = localStorage.getItem("cachedSchoolLogo");
@@ -113,17 +107,6 @@ export default function PpidClient({
       })
       .catch((err) => console.error("Error fetching settings:", err));
   }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    if (newTheme === "light") {
-      document.documentElement.classList.add("light");
-    } else {
-      document.documentElement.classList.remove("light");
-    }
-  };
 
   // Handle File Upload (Max 5MB)
   const handleFileUpload = (
@@ -265,22 +248,6 @@ export default function PpidClient({
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
-      {/* Theme Toggle Button - Identical to Login/Alumni Page */}
-      <div className="absolute top-4 right-4 z-20">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all focus:outline-none cursor-pointer"
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? (
-            <Sun className="w-5 h-5 text-amber-400" />
-          ) : (
-            <Moon className="w-5 h-5 text-indigo-400" />
-          )}
-        </button>
-      </div>
-
       {/* Background Gradient Orbs - Identical to Login/Alumni Page */}
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
