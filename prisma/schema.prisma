@@ -484,3 +484,40 @@ model PrestasiSiswaAnggota {
 
   @@unique([prestasiId, siswaId])
 }
+
+// PPID: Permohonan Informasi & Pengajuan Keberatan Publik
+model PpidPermohonan {
+  id                String   @id @default(uuid())
+  nomorRegistrasi   String   @unique // Contoh: PPID-6TNG/2026/0001
+  namaLengkap       String
+  nik               String   // 16 digit NIK/KTP
+  kategoriPemohon   String   // PERORANGAN, KELOMPOK, PESERTA_DIDIK
+  alamat            String
+  nomorHp           String
+  email             String
+  fileIdentitas     String?  // Base64 / Path file KTP/KTM/SIM
+  rincianInformasi  String
+  tujuanPenggunaan  String
+  caraMemperoleh    String   // MELIHAT_MEMBACA, SOFTCOPY, HARDCOPY
+  caraPengiriman    String   // EMAIL, WHATSAPP, DIAMBIL_LANGSUNG
+  status            String   @default("PENDING") // PENDING, DIPROSES, DISETUJUI, DITOLAK, SELESAI
+  tanggapan         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model PpidKeberatan {
+  id                  String   @id @default(uuid())
+  nomorRegistrasi     String   @unique // Contoh: KEBERATAN-6TNG/2026/0001
+  nomorPermohonan     String   // Nomor Pendaftaran Permohonan Sebelumnya
+  namaLengkap         String
+  nomorHp             String
+  email               String
+  alasanKeberatan     String[] // Checklist alasan pengajuan keberatan
+  penjelasanKeberatan String
+  fileBuktiAwal       String?  // Base64 / Path file bukti permohonan awal
+  status              String   @default("PENDING") // PENDING, DIPROSES, DISETUJUI, DITOLAK, SELESAI
+  tanggapan           String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}

@@ -26,6 +26,7 @@ import {
   Trophy,
   UserCheck,
   GraduationCap,
+  FileText,
 } from "lucide-react";
 
 interface SidebarLayoutProps {
@@ -274,6 +275,12 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       href: "/rekap-alumni",
       icon: GraduationCap,
       roles: ["WAKA", "BK", "WALAS", "GURU"],
+    },
+    {
+      name: "Layanan PPID",
+      href: "/rekap-ppid",
+      icon: FileText,
+      roles: ["WAKA", "BK"],
     },
   ];
 
