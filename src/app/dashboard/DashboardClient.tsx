@@ -48,6 +48,7 @@ import {
 import { resolveSummonsAction } from "@/app/actions/kesiswaan";
 import { sendDailyAttendanceToWAGroupAction } from "@/app/actions/attendance";
 import { printSingleSummons, printBulkSummons } from "@/lib/printUtils";
+import { formatPoin } from "@/lib/attendanceUtils";
 import { toggleCensorViolationAction } from "@/app/actions/violation";
 import { calculateAttendanceRate } from "@/lib/attendanceUtils";
 import * as XLSX from "xlsx";
@@ -1182,7 +1183,7 @@ export default function DashboardClient({
 
     const result = Object.values(studentMap).map((student) => ({
       ...student,
-      totalPoin: Math.max(0, student.totalPoin),
+      totalPoin: Math.max(0, Math.round(student.totalPoin * 100) / 100),
     }));
 
     return result.sort((a, b) => b.totalPoin - a.totalPoin);
@@ -1194,7 +1195,7 @@ export default function DashboardClient({
     const violationPointsMap: Record<string, number> = {};
     localViolationRecap.forEach((v) => {
       if (v.status === "APPROVED") {
-        violationPointsMap[v.studentNis] = (violationPointsMap[v.studentNis] || 0) + v.poin;
+        violationPointsMap[v.studentNis] = Math.round(((violationPointsMap[v.studentNis] || 0) + v.poin) * 100) / 100;
       }
     });
 
@@ -2721,7 +2722,7 @@ export default function DashboardClient({
                                       : "bg-slate-800 text-slate-300"
                                   }`}
                                 >
-                                  {Math.round(student.points * 100) / 100} Poin
+                                  {formatPoin(student.points)} Poin
                                 </span>
                               </td>
                               <td className="py-3.5 px-4 text-center whitespace-nowrap">
@@ -2910,7 +2911,7 @@ export default function DashboardClient({
                         ? "text-amber-400"
                         : "text-emerald-400"
                     }`}>
-                      {selectedStudentInfo.totalPoin} Poin
+                      {formatPoin(selectedStudentInfo.totalPoin)} Poin
                     </p>
                     <p className="text-[10px] text-slate-500 font-medium mt-0.5">
                       {selectedStudentInfo.countApproved} Pelanggaran Sah
@@ -3047,7 +3048,7 @@ export default function DashboardClient({
                                   <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${
                                     item.poin > 0 ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                                   }`}>
-                                    {item.poin > 0 ? `+${item.poin}` : item.poin} Poin
+                                    {item.poin > 0 ? `+${formatPoin(item.poin)}` : formatPoin(item.poin)} Poin
                                   </span>
                                 )}
                               </div>

@@ -29,3 +29,9 @@ export function calculateAttendanceRate(counts: AttendanceCounts): number {
 export function getAttendanceAbsencePoints(counts: AttendanceCounts): number {
   return Math.round((((counts.A || 0) * 1.0) + ((counts.I || 0) * 0.7) + ((counts.S || 0) * 0.5)) * 10) / 10;
 }
+
+export function formatPoin(val: number | undefined | null): string {
+  if (val === undefined || val === null || isNaN(val)) return "0";
+  const rounded = Math.round(val * 100) / 100;
+  return Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
+}

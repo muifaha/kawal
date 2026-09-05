@@ -14,7 +14,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { calculateAttendanceRate } from "@/lib/attendanceUtils";
+import { calculateAttendanceRate, formatPoin } from "@/lib/attendanceUtils";
 import { toggleCensorViolationAction } from "@/app/actions/violation";
 
 interface ClassOption {
@@ -155,7 +155,7 @@ export default function RekapPelanggaranClient({
 
     return Object.values(studentMap).map((student) => ({
       ...student,
-      totalPoin: Math.max(0, student.totalPoin),
+      totalPoin: Math.max(0, Math.round(student.totalPoin * 100) / 100),
     }));
   }, [localViolationRecap]);
 
@@ -363,7 +363,7 @@ export default function RekapPelanggaranClient({
                       : "text-emerald-400"
                   }`}
                 >
-                  {selectedStudentInfo.totalPoin} Poin
+                  {formatPoin(selectedStudentInfo.totalPoin)} Poin
                 </p>
                 <p className="text-[10px] text-slate-500 font-medium mt-0.5">
                   {selectedStudentInfo.countApproved} Pelanggaran Sah
@@ -524,9 +524,9 @@ export default function RekapPelanggaranClient({
                                 }`}
                               >
                                 {item.poin > 0
-                                  ? `+${item.poin} Poin`
+                                  ? `+${formatPoin(item.poin)} Poin`
                                   : item.poin < 0
-                                  ? `${item.poin} Poin`
+                                  ? `${formatPoin(item.poin)} Poin`
                                   : "0 Poin"}
                               </span>
                             </div>
@@ -838,7 +838,7 @@ export default function RekapPelanggaranClient({
                                   : "bg-slate-800 text-slate-300"
                               }`}
                             >
-                              {item.totalPoin} Poin
+                              {formatPoin(item.totalPoin)} Poin
                             </span>
                           </td>
                           <td className="py-3 px-4 text-center">
@@ -959,7 +959,7 @@ export default function RekapPelanggaranClient({
                                 : "text-slate-400"
                             }`}
                           >
-                            {item.poin > 0 ? `+${item.poin}` : item.poin}
+                            {item.poin > 0 ? `+${formatPoin(item.poin)}` : formatPoin(item.poin)}
                           </td>
                           <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
                             {item.pelaporName}

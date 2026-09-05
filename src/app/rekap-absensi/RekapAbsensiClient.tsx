@@ -6,6 +6,7 @@ import {
   getSemesterAttendanceMatrixAction,
 } from "@/app/actions/attendance";
 import { CalendarCheck, RefreshCw } from "lucide-react";
+import { formatPoin } from "@/lib/attendanceUtils";
 
 interface ClassOption {
   id: string;
@@ -401,7 +402,7 @@ export default function RekapAbsensiClient({
 
                         {showPoinColumn && (
                           <td className="py-2.5 text-center font-mono font-bold text-amber-300 border-l border-slate-800">
-                            {poinPelanggaran > 0 ? poinPelanggaran : "-"}
+                            {poinPelanggaran > 0 ? formatPoin(poinPelanggaran) : "-"}
                           </td>
                         )}
 
