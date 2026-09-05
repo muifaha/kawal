@@ -204,7 +204,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
         {
           name: "Rujukan BK",
           href: "/rujukan",
-          roles: ["WAKA", "WALAS", "GURU"],
+          roles: ["WALAS", "GURU"],
         },
         {
           name: "Persetujuan Pelanggaran",
