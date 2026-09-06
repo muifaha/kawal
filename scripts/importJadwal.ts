@@ -11,12 +11,15 @@ const dayMap: Record<string, number> = {
   SABTU: 6,
 };
 
-function generateUsername(name: string): string {
-  // Remove academic titles (S.Pd., M.Pd., S.Kom., Hj., Drs., etc.)
-  const clean = name
-    .replace(/(S\.Pd|M\.Pd|S\.Kom|S\.E|S\.H|S\.Sn|S\.Ag|Drs|Dra|Hj|H)\.?/gi, "")
+function normalizeTeacherName(name: string): string {
+  return name
+    .replace(/(S\.Pd|M\.Pd|S\.Kom|S\.E|S\.H|S\.Sn|S\.Ag|Drs|Dra|Hj|H|M\.T|M\.TI|M\.Si)\.?/gi, "")
     .replace(/[^a-zA-Z0-9]/g, "")
-    .toLowerCase();
+    .toUpperCase();
+}
+
+function generateUsername(name: string): string {
+  const clean = normalizeTeacherName(name).toLowerCase();
   return clean ? `guru_${clean}` : `guru_${Date.now()}`;
 }
 
@@ -63,7 +66,11 @@ export async function importJadwalFromExcel(filePath: string) {
   });
 
   const userMapByNama = new Map<string, string>();
-  existingUsers.forEach((u) => userMapByNama.set(u.nama.trim().toUpperCase(), u.id));
+  const userMapByNormNama = new Map<string, string>();
+  existingUsers.forEach((u) => {
+    userMapByNama.set(u.nama.trim().toUpperCase(), u.id);
+    userMapByNormNama.set(normalizeTeacherName(u.nama), u.id);
+  });
 
   const mapelMapByNama = new Map<string, string>();
   existingMapel.forEach((m) => mapelMapByNama.set(m.nama.trim().toUpperCase(), m.id));
@@ -150,7 +157,9 @@ export async function importJadwalFromExcel(filePath: string) {
       if (isNaN(jamKe) || !guruVal || !mapelVal) continue;
 
       // Ensure Guru (User) exists
-      let guruId = userMapByNama.get(guruVal.toUpperCase());
+      let guruId =
+        userMapByNama.get(guruVal.toUpperCase()) ||
+        userMapByNormNama.get(normalizeTeacherName(guruVal));
       if (!guruId) {
         const username = generateUsername(guruVal);
         const newGuru = await prisma.user.create({
@@ -163,6 +172,7 @@ export async function importJadwalFromExcel(filePath: string) {
         });
         guruId = newGuru.id;
         userMapByNama.set(guruVal.toUpperCase(), guruId);
+        userMapByNormNama.set(normalizeTeacherName(guruVal), guruId);
         createdGuruCount++;
       }
 
