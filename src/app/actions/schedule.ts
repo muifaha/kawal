@@ -5,6 +5,8 @@ import { getSessionUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import path from "path";
 import fs from "fs";
+import XLSX from "xlsx";
+import bcrypt from "bcryptjs";
 
 // Jam Pelajaran Settings (WAKA Only)
 export async function saveJamPelajaranAction(
@@ -274,3 +276,209 @@ export async function saveJurnalAction(formData: FormData) {
     return { error: error.message || "Gagal menyimpan jurnal mengajar." };
   }
 }
+
+// Import Excel Schedule (WAKA Only)
+export async function importJadwalExcelAction(fileBase64: string) {
+  const user = await getSessionUser();
+  if (!user || user.role !== "WAKA") {
+    return { error: "Akses ditolak. Hanya Waka Kesiswaan yang dapat mengimpor file jadwal." };
+  }
+
+  if (!fileBase64) {
+    return { error: "File Excel jadwal wajib diunggah." };
+  }
+
+  try {
+    const base64Data = fileBase64.replace(/^data:.*;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+    const wb = XLSX.read(buffer, { type: "buffer" });
+
+    const dayMap: Record<string, number> = {
+      SENIN: 1,
+      SELASA: 2,
+      RABU: 3,
+      KAMIS: 4,
+      JUMAT: 5,
+      SABTU: 6,
+    };
+
+    const generateUsername = (name: string): string => {
+      const clean = name
+        .replace(/(S\.Pd|M\.Pd|S\.Kom|S\.E|S\.H|S\.Sn|S\.Ag|Drs|Dra|Hj|H)\.?/gi, "")
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .toLowerCase();
+      return clean ? `guru_${clean}` : `guru_${Date.now()}`;
+    };
+
+    const generateMapelCode = (name: string, index: number): string => {
+      const clean = name
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .toUpperCase()
+        .slice(0, 4);
+      return `MP-${clean || index}`;
+    };
+
+    // 1. Dapatkan atau buat Tahun Ajaran Aktif (Default: 2026/2027)
+    let activeTa = await prisma.tahunAjaran.findFirst({
+      where: { isActive: true },
+    });
+
+    if (!activeTa) {
+      activeTa = await prisma.tahunAjaran.upsert({
+        where: { nama: "2026/2027" },
+        update: { isActive: true },
+        create: {
+          nama: "2026/2027",
+          isActive: true,
+          semesterAktif: "GANJIL",
+        },
+      });
+    }
+
+    const defaultPasswordHash = await bcrypt.hash("guru123", 10);
+
+    const existingUsers = await prisma.user.findMany();
+    const existingMapel = await prisma.mataPelajaran.findMany();
+    const existingKelas = await prisma.kelas.findMany({
+      where: { tahunAjaranId: activeTa.id },
+    });
+
+    const userMapByNama = new Map<string, string>();
+    existingUsers.forEach((u) => userMapByNama.set(u.nama.trim().toUpperCase(), u.id));
+
+    const mapelMapByNama = new Map<string, string>();
+    existingMapel.forEach((m) => mapelMapByNama.set(m.nama.trim().toUpperCase(), m.id));
+
+    const kelasMapByNama = new Map<string, string>();
+    existingKelas.forEach((k) => kelasMapByNama.set(k.nama.trim().toUpperCase(), k.id));
+
+    let createdGuruCount = 0;
+    let createdMapelCount = 0;
+    let createdKelasCount = 0;
+    let totalJadwalCreated = 0;
+
+    for (const sheetName of wb.SheetNames) {
+      if (sheetName.toUpperCase() === "DAFTAR KELAS") continue;
+
+      const className = sheetName.trim();
+      if (!className) continue;
+
+      let kelasId = kelasMapByNama.get(className.toUpperCase());
+      if (!kelasId) {
+        const newKelas = await prisma.kelas.create({
+          data: {
+            nama: className,
+            tahunAjaranId: activeTa.id,
+          },
+        });
+        kelasId = newKelas.id;
+        kelasMapByNama.set(className.toUpperCase(), kelasId);
+        createdKelasCount++;
+      }
+
+      await prisma.jadwalPelajaran.deleteMany({
+        where: { kelasId },
+      });
+
+      const sheet = wb.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+
+      let currentDay = 1;
+
+      for (const row of json) {
+        if (!row || row.length === 0) continue;
+
+        const cell0 = String(row[0] || "").trim().toUpperCase();
+        if (dayMap[cell0]) {
+          currentDay = dayMap[cell0];
+        }
+
+        const jamKeVal = row[1];
+        const waktuVal = String(row[2] || "").trim();
+        const guruVal = String(row[3] || "").trim();
+        const mapelVal = String(row[4] || "").trim();
+
+        if (
+          cell0 === "HARI" ||
+          waktuVal.toUpperCase() === "WAKTU" ||
+          guruVal.toUpperCase() === "GURU"
+        ) {
+          continue;
+        }
+
+        const isSpecialActivity = [
+          "UPACARA",
+          "ISTIRAHAT",
+          "ISHOMA",
+          "BUDAYA BERSIH DAN SEHAT",
+          "BUDAYA LITERASI",
+          "BUDAYA APRESIASI SENI",
+          "BUDAYA RELIGI",
+        ].some(
+          (act) =>
+            guruVal.toUpperCase().includes(act) || mapelVal.toUpperCase().includes(act)
+        );
+
+        if (isSpecialActivity || jamKeVal === "-" || !jamKeVal) {
+          continue;
+        }
+
+        const jamKe = parseInt(String(jamKeVal), 10);
+        if (isNaN(jamKe) || !guruVal || !mapelVal) continue;
+
+        let guruId = userMapByNama.get(guruVal.toUpperCase());
+        if (!guruId) {
+          const username = generateUsername(guruVal);
+          const newGuru = await prisma.user.create({
+            data: {
+              username,
+              passwordHash: defaultPasswordHash,
+              nama: guruVal,
+              role: "GURU",
+            },
+          });
+          guruId = newGuru.id;
+          userMapByNama.set(guruVal.toUpperCase(), guruId);
+          createdGuruCount++;
+        }
+
+        let mapelId = mapelMapByNama.get(mapelVal.toUpperCase());
+        if (!mapelId) {
+          const kode = generateMapelCode(mapelVal, mapelMapByNama.size + 1);
+          const newMapel = await prisma.mataPelajaran.create({
+            data: {
+              kode,
+              nama: mapelVal,
+            },
+          });
+          mapelId = newMapel.id;
+          mapelMapByNama.set(mapelVal.toUpperCase(), mapelId);
+          createdMapelCount++;
+        }
+
+        await prisma.jadwalPelajaran.create({
+          data: {
+            kelasId,
+            guruId,
+            mapelId,
+            hari: currentDay,
+            jamMulai: jamKe,
+            jamSelesai: jamKe,
+          },
+        });
+
+        totalJadwalCreated++;
+      }
+    }
+
+    revalidatePath("/jadwal");
+    return {
+      success: true,
+      message: `Import jadwal Excel berhasil diselesaikan! (${totalJadwalCreated} slot jadwal dimasukkan, ${createdKelasCount} kelas baru, ${createdGuruCount} guru baru, ${createdMapelCount} mapel baru).`,
+    };
+  } catch (error: any) {
+    console.error("Import jadwal Excel error:", error);
+    return { error: `Gagal mengimpor file Excel: ${error.message || error}` };
+  }
+}
+

@@ -7,7 +7,8 @@ import {
   saveMataPelajaranAction,
   deleteMataPelajaranAction,
   saveJadwalAction,
-  deleteJadwalAction
+  deleteJadwalAction,
+  importJadwalExcelAction,
 } from "@/app/actions/schedule";
 import {
   Calendar,
@@ -24,7 +25,10 @@ import {
   AlertCircle,
   Check,
   User,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Upload,
+  FileUp,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -176,8 +180,49 @@ export default function JadwalClient({
   const [schedMapel, setSchedMapel] = useState("");
   const [schedHari, setSchedHari] = useState<number>(1);
   const [schedJamMulai, setSchedJamMulai] = useState<number>(1);
-  const [schedJamSelesai, setSchedJamSelesai] = useState<number>(2);
+  const [schedJamSelesai, setSchedJamSelesai] = useState<number>(1);
   const [editSchedId, setEditSchedId] = useState("");
+
+  // Excel Import States
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState<string | null>(null);
+
+  const handleImportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importFile) {
+      setImportError("Pilih file Excel (.xlsx / .xls) terlebih dahulu.");
+      return;
+    }
+
+    setIsImporting(true);
+    setImportError(null);
+    setImportSuccess(null);
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        const res = await importJadwalExcelAction(base64);
+        setIsImporting(false);
+        if (res.error) {
+          setImportError(res.error);
+        } else {
+          setImportSuccess(res.message || "Import jadwal Excel berhasil!");
+          setTimeout(() => {
+            setShowImportModal(false);
+            window.location.reload();
+          }, 1500);
+        }
+      };
+      reader.readAsDataURL(importFile);
+    } catch (err: any) {
+      setIsImporting(false);
+      setImportError(`Gagal membaca file: ${err.message || err}`);
+    }
+  };
 
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState("");
@@ -686,7 +731,32 @@ export default function JadwalClient({
 
       {/* -------------------- TAB: WAKA JADWAL PELAJARAN -------------------- */}
       {activeTab === "jadwal" && user.role === "WAKA" && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+        <div className="space-y-6">
+          {/* Banner Import Excel */}
+          <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <FileSpreadsheet className="w-8 h-8 text-indigo-400 shrink-0" />
+              <div>
+                <h4 className="text-sm font-bold text-white">Import Jadwal Massal dari Excel (`JADWAL_PER_KELAS.xlsx`)</h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Otomatis membaca 32 sheet kelas (X 1 s/d XII D3), membuat kelas, akun guru, mapel, &amp; 1.300+ slot jadwal sekaligus.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setShowImportModal(true);
+                setImportError(null);
+                setImportSuccess(null);
+              }}
+              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-lg flex items-center gap-2 shrink-0 cursor-pointer"
+            >
+              <Upload className="w-4 h-4" />
+              Import File Excel
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
           {/* Left Form: Add/Edit Schedule */}
           <div className="xl:col-span-1 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl space-y-6">
             <div>
@@ -930,6 +1000,7 @@ export default function JadwalClient({
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* -------------------- TAB: WAKA MATA PELAJARAN -------------------- */}
@@ -1480,6 +1551,86 @@ export default function JadwalClient({
                 Tutup
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* EXCEL IMPORT MODAL */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+              <div className="flex items-center gap-2.5">
+                <FileSpreadsheet className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-sm font-bold text-white">Import Jadwal Pelajaran Massal</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowImportModal(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleImportSubmit} className="p-6 space-y-5 text-xs">
+              {importError && (
+                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{importError}</span>
+                </div>
+              )}
+
+              {importSuccess && (
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{importSuccess}</span>
+                </div>
+              )}
+
+              <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2">
+                <h4 className="font-semibold text-slate-200">Ketentuan File Excel:</h4>
+                <ul className="list-disc list-inside space-y-1 text-slate-400 leading-relaxed">
+                  <li>Format file: <code className="text-indigo-300 font-mono">JADWAL_PER_KELAS.xlsx</code> (.xlsx / .xls).</li>
+                  <li>Setiap Sheet berisi jadwal kelas (<span className="text-slate-300">X 1, X 2, ..., XII D3</span>).</li>
+                  <li>Sistem otomatis mendaftarkan Akun Guru baru &amp; Mata Pelajaran jika belum ada.</li>
+                  <li>Sistem otomatis memasukkan 1.300+ slot jam mengajar secara instan.</li>
+                </ul>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-medium mb-2">Pilih File Excel Jadwal</label>
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      setImportFile(e.target.files[0]);
+                      setImportError(null);
+                    }
+                  }}
+                  className="w-full text-xs text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20 border border-slate-800 rounded-xl bg-slate-950 p-2 cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition font-medium cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isImporting || !importFile}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition disabled:opacity-50 cursor-pointer"
+                >
+                  {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {isImporting ? "Mengimpor Data..." : "Mulai Import Jadwal"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
