@@ -5,7 +5,7 @@ import { getSessionUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import path from "path";
 import fs from "fs";
-import XLSX from "xlsx";
+import * as XLSX from "xlsx";
 import bcrypt from "bcryptjs";
 
 // Jam Pelajaran Settings (WAKA Only)

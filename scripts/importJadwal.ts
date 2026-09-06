@@ -1,4 +1,4 @@
-import XLSX from "xlsx";
+import * as XLSX from "xlsx";
 import { prisma } from "../src/lib/prisma";
 import bcrypt from "bcryptjs";
 
