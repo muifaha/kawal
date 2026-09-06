@@ -300,6 +300,7 @@ export async function importJadwalExcelAction(fileBase64: string) {
       KAMIS: 4,
       JUMAT: 5,
       SABTU: 6,
+      MINGGU: 7,
     };
 
     const normalizeTeacherName = (name: string): string => {

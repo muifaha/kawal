@@ -110,12 +110,14 @@ interface JadwalClientProps {
 }
 
 const HARI_MAP: Record<number, string> = {
+  0: "Minggu",
   1: "Senin",
   2: "Selasa",
   3: "Rabu",
   4: "Kamis",
   5: "Jumat",
   6: "Sabtu",
+  7: "Minggu",
 };
 
 const DAY_ORDER: Record<string, number> = {
@@ -125,6 +127,7 @@ const DAY_ORDER: Record<string, number> = {
   KAMIS: 4,
   JUMAT: 5,
   SABTU: 6,
+  MINGGU: 7,
 };
 
 export default function JadwalClient({
@@ -832,6 +835,7 @@ export default function JadwalClient({
                     <option value="4">Kamis</option>
                     <option value="5">Jumat</option>
                     <option value="6">Sabtu</option>
+                    <option value="7">Minggu</option>
                   </select>
                 </div>
 
@@ -1161,6 +1165,7 @@ export default function JadwalClient({
                   <option value="KAMIS">Kamis</option>
                   <option value="JUMAT">Jumat</option>
                   <option value="SABTU">Sabtu</option>
+                  <option value="MINGGU">Minggu</option>
                 </select>
               </div>
 

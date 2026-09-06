@@ -9,6 +9,7 @@ const dayMap: Record<string, number> = {
   KAMIS: 4,
   JUMAT: 5,
   SABTU: 6,
+  MINGGU: 7,
 };
 
 function normalizeTeacherName(name: string): string {
