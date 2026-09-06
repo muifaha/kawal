@@ -49,7 +49,15 @@ export default async function JadwalPage() {
   let journals: any[] = [];
   let todaySchedules: any[] = [];
 
-  const todayDay = new Date().getDay(); // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
+  const todayStrForSched = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  
+  const todayDayOfWeekForSched = new Date(`${todayStrForSched}T12:00:00Z`).getUTCDay();
+  const targetDays = todayDayOfWeekForSched === 0 ? [0, 7] : [todayDayOfWeekForSched];
 
   if (user.role === "WAKA") {
     // WAKA melihat semua jadwal & semua jurnal
@@ -100,7 +108,7 @@ export default async function JadwalPage() {
     todaySchedules = await prisma.jadwalPelajaran.findMany({
       where: {
         guruId: user.id,
-        hari: todayDay,
+        hari: { in: targetDays },
       },
       include: {
         kelas: true,

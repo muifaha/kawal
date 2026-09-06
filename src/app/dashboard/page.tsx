@@ -1004,7 +1004,15 @@ export default async function DashboardPage() {
   }
   // Load today's schedule for teacher/walas
   let todaySchedules: any[] = [];
-  const todayDay = new Date().getDay();
+  const todayStrForSched = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  
+  const todayDayOfWeekForSched = new Date(`${todayStrForSched}T12:00:00Z`).getUTCDay();
+  const targetDays = todayDayOfWeekForSched === 0 ? [0, 7] : [todayDayOfWeekForSched];
   
   if (user.role === "GURU" || user.role === "WALAS") {
     const todayDate = new Date();
@@ -1013,7 +1021,7 @@ export default async function DashboardPage() {
     const rawTodaySchedules = await prisma.jadwalPelajaran.findMany({
       where: {
         guruId: user.id,
-        hari: todayDay,
+        hari: { in: targetDays },
       },
       include: {
         kelas: true,

@@ -370,12 +370,14 @@ export default function DashboardClient({
 
   const getTimeStringDashboard = (day: number, start: number, end: number) => {
     const HARI_MAP_LOCAL: Record<number, string> = {
+      0: "Minggu",
       1: "Senin",
       2: "Selasa",
       3: "Rabu",
       4: "Kamis",
       5: "Jumat",
       6: "Sabtu",
+      7: "Minggu",
     };
     const type = (HARI_MAP_LOCAL[day] || "").toUpperCase();
     const startPeriod = periods.find((p) => p.hariTipe.toUpperCase() === type && p.jamKe === start && !p.isIstirahat);
