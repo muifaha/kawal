@@ -23,12 +23,25 @@ function generateUsername(name: string): string {
   return clean ? `guru_${clean}` : `guru_${Date.now()}`;
 }
 
-function generateMapelCode(name: string, index: number): string {
-  const clean = name
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .toUpperCase()
-    .slice(0, 4);
-  return `MP-${clean || index}`;
+function generateMapelCode(name: string, existingCodes: Set<string>): string {
+  const words = name.trim().split(/\s+/);
+  let baseCode = "";
+  if (words.length >= 2) {
+    baseCode = words.map((w) => w[0]).join("").toUpperCase();
+  } else {
+    baseCode = name.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 5);
+  }
+
+  if (!baseCode) baseCode = "MAPEL";
+
+  let candidate = `MP-${baseCode}`;
+  let counter = 1;
+  while (existingCodes.has(candidate)) {
+    candidate = `MP-${baseCode}${counter}`;
+    counter++;
+  }
+  existingCodes.add(candidate);
+  return candidate;
 }
 
 export async function importJadwalFromExcel(filePath: string) {
@@ -73,7 +86,11 @@ export async function importJadwalFromExcel(filePath: string) {
   });
 
   const mapelMapByNama = new Map<string, string>();
-  existingMapel.forEach((m) => mapelMapByNama.set(m.nama.trim().toUpperCase(), m.id));
+  const existingMapelCodes = new Set<string>();
+  existingMapel.forEach((m) => {
+    mapelMapByNama.set(m.nama.trim().toUpperCase(), m.id);
+    existingMapelCodes.add(m.kode);
+  });
 
   const kelasMapByNama = new Map<string, string>();
   existingKelas.forEach((k) => kelasMapByNama.set(k.nama.trim().toUpperCase(), k.id));
@@ -179,7 +196,7 @@ export async function importJadwalFromExcel(filePath: string) {
       // Ensure MataPelajaran exists
       let mapelId = mapelMapByNama.get(mapelVal.toUpperCase());
       if (!mapelId) {
-        const kode = generateMapelCode(mapelVal, mapelMapByNama.size + 1);
+        const kode = generateMapelCode(mapelVal, existingMapelCodes);
         const newMapel = await prisma.mataPelajaran.create({
           data: {
             kode,
