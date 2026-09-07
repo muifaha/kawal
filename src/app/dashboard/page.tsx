@@ -1044,6 +1044,7 @@ export default async function DashboardPage() {
       jamMulai: s.jamMulai,
       jamSelesai: s.jamSelesai,
       filled: s.jurnal.length > 0,
+      jurnalId: s.jurnal.length > 0 ? s.jurnal[0].id : undefined,
     }));
 
     const rawTeacherJournals = await prisma.jurnalMengajar.findMany({

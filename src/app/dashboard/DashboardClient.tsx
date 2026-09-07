@@ -205,6 +205,7 @@ interface TodayScheduleItem {
   jamMulai: number;
   jamSelesai: number;
   filled: boolean;
+  jurnalId?: string;
 }
 
 interface PeriodItem {
@@ -2531,14 +2532,23 @@ export default function DashboardClient({
               {/* Jadwal Hari Ini (Guru & Walas Only) */}
               {(user.role === "GURU" || user.role === "WALAS") && (
                 <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
-                  <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <CalendarCheck className="w-5 h-5 text-indigo-400" />
-                      Jadwal Mengajar Hari Ini
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Agenda kelas Anda hari ini. Klik tombol isi jurnal untuk melaporkan kegiatan pembelajaran.
-                    </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-800/60 pb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <CalendarCheck className="w-5 h-5 text-indigo-400" />
+                        Jadwal Mengajar Hari Ini
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Agenda kelas Anda hari ini. Gunakan tombol untuk mengisikan atau memperbarui jurnal pembelajaran.
+                      </p>
+                    </div>
+                    <Link
+                      href="/jadwal?tab=input"
+                      className="shrink-0 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white rounded-xl transition-all shadow-sm cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Tambah Kegiatan
+                    </Link>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -2551,7 +2561,7 @@ export default function DashboardClient({
                         return (
                           <div
                             key={sched.id}
-                            className={`p-4 rounded-xl border flex flex-col justify-between min-h-[140px] ${
+                            className={`p-4 rounded-xl border flex flex-col justify-between min-h-[150px] ${
                               sched.filled
                                 ? "bg-emerald-500/5 border-emerald-500/20"
                                 : "bg-slate-950/40 border-slate-800"
@@ -2581,14 +2591,23 @@ export default function DashboardClient({
 
                             <div className="pt-3 border-t border-slate-800/50 mt-3">
                               {sched.filled ? (
-                                <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
-                                  <Check className="w-3.5 h-3.5" />
-                                  Jurnal terlaporkan
-                                </span>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+                                    <Check className="w-3.5 h-3.5" />
+                                    Terlaporkan
+                                  </span>
+                                  <Link
+                                    href={`/jadwal/jurnal/isi?${sched.jurnalId ? `jurnalId=${sched.jurnalId}&` : ''}jadwalId=${sched.id}`}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-600/90 hover:bg-amber-500 text-white text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                    Edit Jurnal
+                                  </Link>
+                                </div>
                               ) : (
                                 <Link
                                   href={`/jadwal/jurnal/isi?jadwalId=${sched.id}`}
-                                  className="w-full inline-flex items-center justify-center gap-1 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white rounded-lg transition-all"
+                                  className="w-full inline-flex items-center justify-center gap-1 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white rounded-lg transition-all cursor-pointer"
                                 >
                                   Isi Jurnal Mengajar
                                 </Link>
