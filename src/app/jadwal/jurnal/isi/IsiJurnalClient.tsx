@@ -546,10 +546,10 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
             <button
               type="submit"
               disabled={isPending}
-              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-xs font-bold text-white rounded-xl transition-all cursor-pointer flex items-center gap-2-indigo-600/10"
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-xs font-bold text-white rounded-xl transition-all cursor-pointer flex items-center gap-2"
             >
               <Send className="w-4 h-4" />
-              Simpan & Laporkan Jurnal
+              {isPending ? "Menyimpan Jurnal..." : "Simpan Jurnal"}
             </button>
           </div>
         </div>
