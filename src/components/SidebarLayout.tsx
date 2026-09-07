@@ -191,22 +191,22 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
     {
       name: "Pelanggaran",
       icon: AlertTriangle,
-      roles: ["BK", "WALAS", "GURU", "WAKA", "OSIS", "PIKET"],
+      roles: ["BK", "WALAS", "WAKA", "OSIS", "PIKET"],
       children: [
         {
           name: "Rekap Pelanggaran",
           href: "/rekap-pelanggaran",
-          roles: ["BK", "GURU", "WAKA", "OSIS", "PIKET"],
+          roles: ["BK", "WAKA", "OSIS", "PIKET"],
         },
         {
           name: "Tambah Pelanggaran",
           href: "/pelanggaran",
-          roles: ["BK", "WALAS", "GURU", "OSIS", "PIKET", "WAKA"],
+          roles: ["BK", "WALAS", "OSIS", "PIKET", "WAKA"],
         },
         {
           name: "Rujukan BK",
           href: "/rujukan",
-          roles: ["WALAS", "GURU"],
+          roles: ["WALAS"],
         },
         {
           name: "Persetujuan Pelanggaran",
@@ -228,24 +228,24 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
     {
       name: "Prestasi Siswa",
       icon: Trophy,
-      roles: ["WAKA", "BK", "GURU", "PEMBINA_OSIS", "WALAS"],
+      roles: ["WAKA", "BK", "PEMBINA_OSIS", "WALAS"],
       children: [
         {
           name: "Daftar Prestasi",
           href: "/prestasi?tab=list",
-          roles: ["WAKA", "BK", "GURU", "PEMBINA_OSIS", "WALAS"],
+          roles: ["WAKA", "BK", "PEMBINA_OSIS", "WALAS"],
         },
         {
           name: "Tambah Prestasi",
           href: "/prestasi?tab=input",
-          roles: ["WAKA", "BK", "GURU", "PEMBINA_OSIS"],
+          roles: ["WAKA", "BK", "PEMBINA_OSIS"],
         },
       ],
     },
     {
       name: "Bimbingan Konseling",
       icon: HeartHandshake,
-      roles: ["BK", "WAKA", "GURU"],
+      roles: ["BK", "WAKA"],
       children: [
         {
           name: "Catatan BK",
@@ -255,18 +255,18 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
         {
           name: "Rujukan BK",
           href: "/rujukan",
-          roles: ["BK", "WAKA", "GURU"],
+          roles: ["BK", "WAKA"],
         },
       ],
     },
     {
-      name: "Jadwal & Jurnal",
+      name: user.role === "GURU" ? "Jurnal Mengajar" : "Jadwal & Jurnal",
       href: "/jadwal",
       icon: CalendarCheck,
       roles: ["WAKA", "WALAS", "GURU"],
     },
     {
-      name: "Penilaian Siswa",
+      name: user.role === "GURU" ? "Penilaian" : "Penilaian Siswa",
       href: "/penilaian",
       icon: Award,
       roles: ["WAKA", "WALAS", "GURU"],
@@ -281,7 +281,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       name: "Alumni & Tracer Study",
       href: "/rekap-alumni",
       icon: GraduationCap,
-      roles: ["WAKA", "BK", "WALAS", "GURU"],
+      roles: ["WAKA", "BK", "WALAS"],
     },
     {
       name: "Layanan PPID",
