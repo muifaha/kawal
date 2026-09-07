@@ -90,8 +90,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard?error=unauthorized", request.url));
   }
 
-  // Halaman Rekap Alumni & Tracer Study (Dapat diakses oleh WAKA, BK, WALAS, dan GURU)
-  if (pathname.startsWith("/rekap-alumni") && !["WAKA", "BK", "WALAS", "GURU"].includes(role)) {
+  // Halaman Rekap Alumni & Tracer Study (Dapat diakses oleh WAKA dan BK)
+  if (pathname.startsWith("/rekap-alumni") && !["WAKA", "BK"].includes(role)) {
     return NextResponse.redirect(new URL("/dashboard?error=unauthorized", request.url));
   }
 

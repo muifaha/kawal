@@ -228,12 +228,12 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
     {
       name: "Prestasi Siswa",
       icon: Trophy,
-      roles: ["WAKA", "BK", "PEMBINA_OSIS", "WALAS"],
+      roles: ["WAKA", "BK", "PEMBINA_OSIS"],
       children: [
         {
           name: "Daftar Prestasi",
           href: "/prestasi?tab=list",
-          roles: ["WAKA", "BK", "PEMBINA_OSIS", "WALAS"],
+          roles: ["WAKA", "BK", "PEMBINA_OSIS"],
         },
         {
           name: "Tambah Prestasi",
@@ -281,7 +281,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       name: "Alumni & Tracer Study",
       href: "/rekap-alumni",
       icon: GraduationCap,
-      roles: ["WAKA", "BK", "WALAS"],
+      roles: ["WAKA", "BK"],
     },
     {
       name: "Layanan PPID",
