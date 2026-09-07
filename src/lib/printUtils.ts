@@ -578,7 +578,7 @@ export function printJurnalMengajarPDF(jurnal: any, schoolSettings?: Record<stri
 
   const schoolLogo = schoolSettings?.school_logo || "/logo.png";
   const headerHtml = schoolSettings?.school_header
-    ? `<div style="border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; text-align: center;">
+    ? `<div style="margin-bottom: 15px; text-align: center;">
         <img src="${schoolSettings.school_header}" style="width: 100%; max-height: 140px; object-fit: contain; display: block; margin: 0 auto;" />
        </div>`
     : `<div class="header-container">
@@ -744,7 +744,7 @@ export function printJurnalMengajarPDF(jurnal: any, schoolSettings?: Record<stri
             <td>${tanggalFormatted}</td>
           </tr>
           <tr>
-            <td class="label">Kelas Target</td>
+            <td class="label">Kelas</td>
             <td class="colon">:</td>
             <td>Kelas ${jurnal.kelas?.nama || "-"}</td>
             <td class="label">Jam Pelajaran</td>
