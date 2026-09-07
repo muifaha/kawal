@@ -355,12 +355,22 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
   const namaJurnal = formData.get("namaJurnal") as string;
   const tanggalStr = formData.get("tanggal") as string;
   const waktuStr = formData.get("waktu") as string;
-  const kelasId = formData.get("kelasId") as string;
-  const mapelId = formData.get("mapelId") as string;
+  let targetKelasId = formData.get("kelasId") as string;
+  let targetMapelId = formData.get("mapelId") as string;
   const kegiatan = formData.get("kegiatan") as string;
 
-  if (!namaJurnal || !kegiatan || !kelasId || !mapelId) {
-    return { error: "Nama Kegiatan, Kelas, Mata Pelajaran, dan Deskripsi Kegiatan wajib diisi." };
+  if (!targetKelasId) {
+    const firstKelas = await prisma.kelas.findFirst();
+    if (firstKelas) targetKelasId = firstKelas.id;
+  }
+
+  if (!targetMapelId) {
+    const firstMapel = await prisma.mataPelajaran.findFirst();
+    if (firstMapel) targetMapelId = firstMapel.id;
+  }
+
+  if (!namaJurnal || !kegiatan || !targetKelasId || !targetMapelId) {
+    return { error: "Nama Kegiatan dan Deskripsi Kegiatan wajib diisi." };
   }
 
   try {
@@ -397,9 +407,9 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
 
     const newJurnal = await prisma.jurnalMengajar.create({
       data: {
-        kelasId,
+        kelasId: targetKelasId,
         guruId: user.id,
-        mapelId,
+        mapelId: targetMapelId,
         jamMulai: 1,
         jamSelesai: 1,
         tanggal,
