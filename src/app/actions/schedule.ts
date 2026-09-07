@@ -475,6 +475,42 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
   }
 }
 
+// Ambil detail lengkap jurnal beserta daftar siswa & absensi untuk PDF/Cetak
+export async function getJurnalFullDetailAction(jurnalId: string) {
+  const user = await getSessionUser();
+  if (!user) {
+    return { error: "Akses ditolak." };
+  }
+
+  try {
+    const jurnal = await prisma.jurnalMengajar.findUnique({
+      where: { id: jurnalId },
+      include: {
+        kelas: true,
+        guru: true,
+        mapel: true,
+        absensi: {
+          include: {
+            siswa: true,
+          },
+          orderBy: {
+            siswa: { nama: "asc" },
+          },
+        },
+      },
+    });
+
+    if (!jurnal) {
+      return { error: "Data jurnal mengajar tidak ditemukan." };
+    }
+
+    return { success: true, jurnal };
+  } catch (error: any) {
+    console.error("getJurnalFullDetailAction error:", error);
+    return { error: "Gagal memuat data detail jurnal." };
+  }
+}
+
 // Auto-Save Draft Jurnal Action
 export async function saveJurnalDraftAction(payload: {
   jadwalId: string;

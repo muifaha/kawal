@@ -513,3 +513,293 @@ export function printBulkSummons(
   printWindow.document.write(htmlContent);
   printWindow.document.close();
 }
+
+export function printJurnalMengajarPDF(jurnal: any, schoolSettings?: Record<string, string>) {
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) return;
+
+  const schoolName = schoolSettings?.school_name || "SMA NEGERI 6 TANGERANG";
+  const schoolAddress = schoolSettings?.school_address || "Jl. Pt. YKK Mahkota, Pasir Jaya, Kec. Jatiuwung, Kota Tangerang, Banten 15135";
+
+  const tanggalFormatted = new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(jurnal.tanggal));
+
+  const ttdDateFormatted = new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(jurnal.tanggal));
+
+  // Parse photos if present
+  let photosHtml = "";
+  if (jurnal.foto) {
+    try {
+      const urls = JSON.parse(jurnal.foto);
+      const kets = jurnal.fotoKeterangan ? JSON.parse(jurnal.fotoKeterangan) : [];
+      if (Array.isArray(urls) && urls.length > 0) {
+        photosHtml = `
+          <div style="margin-top: 15px; margin-bottom: 20px; page-break-inside: avoid;">
+            <div style="font-weight: bold; font-size: 10pt; margin-bottom: 8px; text-transform: uppercase;">Foto & Dokumentasi Pembelajaran:</div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              ${urls.map((url: string, idx: number) => `
+                <div style="border: 1px solid #ccc; padding: 4px; border-radius: 6px; text-align: center; width: 180px;">
+                  <img src="${url}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 4px;" />
+                  ${kets[idx] ? `<div style="font-size: 8pt; color: #555; margin-top: 4px; font-style: italic;">${kets[idx]}</div>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+    } catch (e) {}
+  }
+
+  // Attendance Status Map
+  const statusLabels: Record<string, string> = {
+    H: "Hadir",
+    S: "Sakit",
+    I: "Izin",
+    A: "Alfa",
+    D: "Dispensasi",
+  };
+
+  const absensiRowsHtml = (jurnal.absensi || []).map((att: any, idx: number) => `
+    <tr>
+      <td style="text-align: center;">${idx + 1}</td>
+      <td style="font-family: monospace; text-align: center;">${att.siswa?.nis || "-"}</td>
+      <td>${att.siswa?.nama || "-"}</td>
+      <td style="text-align: center; font-weight: bold;">${statusLabels[att.status] || att.status}</td>
+    </tr>
+  `).join('');
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Jurnal Mengajar - ${jurnal.namaJurnal} - ${jurnal.kelas?.nama || ""}</title>
+        <style>
+          @page {
+            size: A4;
+            margin: 15mm 20mm;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #111;
+            font-size: 10pt;
+            line-height: 1.4;
+            padding: 0;
+            margin: 0;
+          }
+          .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px double #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+          }
+          .logo-img {
+            width: 70px;
+            height: auto;
+          }
+          .header-text {
+            text-align: center;
+            flex-grow: 1;
+            padding: 0 10px;
+          }
+          .header-text h2 {
+            margin: 0;
+            font-size: 13pt;
+            font-weight: bold;
+            text-transform: uppercase;
+          }
+          .header-text h3 {
+            margin: 2px 0 0 0;
+            font-size: 11pt;
+            font-weight: bold;
+            text-transform: uppercase;
+          }
+          .header-text p {
+            margin: 2px 0 0 0;
+            font-size: 8pt;
+            color: #333;
+          }
+          .doc-title {
+            text-align: center;
+            font-size: 14pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 15px 0 20px 0;
+            letter-spacing: 1px;
+            text-decoration: underline;
+          }
+          .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+          }
+          .info-table td {
+            padding: 4px 6px;
+            vertical-align: top;
+          }
+          .info-table td.label {
+            width: 130px;
+            font-weight: bold;
+            color: #333;
+          }
+          .info-table td.colon {
+            width: 10px;
+          }
+          .box-section {
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 15px;
+            background-color: #fcfcfc;
+          }
+          .box-title {
+            font-weight: bold;
+            font-size: 9pt;
+            text-transform: uppercase;
+            color: #555;
+            margin-bottom: 4px;
+          }
+          .box-content {
+            font-size: 10pt;
+            white-space: pre-wrap;
+          }
+          .absensi-title {
+            font-weight: bold;
+            font-size: 10pt;
+            text-transform: uppercase;
+            margin-top: 15px;
+            margin-bottom: 8px;
+          }
+          table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+          }
+          table.data-table th, table.data-table td {
+            border: 1px solid #444;
+            padding: 5px 8px;
+            font-size: 9.5pt;
+          }
+          table.data-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 8.5pt;
+          }
+          .footer-section {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+            page-break-inside: avoid;
+          }
+          .ttd-box {
+            text-align: center;
+            width: 260px;
+          }
+          .ttd-space {
+            height: 65px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header-container">
+          <img src="/logo.png" class="logo-img" alt="Logo Sekolah" />
+          <div class="header-text">
+            <h2>PEMERINTAH PROVINSI BANTEN</h2>
+            <h3>DINAS PENDIDIKAN DAN KEBUDAYAAN</h3>
+            <h2>${schoolName}</h2>
+            <p>${schoolAddress}</p>
+          </div>
+          <div style="width: 70px;"></div>
+        </div>
+
+        <div class="doc-title">JURNAL MENGAJAR</div>
+
+        <table class="info-table">
+          <tr>
+            <td class="label">Nama Guru</td>
+            <td class="colon">:</td>
+            <td><strong>${jurnal.guru?.nama || "-"}</strong></td>
+            <td class="label">Tanggal</td>
+            <td class="colon">:</td>
+            <td>${tanggalFormatted}</td>
+          </tr>
+          <tr>
+            <td class="label">Kelas Target</td>
+            <td class="colon">:</td>
+            <td>Kelas ${jurnal.kelas?.nama || "-"}</td>
+            <td class="label">Jam Pelajaran</td>
+            <td class="colon">:</td>
+            <td>Jam ke-${jurnal.jamMulai} - ${jurnal.jamSelesai}</td>
+          </tr>
+          <tr>
+            <td class="label">Mata Pelajaran</td>
+            <td class="colon">:</td>
+            <td>${jurnal.mapel?.nama || "-"}</td>
+            <td class="label">Nama Jurnal</td>
+            <td class="colon">:</td>
+            <td><strong>${jurnal.namaJurnal}</strong></td>
+          </tr>
+        </table>
+
+        <div class="box-section">
+          <div class="box-title">Deskripsi Pembelajaran</div>
+          <div class="box-content">${jurnal.kegiatan}</div>
+        </div>
+
+        ${photosHtml}
+
+        ${jurnal.absensi && jurnal.absensi.length > 0 ? `
+          <div class="absensi-title">Daftar Kehadiran Siswa (Absensi Kelas):</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 35px; text-align: center;">No</th>
+                <th style="width: 110px; text-align: center;">NIS</th>
+                <th>Nama Lengkap Siswa</th>
+                <th style="width: 100px; text-align: center;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${absensiRowsHtml}
+            </tbody>
+          </table>
+        ` : ''}
+
+        <div class="footer-section">
+          <div class="ttd-box">
+            <div>Tangerang, ${ttdDateFormatted}</div>
+            <div style="margin-top: 4px;">Guru Mata Pelajaran ${jurnal.mapel?.nama || ""}</div>
+            <div class="ttd-space"></div>
+            <div style="font-weight: bold; text-decoration: underline;">${jurnal.guru?.nama || "-"}</div>
+            <div>NIP. ${jurnal.guru?.nip || "...................................."}</div>
+          </div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 300);
+          }
+        </script>
+      </body>
+    </html>
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+}

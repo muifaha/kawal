@@ -12,7 +12,9 @@ import {
   bulkDeleteJadwalAction,
   importJadwalExcelAction,
   createCustomActivityJurnalAction,
+  getJurnalFullDetailAction,
 } from "@/app/actions/schedule";
+import { printJurnalMengajarPDF } from "@/lib/printUtils";
 import {
   Calendar,
   Clock,
@@ -36,6 +38,8 @@ import {
   Award,
   Eye,
   Edit3,
+  Download,
+  Printer,
 } from "lucide-react";
 import Link from "next/link";
 import PenilaianManager from "@/components/PenilaianManager";
@@ -336,6 +340,24 @@ export default function JadwalClient({
         window.location.reload();
       }
     });
+  };
+
+  const [downloadingPdfId, setDownloadingPdfId] = useState<string | null>(null);
+
+  const handleDownloadJournalPDF = async (jurnalId: string) => {
+    setDownloadingPdfId(jurnalId);
+    try {
+      const res = await getJurnalFullDetailAction(jurnalId);
+      if (res.success && res.jurnal) {
+        printJurnalMengajarPDF(res.jurnal);
+      } else {
+        alert(res.error || "Gagal mengunduh berkas Jurnal.");
+      }
+    } catch (e) {
+      alert("Terjadi kesalahan saat membuat dokumen PDF.");
+    } finally {
+      setDownloadingPdfId(null);
+    }
   };
 
   // Bulk Delete Handlers
@@ -917,13 +939,27 @@ export default function JadwalClient({
                         </p>
                       </td>
                       <td className="py-4 text-center">
-                        <button
-                          onClick={() => setSelectedJournal(item)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          Lihat
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => setSelectedJournal(item)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            Lihat
+                          </button>
+                          <button
+                            onClick={() => handleDownloadJournalPDF(item.id)}
+                            disabled={downloadingPdfId === item.id}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white text-xs font-bold transition cursor-pointer"
+                          >
+                            {downloadingPdfId === item.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Download className="w-3.5 h-3.5" />
+                            )}
+                            Download
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -1814,7 +1850,19 @@ export default function JadwalClient({
               </div>
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <button
+                onClick={() => handleDownloadJournalPDF(selectedJournal.id)}
+                disabled={downloadingPdfId === selectedJournal.id}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-xs font-bold text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                {downloadingPdfId === selectedJournal.id ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Printer className="w-3.5 h-3.5" />
+                )}
+                Cetak / Download PDF
+              </button>
               <button
                 onClick={() => setSelectedJournal(null)}
                 className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white rounded-xl transition-all cursor-pointer"
