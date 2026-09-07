@@ -2268,7 +2268,7 @@ export default function DashboardClient({
       </div>
 
       {/* Alert Absensi Belum Diisi Hari Ini */}
-      {classesNotSubmittedToday.length > 0 && (
+      {classesNotSubmittedToday.length > 0 && user.role !== "GURU" && (
         <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-4 text-amber-300 animate-fade-in">
           <AlertOctagon className="w-5 h-5 mt-0.5 shrink-0 text-amber-300" />
           <div className="space-y-1">
@@ -2302,7 +2302,7 @@ export default function DashboardClient({
       )}
 
       {/* Rangkuman Kelengkapan Absensi Tanggal-Tanggal Sebelumnya */}
-      {pastUnsubmittedAttendanceDates && pastUnsubmittedAttendanceDates.length > 0 && (
+      {pastUnsubmittedAttendanceDates && pastUnsubmittedAttendanceDates.length > 0 && !["GURU", "WALAS"].includes(user.role) && (
         <div className="mb-8 p-4 bg-slate-900/40 border border-slate-800 rounded-2xl space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
@@ -2525,8 +2525,8 @@ export default function DashboardClient({
           )}
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            {/* Left/Middle Column (lg:col-span-2) */}
-            <div className="space-y-8 lg:col-span-2">
+            {/* Left/Middle Column */}
+            <div className={`space-y-8 ${["GURU", "WALAS"].includes(user.role) ? "lg:col-span-3" : "lg:col-span-2"}`}>
               {/* Jadwal Hari Ini (Guru & Walas Only) */}
               {(user.role === "GURU" || user.role === "WALAS") && (
                 <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
@@ -2540,7 +2540,7 @@ export default function DashboardClient({
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {todaySchedules.length === 0 ? (
                       <div className="col-span-full py-8 text-center text-slate-500 bg-slate-950/20 border border-slate-900 rounded-2xl">
                         Tidak ada agenda mengajar untuk Anda hari ini.
@@ -2780,7 +2780,7 @@ export default function DashboardClient({
               )}
 
               {/* Siswa Berisiko Tinggi Section (Consolidated) */}
-              {user.role !== "WALAS" && (
+              {!["GURU", "WALAS"].includes(user.role) && (
                 <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
                   <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-rose-400" />
@@ -2867,96 +2867,98 @@ export default function DashboardClient({
               )}
             </div>
 
-            {/* Right Column (lg:col-span-1) */}
-            <div className="space-y-6">
-              {/* Quick Actions Panel (Desktop Only - Mobile is rendered at the top) */}
-              <div className="hidden lg:block bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
-                <h3 className="text-lg font-bold text-white mb-4">Aksi Cepat</h3>
-                <div className="space-y-3">
-                  {user.role === "WAKA" && (
+            {/* Right Column (lg:col-span-1) - Only for WAKA/BK/ADMIN */}
+            {!["GURU", "WALAS"].includes(user.role) && (
+              <div className="space-y-6">
+                {/* Quick Actions Panel (Desktop Only - Mobile is rendered at the top) */}
+                <div className="hidden lg:block bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
+                  <h3 className="text-lg font-bold text-white mb-4">Aksi Cepat</h3>
+                  <div className="space-y-3">
+                    {user.role === "WAKA" && (
+                      <Link
+                        href="/kesiswaan"
+                        className="flex items-center gap-3 p-3 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-xl transition-all"
+                      >
+                        <Settings className="w-5 h-5 shrink-0" />
+                        Manajemen Kesiswaan
+                      </Link>
+                    )}
+                    {user.role === "BK" && (
+                      <>
+                        <Link
+                          href="/absensi"
+                          className="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-300 text-sm font-semibold rounded-xl transition-all"
+                        >
+                          <CalendarCheck className="w-5 h-5 shrink-0" />
+                          Catat Absensi Kelas
+                        </Link>
+                        <Link
+                          href="/approval"
+                          className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-300 text-sm font-semibold rounded-xl transition-all"
+                        >
+                          <CheckSquare className="w-5 h-5 shrink-0" />
+                          Persetujuan Pelanggaran
+                        </Link>
+                      </>
+                    )}
                     <Link
-                      href="/kesiswaan"
+                      href="/pelanggaran"
                       className="flex items-center gap-3 p-3 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-xl transition-all"
                     >
-                      <Settings className="w-5 h-5 shrink-0" />
-                      Manajemen Kesiswaan
+                      <Plus className="w-5 h-5 shrink-0" />
+                      Laporkan Pelanggaran
                     </Link>
-                  )}
-                  {user.role === "BK" && (
-                    <>
-                      <Link
-                        href="/absensi"
-                        className="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-300 text-sm font-semibold rounded-xl transition-all"
-                      >
-                        <CalendarCheck className="w-5 h-5 shrink-0" />
-                        Catat Absensi Kelas
-                      </Link>
-                      <Link
-                        href="/approval"
-                        className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-300 text-sm font-semibold rounded-xl transition-all"
-                      >
-                        <CheckSquare className="w-5 h-5 shrink-0" />
-                        Persetujuan Pelanggaran
-                      </Link>
-                    </>
-                  )}
-                  <Link
-                    href="/pelanggaran"
-                    className="flex items-center gap-3 p-3 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-xl transition-all"
-                  >
-                    <Plus className="w-5 h-5 shrink-0" />
-                    Laporkan Pelanggaran
-                  </Link>
+                  </div>
                 </div>
-              </div>
 
-              {/* Analisis Risiko Kelas Section (Consolidated) */}
-              {isWakaOrBK && (
-                <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-indigo-400" />
-                    Analisis Risiko Kelas
-                  </h3>
-                  {classRiskSummaries.length === 0 ? (
-                    <p className="text-slate-500 text-sm">Belum ada data risiko kelas.</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {classRiskSummaries.map((item, idx) => (
-                        <div key={`${item.nama}-${idx}`} className="p-4 bg-slate-950/40 border border-slate-900 rounded-xl space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5">
-                              <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-400 font-bold text-xs">
-                                {idx + 1}
+                {/* Analisis Risiko Kelas Section (Consolidated) */}
+                {isWakaOrBK && (
+                  <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6">
+                    <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-indigo-400" />
+                      Analisis Risiko Kelas
+                    </h3>
+                    {classRiskSummaries.length === 0 ? (
+                      <p className="text-slate-500 text-sm">Belum ada data risiko kelas.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {classRiskSummaries.map((item, idx) => (
+                          <div key={`${item.nama}-${idx}`} className="p-4 bg-slate-950/40 border border-slate-900 rounded-xl space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2.5">
+                                <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-400 font-bold text-xs">
+                                  {idx + 1}
+                                </span>
+                                <span className="font-bold text-white text-sm">{item.nama}</span>
+                              </div>
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider ${
+                                  item.totalRisk >= 35
+                                    ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                                    : item.totalRisk >= 15
+                                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                    : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                }`}
+                              >
+                                {item.totalRisk >= 35 ? "Tinggi" : item.totalRisk >= 15 ? "Sedang" : "Rendah"}
                               </span>
-                              <span className="font-bold text-white text-sm">{item.nama}</span>
                             </div>
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider ${
-                                item.totalRisk >= 35
-                                  ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                                  : item.totalRisk >= 15
-                                  ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                                  : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              }`}
-                            >
-                              {item.totalRisk >= 35 ? "Tinggi" : item.totalRisk >= 15 ? "Sedang" : "Rendah"}
-                            </span>
+                            <div className="flex items-center gap-2 text-[10px] font-semibold">
+                              <span className="bg-slate-900 border border-slate-800 text-slate-400 px-2 py-0.5 rounded">
+                                Absen Hari Ini: <span className="text-indigo-400 font-bold">{item.absentCount}</span>
+                              </span>
+                              <span className="bg-slate-900 border border-slate-800 text-slate-400 px-2 py-0.5 rounded">
+                                Kasus Pelanggaran: <span className="text-rose-400 font-bold">{item.violationCount}</span>
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 text-[10px] font-semibold">
-                            <span className="bg-slate-900 border border-slate-800 text-slate-400 px-2 py-0.5 rounded">
-                              Absen Hari Ini: <span className="text-indigo-400 font-bold">{item.absentCount}</span>
-                            </span>
-                            <span className="bg-slate-900 border border-slate-800 text-slate-400 px-2 py-0.5 rounded">
-                              Kasus Pelanggaran: <span className="text-rose-400 font-bold">{item.violationCount}</span>
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
