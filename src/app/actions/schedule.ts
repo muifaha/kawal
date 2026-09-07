@@ -110,6 +110,28 @@ export async function deleteMataPelajaranAction(id: string) {
   }
 }
 
+export async function bulkDeleteMataPelajaranAction(ids: string[]) {
+  const user = await getSessionUser();
+  if (!user || user.role !== "WAKA") {
+    return { error: "Akses ditolak. Hanya Waka Kesiswaan yang dapat menghapus mata pelajaran." };
+  }
+
+  if (!ids || ids.length === 0) {
+    return { error: "Pilih setidaknya satu mata pelajaran yang ingin dihapus." };
+  }
+
+  try {
+    const res = await prisma.mataPelajaran.deleteMany({
+      where: { id: { in: ids } },
+    });
+    revalidatePath("/jadwal");
+    return { success: true, message: `Berhasil menghapus ${res.count} mata pelajaran terpilih.` };
+  } catch (error: any) {
+    console.error("Bulk delete mata pelajaran error:", error);
+    return { error: error.message || "Gagal menghapus mata pelajaran terpilih." };
+  }
+}
+
 // Jadwal Pelajaran (WAKA Only)
 export async function saveJadwalAction(
   kelasId: string,
@@ -162,6 +184,28 @@ export async function deleteJadwalAction(id: string) {
   } catch (error: any) {
     console.error("Delete jadwal error:", error);
     return { error: error.message || "Gagal menghapus jadwal pelajaran." };
+  }
+}
+
+export async function bulkDeleteJadwalAction(ids: string[]) {
+  const user = await getSessionUser();
+  if (!user || user.role !== "WAKA") {
+    return { error: "Akses ditolak. Hanya Waka Kesiswaan yang dapat menghapus jadwal pelajaran." };
+  }
+
+  if (!ids || ids.length === 0) {
+    return { error: "Pilih setidaknya satu jadwal pelajaran yang ingin dihapus." };
+  }
+
+  try {
+    const res = await prisma.jadwalPelajaran.deleteMany({
+      where: { id: { in: ids } },
+    });
+    revalidatePath("/jadwal");
+    return { success: true, message: `Berhasil menghapus ${res.count} jadwal pelajaran terpilih.` };
+  } catch (error: any) {
+    console.error("Bulk delete jadwal error:", error);
+    return { error: error.message || "Gagal menghapus jadwal pelajaran terpilih." };
   }
 }
 

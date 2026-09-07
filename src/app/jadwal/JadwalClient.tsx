@@ -6,8 +6,10 @@ import {
   deleteJamPelajaranAction,
   saveMataPelajaranAction,
   deleteMataPelajaranAction,
+  bulkDeleteMataPelajaranAction,
   saveJadwalAction,
   deleteJadwalAction,
+  bulkDeleteJadwalAction,
   importJadwalExcelAction,
 } from "@/app/actions/schedule";
 import {
@@ -227,11 +229,86 @@ export default function JadwalClient({
     }
   };
 
+  // Bulk Selection States
+  const [selectedSchedIds, setSelectedSchedIds] = useState<string[]>([]);
+  const [selectedMapelIds, setSelectedMapelIds] = useState<string[]>([]);
+
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
 
   const [selectedJournal, setSelectedJournal] = useState<JournalItem | null>(null);
+
+  // Bulk Delete Handlers
+  const handleSelectAllSched = (filteredList: ScheduleItem[]) => {
+    const allFilteredIds = filteredList.map((item) => item.id);
+    const isAllSelected = allFilteredIds.length > 0 && allFilteredIds.every((id) => selectedSchedIds.includes(id));
+    if (isAllSelected) {
+      setSelectedSchedIds((prev) => prev.filter((id) => !allFilteredIds.includes(id)));
+    } else {
+      setSelectedSchedIds((prev) => Array.from(new Set([...prev, ...allFilteredIds])));
+    }
+  };
+
+  const handleToggleSchedSelect = (id: string) => {
+    setSelectedSchedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDeleteSched = async () => {
+    if (selectedSchedIds.length === 0) return;
+    if (!confirm(`Apakah Anda yakin ingin menghapus ${selectedSchedIds.length} jadwal pelajaran terpilih?`)) return;
+
+    setActionError("");
+    setActionSuccess("");
+
+    startTransition(async () => {
+      const res = await bulkDeleteJadwalAction(selectedSchedIds);
+      if (res.error) {
+        setActionError(res.error);
+      } else {
+        setActionSuccess(res.message || "Jadwal terpilih berhasil dihapus.");
+        setSchedules((prev) => prev.filter((s) => !selectedSchedIds.includes(s.id)));
+        setSelectedSchedIds([]);
+      }
+    });
+  };
+
+  const handleSelectAllMapel = (filteredList: SubjectOption[]) => {
+    const allFilteredIds = filteredList.map((item) => item.id);
+    const isAllSelected = allFilteredIds.length > 0 && allFilteredIds.every((id) => selectedMapelIds.includes(id));
+    if (isAllSelected) {
+      setSelectedMapelIds((prev) => prev.filter((id) => !allFilteredIds.includes(id)));
+    } else {
+      setSelectedMapelIds((prev) => Array.from(new Set([...prev, ...allFilteredIds])));
+    }
+  };
+
+  const handleToggleMapelSelect = (id: string) => {
+    setSelectedMapelIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDeleteMapel = async () => {
+    if (selectedMapelIds.length === 0) return;
+    if (!confirm(`Apakah Anda yakin ingin menghapus ${selectedMapelIds.length} mata pelajaran terpilih?`)) return;
+
+    setActionError("");
+    setActionSuccess("");
+
+    startTransition(async () => {
+      const res = await bulkDeleteMataPelajaranAction(selectedMapelIds);
+      if (res.error) {
+        setActionError(res.error);
+      } else {
+        setActionSuccess(res.message || "Mata pelajaran terpilih berhasil dihapus.");
+        setSubjectList((prev) => prev.filter((s) => !selectedMapelIds.includes(s.id)));
+        setSelectedMapelIds([]);
+      }
+    });
+  };
 
   // Handlers - Subject CRUD
   const handleSaveSubject = async (e: React.FormEvent) => {
@@ -908,6 +985,17 @@ export default function JadwalClient({
               </div>
 
               <div className="flex items-center gap-2">
+                {selectedSchedIds.length > 0 && (
+                  <button
+                    onClick={handleBulkDeleteSched}
+                    disabled={isPending}
+                    className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Hapus Terpilih ({selectedSchedIds.length})
+                  </button>
+                )}
+
                 <select
                   value={selectedClassFilter}
                   onChange={(e) => setSelectedClassFilter(e.target.value)}
@@ -940,6 +1028,18 @@ export default function JadwalClient({
               <table className="min-w-full divide-y divide-slate-800">
                 <thead>
                   <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="pb-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={
+                          filteredSchedules.length > 0 &&
+                          filteredSchedules.every((s) => selectedSchedIds.includes(s.id))
+                        }
+                        onChange={() => handleSelectAllSched(filteredSchedules)}
+                        className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        title="Pilih Semua Jadwal"
+                      />
+                    </th>
                     <th className="pb-3 w-10">No</th>
                     <th className="pb-3 w-20">Hari</th>
                     <th className="pb-3 w-28">Jam Pelajaran</th>
@@ -952,13 +1052,21 @@ export default function JadwalClient({
                 <tbody className="divide-y divide-slate-800/60 text-sm">
                   {filteredSchedules.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-10 text-slate-500">
+                      <td colSpan={8} className="text-center py-10 text-slate-500">
                         Tidak ada data jadwal ditemukan.
                       </td>
                     </tr>
                   ) : (
                     filteredSchedules.map((item, index) => (
-                      <tr key={item.id}>
+                      <tr key={item.id} className={selectedSchedIds.includes(item.id) ? "bg-indigo-500/10" : ""}>
+                        <td className="py-4 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedSchedIds.includes(item.id)}
+                            onChange={() => handleToggleSchedSelect(item.id)}
+                            className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                        </td>
                         <td className="py-4 text-slate-500">{index + 1}</td>
                         <td className="py-4 font-bold text-white">{HARI_MAP[item.hari]}</td>
                         <td className="py-4 text-slate-300 font-mono text-xs">
@@ -1076,15 +1184,40 @@ export default function JadwalClient({
 
           {/* List Subject View */}
           <div className="xl:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-indigo-400" />
-              Database Mata Pelajaran
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-indigo-400" />
+                Database Mata Pelajaran
+              </h3>
+
+              {selectedMapelIds.length > 0 && (
+                <button
+                  onClick={handleBulkDeleteMapel}
+                  disabled={isPending}
+                  className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Hapus Terpilih ({selectedMapelIds.length})
+                </button>
+              )}
+            </div>
 
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-800">
                 <thead>
                   <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="pb-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={
+                          subjectList.length > 0 &&
+                          subjectList.every((s) => selectedMapelIds.includes(s.id))
+                        }
+                        onChange={() => handleSelectAllMapel(subjectList)}
+                        className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        title="Pilih Semua Mapel"
+                      />
+                    </th>
                     <th className="pb-3 w-10">No</th>
                     <th className="pb-3 w-32">Kode Mapel</th>
                     <th className="pb-3">Nama Mata Pelajaran</th>
@@ -1094,13 +1227,21 @@ export default function JadwalClient({
                 <tbody className="divide-y divide-slate-800/60 text-sm">
                   {subjectList.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="text-center py-10 text-slate-500">
+                      <td colSpan={5} className="text-center py-10 text-slate-500">
                         Belum ada data mata pelajaran.
                       </td>
                     </tr>
                   ) : (
                     subjectList.map((item, index) => (
-                      <tr key={item.id}>
+                      <tr key={item.id} className={selectedMapelIds.includes(item.id) ? "bg-indigo-500/10" : ""}>
+                        <td className="py-4 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedMapelIds.includes(item.id)}
+                            onChange={() => handleToggleMapelSelect(item.id)}
+                            className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                        </td>
                         <td className="py-4 text-slate-500">{index + 1}</td>
                         <td className="py-4 font-mono text-xs font-bold text-white">{item.kode}</td>
                         <td className="py-4 text-slate-300">{item.nama}</td>
