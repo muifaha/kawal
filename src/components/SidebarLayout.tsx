@@ -191,7 +191,7 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
     {
       name: "Pelanggaran",
       icon: AlertTriangle,
-      roles: ["BK", "WALAS", "WAKA", "OSIS", "PIKET"],
+      roles: ["BK", "WALAS", "GURU", "WAKA", "OSIS", "PIKET"],
       children: [
         {
           name: "Rekap Pelanggaran",
@@ -201,12 +201,12 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
         {
           name: "Tambah Pelanggaran",
           href: "/pelanggaran",
-          roles: ["BK", "WALAS", "OSIS", "PIKET", "WAKA"],
+          roles: ["BK", "WALAS", "GURU", "OSIS", "PIKET", "WAKA"],
         },
         {
           name: "Rujukan BK",
           href: "/rujukan",
-          roles: ["WALAS"],
+          roles: ["WALAS", "GURU"],
         },
         {
           name: "Persetujuan Pelanggaran",
