@@ -1251,157 +1251,267 @@ export function printJurnalMengajarDailyPDF(
   printWindow.document.close();
 }
 
-export async function exportKehadiranJurnalExcel(
-  journals: any[],
-  dateLabel: string,
-  schoolSettings?: Record<string, string>
+export function sortClassesByGrade(classes: any[]): any[] {
+  return [...classes].sort((a, b) => {
+    const classA = parseKelasSortOrder(a.nama || "");
+    const classB = parseKelasSortOrder(b.nama || "");
+
+    if (classA.grade !== classB.grade) {
+      return classA.grade - classB.grade;
+    }
+    return classA.sub.localeCompare(classB.sub, undefined, { numeric: true, sensitivity: 'base' });
+  });
+}
+
+export async function exportKehadiranJurnalExcelMatrix(
+  matrixData: {
+    dateStr: string;
+    dayTipe: string;
+    classes: any[];
+    schedules: any[];
+    journals: any[];
+    schoolSettings: Record<string, string>;
+  },
+  dateLabel: string
 ) {
-  if (!journals || journals.length === 0) return;
-
-  // Sort journals X -> XI -> XII and jam 1-9
-  const sortedJournals = sortJournalsByKelasAndJam(journals);
-
   const ExcelJS = await import("exceljs");
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Kehadiran Jurnal", {
+  const worksheet = workbook.addWorksheet("Rekap Kehadiran Jurnal", {
     pageSetup: { paperSize: 9, orientation: "landscape" },
   });
 
-  const schoolName = schoolSettings?.school_name || "SMA NEGERI 6 TANGERANG";
+  const schoolName = matrixData.schoolSettings?.school_name || "SMA NEGERI 6 TANGERANG";
 
-  // Title Block
-  worksheet.mergeCells("A1:I1");
+  // 1. Title Block
+  worksheet.mergeCells("A1:K1");
   const cTitle1 = worksheet.getCell("A1");
-  cTitle1.value = "REKAPITULASI KEHADIRAN SISWA DALAM JURNAL MENGAJAR";
+  cTitle1.value = "REKAPITULASI KEHADIRAN SISWA PER KELAS (JURNAL MENGAJAR HARIAN)";
   cTitle1.font = { name: "Arial", size: 14, bold: true, color: { argb: "FF1E3A8A" } };
   cTitle1.alignment = { horizontal: "center", vertical: "middle" };
 
-  worksheet.mergeCells("A2:I2");
+  worksheet.mergeCells("A2:K2");
   const cTitle2 = worksheet.getCell("A2");
   cTitle2.value = schoolName.toUpperCase();
   cTitle2.font = { name: "Arial", size: 12, bold: true, color: { argb: "FF0F172A" } };
   cTitle2.alignment = { horizontal: "center", vertical: "middle" };
 
-  worksheet.mergeCells("A3:I3");
+  worksheet.mergeCells("A3:K3");
   const cTitle3 = worksheet.getCell("A3");
-  cTitle3.value = `Tanggal: ${dateLabel} | Total ${sortedJournals.length} Sesi Pembelajaran`;
+  cTitle3.value = `Hari, Tanggal: ${dateLabel}`;
   cTitle3.font = { name: "Arial", size: 10, italic: true, color: { argb: "FF475569" } };
   cTitle3.alignment = { horizontal: "center", vertical: "middle" };
 
-  worksheet.addRow([]); // Row 4 space
+  let currentWorkingRow = 5;
 
-  // Table Headers (Row 5)
-  const headers = [
-    "No",
-    "Kelas",
-    "Sesi / Jam",
-    "Mata Pelajaran",
-    "Guru Pengajar",
-    "Nama Siswa",
-    "NIS / NIK",
-    "Status Kehadiran",
-    "Nama Jurnal / Catatan",
-  ];
-  const headerRow = worksheet.addRow(headers);
-  headerRow.height = 26;
-
-  headerRow.eachCell((cell) => {
-    cell.fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FF1E3A8A" },
-    };
-    cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
-    cell.alignment = { horizontal: "center", vertical: "middle" };
-    cell.border = {
-      top: { style: "thin", color: { argb: "FF1E3A8A" } },
-      bottom: { style: "medium", color: { argb: "FF0F172A" } },
-      left: { style: "thin", color: { argb: "FF334155" } },
-      right: { style: "thin", color: { argb: "FF334155" } },
-    };
-  });
-
-  const statusColors: Record<string, { label: string; bg: string; fg: string }> = {
-    H: { label: "Hadir", bg: "FFDCFCE7", fg: "FF15803D" },
-    S: { label: "Sakit", bg: "FFFDE68A", fg: "FFB45309" },
-    I: { label: "Izin", bg: "FFDBEAFE", fg: "FF1D4ED8" },
-    A: { label: "Alfa", bg: "FFFFCDD3", fg: "FFBE123C" },
-    D: { label: "Dispensasi", bg: "FFE9D5FF", fg: "FF6B21A8" },
+  const statusStyles: Record<string, { label: string; bg: string; fg: string }> = {
+    H: { label: "H", bg: "FFDCFCE7", fg: "FF15803D" }, // Hadir
+    S: { label: "S", bg: "FFFDE68A", fg: "FFB45309" }, // Sakit
+    I: { label: "I", bg: "FFDBEAFE", fg: "FF1D4ED8" }, // Izin
+    A: { label: "A", bg: "FFFFCDD3", fg: "FFBE123C" }, // Alfa
+    D: { label: "D", bg: "FFE9D5FF", fg: "FF6B21A8" }, // Dispensasi
+    "-": { label: "-", bg: "FFF1F5F9", fg: "FF94A3B8" }, // Belum diisi guru
   };
 
-  let rowCounter = 1;
+  const sortedClasses = sortClassesByGrade(matrixData.classes);
 
-  sortedJournals.forEach((jurnal) => {
-    const cleanKelas = jurnal.kelas?.nama?.replace(/^Kelas\s+/i, "") || "-";
-    const jamLabel = `Jam ${jurnal.jamMulai} - ${jurnal.jamSelesai}`;
-    const mapelNama = jurnal.mapel?.nama || "-";
-    const guruNama = jurnal.guru?.nama || "-";
+  sortedClasses.forEach((kelasItem) => {
+    const classSchedules = matrixData.schedules.filter((s) => s.kelasId === kelasItem.id);
+    const classJournals = matrixData.journals.filter((j) => j.kelasId === kelasItem.id);
 
-    const absensiList = jurnal.absensi || [];
-    if (absensiList.length === 0) {
-      const row = worksheet.addRow([
-        rowCounter++,
-        cleanKelas,
-        jamLabel,
-        mapelNama,
-        guruNama,
-        "- (Tidak Ada Absensi Terinput)",
-        "-",
-        "-",
-        jurnal.namaJurnal || "-",
-      ]);
-      row.height = 20;
-    } else {
-      absensiList.forEach((att: any) => {
-        const stInfo = statusColors[att.status] || { label: att.status || "-", bg: "FFF1F5F9", fg: "FF475569" };
-        const row = worksheet.addRow([
-          rowCounter++,
-          cleanKelas,
-          jamLabel,
-          mapelNama,
-          guruNama,
-          att.siswa?.nama || "-",
-          att.siswa?.nis || att.siswa?.nisn || "-",
-          stInfo.label,
-          att.keterangan || jurnal.namaJurnal || "-",
-        ]);
-        row.height = 20;
+    if (classSchedules.length === 0 && classJournals.length === 0) return;
 
-        const statusCell = row.getCell(8);
-        statusCell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: stInfo.bg },
-        };
-        statusCell.font = { name: "Arial", size: 9, bold: true, color: { argb: stInfo.fg } };
-        statusCell.alignment = { horizontal: "center", vertical: "middle" };
+    // Collect all session slots
+    const sessionMap = new Map<string, { jamMulai: number; jamSelesai: number; label: string; journal: any; schedule: any }>();
+
+    classSchedules.forEach((sched) => {
+      const key = `${sched.jamMulai}-${sched.jamSelesai}`;
+      if (!sessionMap.has(key)) {
+        const matchingJournal = classJournals.find(
+          (j) => j.jamMulai === sched.jamMulai || (j.jadwalId && j.jadwalId === sched.id)
+        );
+        sessionMap.set(key, {
+          jamMulai: sched.jamMulai,
+          jamSelesai: sched.jamSelesai,
+          label: `Jam ${sched.jamMulai}-${sched.jamSelesai}`,
+          journal: matchingJournal || null,
+          schedule: sched,
+        });
+      }
+    });
+
+    classJournals.forEach((j) => {
+      const key = `${j.jamMulai}-${j.jamSelesai}`;
+      if (!sessionMap.has(key)) {
+        sessionMap.set(key, {
+          jamMulai: j.jamMulai,
+          jamSelesai: j.jamSelesai,
+          label: `Jam ${j.jamMulai}-${j.jamSelesai}`,
+          journal: j,
+          schedule: null,
+        });
+      }
+    });
+
+    const sessionsList = Array.from(sessionMap.values()).sort((a, b) => a.jamMulai - b.jamMulai);
+
+    // Active students in class
+    const students = (kelasItem.siswaKelas || [])
+      .map((sk: any) => sk.siswa)
+      .filter(Boolean)
+      .filter((s: any) => s.status !== "LULUS" && s.status !== "PINDAH")
+      .sort((a: any, b: any) => a.nama.localeCompare(b.nama));
+
+    if (students.length === 0 && sessionsList.length === 0) return;
+
+    const cleanKelasNama = kelasItem.nama.replace(/^Kelas\s+/i, "");
+
+    // RENDER HEADER ROW
+    const headers = ["Kelas", "NIS", "Nama Siswa", ...sessionsList.map((s) => s.label)];
+    const hRow = worksheet.getRow(currentWorkingRow);
+    hRow.values = headers;
+    hRow.height = 24;
+
+    hRow.eachCell({ includeEmpty: false }, (cell) => {
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E3A8A" } };
+      cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FF1E3A8A" } },
+        bottom: { style: "medium", color: { argb: "FF0F172A" } },
+        left: { style: "thin", color: { argb: "FF334155" } },
+        right: { style: "thin", color: { argb: "FF334155" } },
+      };
+    });
+
+    currentWorkingRow++;
+    const firstStudentRow = currentWorkingRow;
+
+    // RENDER STUDENT ROWS
+    students.forEach((student: any) => {
+      const rowValues: any[] = [cleanKelasNama, student.nis || student.nisn || "-", student.nama];
+
+      sessionsList.forEach((sess) => {
+        if (!sess.journal) {
+          // Guru belum mengisi -> '-'
+          rowValues.push("-");
+        } else {
+          const att = (sess.journal.absensi || []).find((a: any) => a.siswaId === student.id);
+          if (att) {
+            rowValues.push(att.status || "H");
+          } else {
+            rowValues.push("H");
+          }
+        }
       });
-    }
-  });
 
-  // Apply default styles to data cells
-  worksheet.eachRow((row, rowNumber) => {
-    if (rowNumber > 5) {
-      row.eachCell((cell, colNumber) => {
+      const sRow = worksheet.getRow(currentWorkingRow);
+      sRow.values = rowValues;
+      sRow.height = 19;
+
+      sRow.eachCell({ includeEmpty: false }, (cell, colNum) => {
+        cell.font = { name: "Arial", size: 9, color: { argb: "FF0F172A" } };
         cell.border = {
           top: { style: "thin", color: { argb: "FFE2E8F0" } },
           bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
           left: { style: "thin", color: { argb: "FFE2E8F0" } },
           right: { style: "thin", color: { argb: "FFE2E8F0" } },
         };
-        if (colNumber !== 8) {
-          cell.font = { name: "Arial", size: 9, color: { argb: "FF0F172A" } };
-          if ([1, 2, 3, 7].includes(colNumber)) {
-            cell.alignment = { horizontal: "center", vertical: "middle" };
-          } else {
-            cell.alignment = { horizontal: "left", vertical: "middle" };
-          }
+
+        if (colNum === 1 || colNum === 2) {
+          cell.alignment = { horizontal: "center", vertical: "middle" };
+        } else if (colNum === 3) {
+          cell.alignment = { horizontal: "left", vertical: "middle" };
+        } else {
+          // Session columns
+          const stVal = String(cell.value || "-").toUpperCase();
+          const stStyle = statusStyles[stVal] || statusStyles["-"];
+
+          cell.value = stStyle.label;
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: stStyle.bg } };
+          cell.font = { name: "Arial", size: 9, bold: true, color: { argb: stStyle.fg } };
+          cell.alignment = { horizontal: "center", vertical: "middle" };
         }
       });
+
+      currentWorkingRow++;
+    });
+
+    const lastStudentRow = currentWorkingRow - 1;
+
+    if (students.length > 1 && lastStudentRow >= firstStudentRow) {
+      try {
+        worksheet.mergeCells(`A${firstStudentRow}:A${lastStudentRow}`);
+        const mergedCell = worksheet.getCell(`A${firstStudentRow}`);
+        mergedCell.alignment = { horizontal: "center", vertical: "middle" };
+      } catch (e) {}
     }
+
+    currentWorkingRow++;
+
+    // RENDER KETERANGAN LEGEND TABLE FOR THIS CLASS
+    const ketHeaderRow = worksheet.getRow(currentWorkingRow);
+    ketHeaderRow.values = ["Keterangan Sesi Pembelajaran Kelas " + cleanKelasNama];
+    try {
+      worksheet.mergeCells(`A${currentWorkingRow}:D${currentWorkingRow}`);
+    } catch (e) {}
+    const ketTitleCell = worksheet.getCell(`A${currentWorkingRow}`);
+    ketTitleCell.font = { name: "Arial", size: 9, bold: true, color: { argb: "FF1E3A8A" } };
+    currentWorkingRow++;
+
+    const ketSubHeaderRow = worksheet.getRow(currentWorkingRow);
+    ketSubHeaderRow.values = ["Waktu / Sesi", "Mata Pelajaran", "Guru Pengajar", "Status Jurnal"];
+    ketSubHeaderRow.height = 20;
+
+    [1, 2, 3, 4].forEach((colIdx) => {
+      const cell = ketSubHeaderRow.getCell(colIdx);
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF334155" } };
+      cell.font = { name: "Arial", size: 8.5, bold: true, color: { argb: "FFFFFFFF" } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FF334155" } },
+        bottom: { style: "thin", color: { argb: "FF334155" } },
+        left: { style: "thin", color: { argb: "FF475569" } },
+        right: { style: "thin", color: { argb: "FF475569" } },
+      };
+    });
+
+    currentWorkingRow++;
+
+    sessionsList.forEach((sess) => {
+      const mapelNama = sess.journal?.mapel?.nama || sess.schedule?.mapel?.nama || "-";
+      const guruNama = sess.journal?.guru?.nama || sess.schedule?.guru?.nama || "-";
+      const statusKet = sess.journal ? "Sudah Diisi" : "Belum Diisi";
+
+      const r = worksheet.getRow(currentWorkingRow);
+      r.values = [sess.label, mapelNama, guruNama, statusKet];
+      r.height = 18;
+
+      [1, 2, 3, 4].forEach((colIdx) => {
+        const cell = r.getCell(colIdx);
+        cell.font = { name: "Arial", size: 8.5, color: { argb: "FF0F172A" } };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFE2E8F0" } },
+          bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+          left: { style: "thin", color: { argb: "FFE2E8F0" } },
+          right: { style: "thin", color: { argb: "FFE2E8F0" } },
+        };
+
+        if (colIdx === 1) cell.alignment = { horizontal: "center", vertical: "middle" };
+        else if (colIdx === 4) {
+          cell.alignment = { horizontal: "center", vertical: "middle" };
+          cell.font = { name: "Arial", size: 8.5, bold: true, color: { argb: sess.journal ? "FF15803D" : "FFBE123C" } };
+        } else {
+          cell.alignment = { horizontal: "left", vertical: "middle" };
+        }
+      });
+
+      currentWorkingRow++;
+    });
+
+    currentWorkingRow += 2; // Blank spacing
   });
 
-  // TTD Block
+  // FOOTER SIGNATURES
   worksheet.addRow([]);
   const ttdDateFormatted = new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
@@ -1410,46 +1520,38 @@ export async function exportKehadiranJurnalExcel(
     timeZone: "Asia/Jakarta",
   }).format(new Date());
 
-  const rTtd1 = worksheet.addRow(["", "", "", "", "", "", "", "Tangerang, " + ttdDateFormatted, ""]);
-  rTtd1.getCell(8).alignment = { horizontal: "center" };
-  rTtd1.getCell(8).font = { name: "Arial", size: 10 };
+  const rTtd1 = worksheet.addRow(["", "", "Tangerang, " + ttdDateFormatted]);
+  rTtd1.getCell(3).font = { name: "Arial", size: 10 };
 
-  const rTtd2 = worksheet.addRow(["", "", "", "", "", "", "", "Mengetahui,", ""]);
-  rTtd2.getCell(8).alignment = { horizontal: "center" };
-  rTtd2.getCell(8).font = { name: "Arial", size: 10, bold: true };
+  const rTtd2 = worksheet.addRow(["", "", "Mengetahui,"]);
+  rTtd2.getCell(3).font = { name: "Arial", size: 10, bold: true };
 
-  const rTtd3 = worksheet.addRow(["", "", "", "", "", "", "", "Waka Kurikulum", ""]);
-  rTtd3.getCell(8).alignment = { horizontal: "center" };
-  rTtd3.getCell(8).font = { name: "Arial", size: 10, bold: true };
+  const rTtd3 = worksheet.addRow(["", "", "Waka Kurikulum"]);
+  rTtd3.getCell(3).font = { name: "Arial", size: 10, bold: true };
 
   worksheet.addRow([]);
   worksheet.addRow([]);
 
-  const rTtd4 = worksheet.addRow(["", "", "", "", "", "", "", "CHRESTIAN PRASETIO H, S.E, MM.", ""]);
-  rTtd4.getCell(8).alignment = { horizontal: "center" };
-  rTtd4.getCell(8).font = { name: "Arial", size: 10, bold: true, underline: true };
+  const rTtd4 = worksheet.addRow(["", "", "CHRESTIAN PRASETIO H, S.E, MM."]);
+  rTtd4.getCell(3).font = { name: "Arial", size: 10, bold: true, underline: true };
 
-  const rTtd5 = worksheet.addRow(["", "", "", "", "", "", "", "NIP. 197108152008011007", ""]);
-  rTtd5.getCell(8).alignment = { horizontal: "center" };
-  rTtd5.getCell(8).font = { name: "Arial", size: 9, color: { argb: "FF475569" } };
+  const rTtd5 = worksheet.addRow(["", "", "NIP. 197108152008011007"]);
+  rTtd5.getCell(3).font = { name: "Arial", size: 9, color: { argb: "FF475569" } };
 
   // Set explicit column widths
-  worksheet.getColumn(1).width = 6;  // No
-  worksheet.getColumn(2).width = 12; // Kelas
-  worksheet.getColumn(3).width = 16; // Sesi
-  worksheet.getColumn(4).width = 26; // Mapel
-  worksheet.getColumn(5).width = 26; // Guru
-  worksheet.getColumn(6).width = 30; // Nama Siswa
-  worksheet.getColumn(7).width = 18; // NIS
-  worksheet.getColumn(8).width = 18; // Status
-  worksheet.getColumn(9).width = 32; // Keterangan
+  worksheet.getColumn(1).width = 12; // Kelas
+  worksheet.getColumn(2).width = 16; // NIS
+  worksheet.getColumn(3).width = 30; // Nama Siswa
+  for (let c = 4; c <= 15; c++) {
+    worksheet.getColumn(c).width = 14;
+  }
 
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = window.URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `Kehadiran_Jurnal_${dateLabel.replace(/\s+/g, "_")}.xlsx`;
+  anchor.download = `Matriks_Kehadiran_Jurnal_${dateLabel.replace(/\s+/g, "_")}.xlsx`;
   anchor.click();
   window.URL.revokeObjectURL(url);
 }

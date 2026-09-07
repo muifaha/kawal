@@ -899,3 +899,90 @@ export async function importJadwalExcelAction(fileBase64: string) {
   }
 }
 
+export async function getDailyAttendanceMatrixAction(dateStr: string) {
+  const user = await getSessionUser();
+  if (!user) {
+    return { error: "Akses ditolak." };
+  }
+
+  try {
+    const dateObj = new Date(`${dateStr}T12:00:00.000Z`);
+    const dayNumber = dateObj.getUTCDay() === 0 ? 7 : dateObj.getUTCDay();
+    const dayNames: Record<number, string> = {
+      1: "SENIN",
+      2: "SELASA",
+      3: "RABU",
+      4: "KAMIS",
+      5: "JUMAT",
+      6: "SABTU",
+      7: "MINGGU",
+    };
+    const dayTipe = dayNames[dayNumber] || "SENIN";
+
+    const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+    const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
+
+    const classes = await prisma.kelas.findMany({
+      include: {
+        siswaKelas: {
+          include: {
+            siswa: true,
+          },
+          orderBy: {
+            siswa: { nama: "asc" },
+          },
+        },
+      },
+    });
+
+    const schedules = await prisma.jadwalPelajaran.findMany({
+      where: { hari: dayNumber },
+      include: {
+        kelas: true,
+        guru: true,
+        mapel: true,
+      },
+      orderBy: { jamMulai: "asc" },
+    });
+
+    const journals = await prisma.jurnalMengajar.findMany({
+      where: {
+        tanggal: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      include: {
+        kelas: true,
+        guru: true,
+        mapel: true,
+        absensi: {
+          include: {
+            siswa: true,
+          },
+        },
+      },
+      orderBy: { jamMulai: "asc" },
+    });
+
+    const appSettingsList = await prisma.appSetting.findMany();
+    const schoolSettings: Record<string, string> = {};
+    appSettingsList.forEach((s) => {
+      schoolSettings[s.key] = s.value;
+    });
+
+    return {
+      success: true,
+      dateStr,
+      dayTipe,
+      classes,
+      schedules,
+      journals,
+      schoolSettings,
+    };
+  } catch (error: any) {
+    console.error("getDailyAttendanceMatrixAction error:", error);
+    return { error: "Gagal mengambil data matriks kehadiran." };
+  }
+}
+

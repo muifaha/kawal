@@ -13,11 +13,12 @@ import {
   importJadwalExcelAction,
   createCustomActivityJurnalAction,
   getJurnalFullDetailAction,
+  getDailyAttendanceMatrixAction,
 } from "@/app/actions/schedule";
 import {
   printJurnalMengajarPDF,
   printJurnalMengajarDailyPDF,
-  exportKehadiranJurnalExcel,
+  exportKehadiranJurnalExcelMatrix,
   sortJournalsByKelasAndJam,
 } from "@/lib/printUtils";
 import {
@@ -314,13 +315,32 @@ export default function JadwalClient({
   };
 
   const handleExportKehadiranExcelForDate = async () => {
+    if (!printDate) {
+      alert("Silakan pilih tanggal terlebih dahulu.");
+      return;
+    }
+
     try {
       setIsBulkProcessing(true);
-      const data = await getFullJournalsForPrintDate();
-      if (!data) return;
-      await exportKehadiranJurnalExcel(data.sortedJournals, data.dateLabel, data.schoolSettings);
+      const res = await getDailyAttendanceMatrixAction(printDate);
+      if (!res || !res.success || !res.classes) {
+        alert(res?.error || "Gagal memuat data matriks kehadiran.");
+        return;
+      }
+
+      const dateObj = new Date(`${printDate}T12:00:00Z`);
+      const dateLabel = new Intl.DateTimeFormat("id-ID", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Asia/Jakarta",
+      }).format(dateObj);
+
+      await exportKehadiranJurnalExcelMatrix(res as any, dateLabel);
     } catch (e) {
-      alert("Terjadi kesalahan saat mengekspor data ke Excel.");
+      console.error(e);
+      alert("Terjadi kesalahan saat mengekspor data matriks kehadiran ke Excel.");
     } finally {
       setIsBulkProcessing(false);
     }
