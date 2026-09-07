@@ -954,8 +954,8 @@ export function printJurnalMengajarDailyPDF(
     }).join('');
 
     return `
-      <div style="margin-bottom: 22px; page-break-inside: avoid; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #ffffff;">
-        <div style="background: #1e3a8a; color: #ffffff; padding: 8px 12px; font-weight: 800; font-size: 9.5pt; display: flex; justify-content: space-between; align-items: center;">
+      <div style="margin-bottom: 20px; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #ffffff;">
+        <div style="background: #1e3a8a; color: #ffffff; padding: 8px 12px; font-weight: 800; font-size: 9.5pt; display: flex; justify-content: space-between; align-items: center; page-break-after: avoid; break-after: avoid;">
           <span>Sesi #${index + 1}: ${jurnal.namaJurnal}</span>
           <span style="font-size: 8.5pt; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">
             Kelas ${jurnal.kelas?.nama || "-"} | Jam Ke-${jurnal.jamMulai} - ${jurnal.jamSelesai}
@@ -974,7 +974,7 @@ export function printJurnalMengajarDailyPDF(
             </tr>
           </table>
 
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #2563eb; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #2563eb; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; page-break-inside: avoid;">
             <div style="font-weight: 800; font-size: 8.5pt; color: #1e3a8a; text-transform: uppercase; margin-bottom: 3px;">Deskripsi Pembelajaran:</div>
             <div style="font-size: 9pt; color: #1e293b; white-space: pre-wrap; line-height: 1.4;">${jurnal.kegiatan}</div>
           </div>
@@ -982,7 +982,7 @@ export function printJurnalMengajarDailyPDF(
           ${photosHtml}
 
           ${jurnal.absensi && jurnal.absensi.length > 0 ? `
-            <div style="font-weight: 800; font-size: 8.5pt; color: #1e3a8a; text-transform: uppercase; margin-top: 10px; margin-bottom: 6px;">
+            <div style="font-weight: 800; font-size: 8.5pt; color: #1e3a8a; text-transform: uppercase; margin-top: 10px; margin-bottom: 6px; page-break-after: avoid; break-after: avoid;">
               Daftar Absensi Siswa:
             </div>
             <table class="data-table" style="margin-bottom: 0;">
@@ -1008,11 +1008,11 @@ export function printJurnalMengajarDailyPDF(
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Rekap Jurnal Mengajar Harian - ${dateLabel}</title>
+        <title>Jurnal Kegiatan Harian - ${dateLabel}</title>
         <style>
           @page {
             size: A4;
-            margin: 12mm 16mm;
+            margin: 10mm 14mm;
           }
           * {
             box-sizing: border-box;
@@ -1031,11 +1031,11 @@ export function printJurnalMengajarDailyPDF(
             align-items: center;
             justify-content: space-between;
             border-bottom: 3px double #1e3a8a;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
           }
           .logo-img {
-            width: 70px;
+            width: 65px;
             height: auto;
           }
           .header-text {
@@ -1045,14 +1045,14 @@ export function printJurnalMengajarDailyPDF(
           }
           .header-text h2 {
             margin: 0;
-            font-size: 13pt;
+            font-size: 12.5pt;
             font-weight: 800;
             color: #1e3a8a;
             text-transform: uppercase;
           }
           .header-text h3 {
             margin: 2px 0 0 0;
-            font-size: 10.5pt;
+            font-size: 10pt;
             font-weight: 700;
             color: #1e293b;
             text-transform: uppercase;
@@ -1064,7 +1064,9 @@ export function printJurnalMengajarDailyPDF(
           }
           .doc-title-container {
             text-align: center;
-            margin: 14px 0 16px 0;
+            margin: 10px 0 14px 0;
+            page-break-after: avoid;
+            break-after: avoid;
           }
           .doc-title {
             display: inline-block;
@@ -1077,7 +1079,7 @@ export function printJurnalMengajarDailyPDF(
             border-bottom: 2.5px solid #2563eb;
           }
           .doc-subtitle {
-            font-size: 9.5pt;
+            font-size: 9pt;
             color: #475569;
             font-weight: 600;
             margin-top: 4px;
@@ -1100,18 +1102,23 @@ export function printJurnalMengajarDailyPDF(
           }
           table.data-table td {
             border: 1px solid #e2e8f0;
-            padding: 5px 8px;
+            padding: 4px 8px;
             font-size: 8.5pt;
             color: #1e293b;
+          }
+          table.data-table tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
           }
           table.data-table tbody tr:nth-child(even) {
             background-color: #f8fafc;
           }
           .footer-section {
-            margin-top: 25px;
+            margin-top: 20px;
             display: flex;
             justify-content: flex-end;
             page-break-inside: avoid;
+            break-inside: avoid;
           }
           .ttd-box {
             text-align: center;
@@ -1120,7 +1127,7 @@ export function printJurnalMengajarDailyPDF(
             color: #1e293b;
           }
           .ttd-space {
-            height: 60px;
+            height: 55px;
             margin: 4px 0;
           }
           .ttd-nama {
@@ -1134,7 +1141,7 @@ export function printJurnalMengajarDailyPDF(
         ${headerHtml}
 
         <div class="doc-title-container">
-          <div class="doc-title">REKAP JURNAL MENGAJAR HARIAN</div>
+          <div class="doc-title">JURNAL KEGIATAN HARIAN</div>
           <div class="doc-subtitle">Tanggal: ${dateLabel} | Total Sesi: ${journals.length} Kegiatan</div>
         </div>
 
@@ -1145,7 +1152,7 @@ export function printJurnalMengajarDailyPDF(
             <div>Tangerang, ${ttdDateFormatted}</div>
             <div style="margin-top: 3px; font-weight: 600; color: #475569;">Guru Pengajar</div>
             <div class="ttd-space" style="display: flex; align-items: center; justify-content: center;">
-              ${firstJournal.guru?.ttd ? `<img src="${firstJournal.guru.ttd}" style="max-height: 60px; max-width: 160px; object-fit: contain;" />` : ''}
+              ${firstJournal.guru?.ttd ? `<img src="${firstJournal.guru.ttd}" style="max-height: 55px; max-width: 160px; object-fit: contain;" />` : ''}
             </div>
             <div class="ttd-nama">${firstJournal.guru?.nama || "-"}</div>
             <div style="font-size: 8.5pt; color: #475569;">NIP. ${firstJournal.guru?.nip || "...................................."}</div>
