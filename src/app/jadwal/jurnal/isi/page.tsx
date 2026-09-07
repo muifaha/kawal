@@ -8,13 +8,14 @@ import IsiJurnalClient from "./IsiJurnalClient";
 interface PageProps {
   searchParams: Promise<{
     jadwalId?: string;
+    jurnalId?: string;
   }>;
 }
 
 export const revalidate = 0;
 
 export default async function IsiJurnalPage({ searchParams }: PageProps) {
-  const { jadwalId } = await searchParams;
+  const { jadwalId, jurnalId } = await searchParams;
 
   const user = await getSessionUser();
   if (!user) {
@@ -25,28 +26,63 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
     redirect("/jadwal");
   }
 
-  if (!jadwalId) {
-    redirect("/jadwal");
+  let existingJurnal: any = null;
+  if (jurnalId) {
+    existingJurnal = await prisma.jurnalMengajar.findUnique({
+      where: { id: jurnalId },
+      include: {
+        kelas: true,
+        guru: true,
+        mapel: true,
+        absensi: true,
+      },
+    });
   }
 
-  // 1. Ambil data Jadwal Pelajaran
-  const jadwal = await prisma.jadwalPelajaran.findUnique({
-    where: { id: jadwalId },
-    include: {
-      kelas: true,
-      guru: true,
-      mapel: true,
-    },
-  });
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
 
-  if (!jadwal || (jadwal.guruId !== user.id)) {
-    redirect("/jadwal?error=unauthorized_schedule");
+  const targetJadwalId = jadwalId || existingJurnal?.jadwalId;
+  let jadwal: any = null;
+
+  if (targetJadwalId) {
+    jadwal = await prisma.jadwalPelajaran.findUnique({
+      where: { id: targetJadwalId },
+      include: {
+        kelas: true,
+        guru: true,
+        mapel: true,
+      },
+    });
+  }
+
+  if (!existingJurnal && targetJadwalId) {
+    existingJurnal = await prisma.jurnalMengajar.findFirst({
+      where: {
+        jadwalId: targetJadwalId,
+        tanggal: today,
+        guruId: user.id,
+      },
+      include: {
+        kelas: true,
+        guru: true,
+        mapel: true,
+        absensi: true,
+      },
+    });
+  }
+
+  const targetKelasId = jadwal?.kelasId || existingJurnal?.kelasId;
+  const targetMapelId = jadwal?.mapelId || existingJurnal?.mapelId;
+
+  if (!targetKelasId || !targetMapelId) {
+    redirect("/jadwal");
   }
 
   // 2. Ambil seluruh siswa aktif di kelas tersebut
   const dbStudents = await prisma.siswaKelas.findMany({
     where: {
-      kelasId: jadwal.kelasId,
+      kelasId: targetKelasId,
       siswa: { status: "AKTIF" },
     },
     include: {
@@ -60,9 +96,6 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
   const studentsList = dbStudents.map((sk) => sk.siswa);
 
   // 3. Ambil data absensi hari ini (jika ada di BK) untuk pre-fill
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0); // Midnight UTC matching database date keys
-
   const todayAttendance = await prisma.absensi.findMany({
     where: {
       tanggal: today,
@@ -83,19 +116,8 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
     id: s.id,
     nis: s.nis,
     nama: s.nama,
-    defaultStatus: attendanceMap[s.id] || "H", // Default to "H" (Hadir) if not set in BK today
+    defaultStatus: attendanceMap[s.id] || "H",
   }));
-
-  const existingJurnal = await prisma.jurnalMengajar.findFirst({
-    where: {
-      jadwalId: jadwal.id,
-      tanggal: today,
-      guruId: user.id,
-    },
-    include: {
-      absensi: true,
-    },
-  });
 
   const existingJurnalData = existingJurnal ? {
     id: existingJurnal.id,
@@ -103,8 +125,18 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
     kegiatan: existingJurnal.kegiatan,
     foto: existingJurnal.foto,
     fotoKeterangan: existingJurnal.fotoKeterangan,
-    absensi: existingJurnal.absensi.map((a) => ({ siswaId: a.siswaId, status: a.status })),
+    absensi: existingJurnal.absensi.map((a: any) => ({ siswaId: a.siswaId, status: a.status })),
   } : null;
+
+  const jadwalData = {
+    id: targetJadwalId || "",
+    kelasId: targetKelasId,
+    kelasNama: jadwal?.kelas?.nama || existingJurnal?.kelas?.nama || "",
+    mapelId: targetMapelId,
+    mapelNama: jadwal?.mapel?.nama || existingJurnal?.mapel?.nama || "",
+    jamMulai: jadwal?.jamMulai || existingJurnal?.jamMulai || 1,
+    jamSelesai: jadwal?.jamSelesai || existingJurnal?.jamSelesai || 2,
+  };
 
   return (
     <SidebarLayout user={user}>
@@ -121,15 +153,7 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
 
       <IsiJurnalClient
         user={user}
-        jadwal={{
-          id: jadwal.id,
-          kelasId: jadwal.kelasId,
-          kelasNama: jadwal.kelas.nama,
-          mapelId: jadwal.mapelId,
-          mapelNama: jadwal.mapel.nama,
-          jamMulai: jadwal.jamMulai,
-          jamSelesai: jadwal.jamSelesai,
-        }}
+        jadwal={jadwalData}
         students={students}
         existingJurnal={existingJurnalData}
       />

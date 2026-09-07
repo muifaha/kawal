@@ -947,6 +947,13 @@ export default function JadwalClient({
                             <Eye className="w-3.5 h-3.5" />
                             Lihat
                           </button>
+                          <Link
+                            href={`/jadwal/jurnal/isi?jurnalId=${item.id}${item.jadwalId ? `&jadwalId=${item.jadwalId}` : ''}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition cursor-pointer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            Edit
+                          </Link>
                           <button
                             onClick={() => handleDownloadJournalPDF(item.id)}
                             disabled={downloadingPdfId === item.id}
