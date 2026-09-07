@@ -63,7 +63,7 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
   const router = useRouter();
 
   // General fields
-  const [namaJurnal, setNamaJurnal] = useState("Pertemuan 1");
+  const [namaJurnal, setNamaJurnal] = useState("");
   const [kegiatan, setKegiatan] = useState("");
   interface PhotoDoc {
     file: File | null;
@@ -416,7 +416,7 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
               <input
                 type="text"
                 required
-                placeholder="Contoh: Pertemuan 1 - Pembahasan Bab 1..."
+                placeholder="Pertemuan Ke / Materi pembelajaran"
                 value={namaJurnal}
                 onChange={(e) => setNamaJurnal(e.target.value)}
                 className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
