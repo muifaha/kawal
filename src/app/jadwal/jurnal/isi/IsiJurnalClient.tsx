@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { saveJurnalAction } from "@/app/actions/schedule";
+import { saveJurnalAction, saveJurnalDraftAction, getJurnalDraftAction } from "@/app/actions/schedule";
 import {
   ClipboardList,
   ArrowLeft,
@@ -15,6 +15,10 @@ import {
   Sparkles,
   Award,
   Search,
+  Cloud,
+  CloudUpload,
+  CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -72,14 +76,100 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
 
-  // Prepopulate attendance with defaults
+  // Auto-Save Draft states
+  const [draftStatus, setDraftStatus] = useState<string>("");
+  const [isSavingDraft, setIsSavingDraft] = useState<boolean>(false);
+  const [isDraftLoaded, setIsDraftLoaded] = useState<boolean>(false);
+
+  // Prepopulate attendance with defaults & load cloud draft
   useEffect(() => {
     const defaultAtt: Record<string, string> = {};
     students.forEach((s) => {
       defaultAtt[s.id] = s.defaultStatus;
     });
     setAttendance(defaultAtt);
-  }, [students]);
+
+    async function loadCloudDraft() {
+      const res = await getJurnalDraftAction(jadwal.id);
+      if (res.success && res.draft) {
+        if (res.draft.namaJurnal) setNamaJurnal(res.draft.namaJurnal);
+        if (res.draft.kegiatan) setKegiatan(res.draft.kegiatan);
+
+        if (res.draft.attendanceJson) {
+          try {
+            const parsedAtt = JSON.parse(res.draft.attendanceJson);
+            const attMap: Record<string, string> = {};
+            parsedAtt.forEach((item: any) => {
+              if (item.siswaId && item.status) attMap[item.siswaId] = item.status;
+            });
+            if (Object.keys(attMap).length > 0) {
+              setAttendance((prev) => ({ ...prev, ...attMap }));
+            }
+          } catch (e) {}
+        }
+
+        if (res.draft.photosJson) {
+          try {
+            const parsedPhotos = JSON.parse(res.draft.photosJson);
+            if (Array.isArray(parsedPhotos) && parsedPhotos.length > 0) {
+              setPhotos((prev) => {
+                const next = [...prev];
+                parsedPhotos.forEach((item: any, idx: number) => {
+                  if (idx < 3 && item.preview) {
+                    next[idx] = {
+                      file: null,
+                      preview: item.preview,
+                      caption: item.caption || "",
+                    };
+                  }
+                });
+                return next;
+              });
+            }
+          } catch (e) {}
+        }
+
+        setDraftStatus(`Draf tersimpan otomatis pukul ${res.draft.updatedAt}`);
+      }
+      setIsDraftLoaded(true);
+    }
+
+    loadCloudDraft();
+  }, [students, jadwal.id]);
+
+  // Debounced Auto-Save Draft to Cloud (1.5s delay)
+  useEffect(() => {
+    if (!isDraftLoaded) return;
+
+    const timer = setTimeout(async () => {
+      setIsSavingDraft(true);
+
+      const attendanceArray = Object.entries(attendance).map(([siswaId, status]) => ({
+        siswaId,
+        status,
+      }));
+
+      const photosArray = photos.map((p) => ({
+        preview: p.preview || null,
+        caption: p.caption || "",
+      }));
+
+      const res = await saveJurnalDraftAction({
+        jadwalId: jadwal.id,
+        namaJurnal,
+        kegiatan,
+        photosJson: JSON.stringify(photosArray),
+        attendanceJson: JSON.stringify(attendanceArray),
+      });
+
+      if (res.success && res.updatedAt) {
+        setDraftStatus(`Draf tersimpan otomatis pukul ${res.updatedAt}`);
+      }
+      setIsSavingDraft(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [namaJurnal, kegiatan, photos, attendance, isDraftLoaded, jadwal.id]);
 
   const filteredStudents = students.filter(
     (s) =>
@@ -103,23 +193,32 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
   };
 
   const handlePhotoSlotChange = (index: number, file: File | null) => {
-    setPhotos((prev) => {
-      const next = [...prev];
-      if (file) {
-        next[index] = {
-          file,
-          preview: URL.createObjectURL(file),
-          caption: next[index].caption,
-        };
-      } else {
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Str = reader.result as string;
+        setPhotos((prev) => {
+          const next = [...prev];
+          next[index] = {
+            file,
+            preview: base64Str,
+            caption: next[index].caption,
+          };
+          return next;
+        });
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPhotos((prev) => {
+        const next = [...prev];
         next[index] = {
           file: null,
           preview: null,
           caption: "",
         };
-      }
-      return next;
-    });
+        return next;
+      });
+    }
   };
 
   const handleCaptionSlotChange = (index: number, caption: string) => {
@@ -165,6 +264,9 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
       if (doc.file) {
         formData.append(`foto_${idx}`, doc.file);
         formData.append(`fotoKeterangan_${idx}`, doc.caption);
+      } else if (doc.preview) {
+        formData.append(`fotoBase64_${idx}`, doc.preview);
+        formData.append(`fotoKeterangan_${idx}`, doc.caption);
       }
     });
     formData.append("absensiJson", JSON.stringify(attendanceArray));
@@ -186,14 +288,36 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link
-          href="/jadwal"
-          className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-900/40 border border-slate-900 text-slate-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </Link>
-        <span className="text-xs font-semibold text-slate-400">Kembali ke Dashboard Jadwal</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/jadwal"
+            className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-900/40 border border-slate-900 text-slate-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <span className="text-xs font-semibold text-slate-400">Kembali ke Dashboard Jadwal</span>
+        </div>
+
+        {/* Cloud Auto-Save Status Badge */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/60 border border-slate-800/80 text-xs w-fit">
+          {isSavingDraft ? (
+            <>
+              <CloudUpload className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <span className="text-amber-300 font-medium text-[11px]">Menyimpan draf ke cloud...</span>
+            </>
+          ) : draftStatus ? (
+            <>
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-emerald-300 font-medium text-[11px]">{draftStatus}</span>
+            </>
+          ) : (
+            <>
+              <Cloud className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="text-slate-400 font-medium text-[11px]">Simpan otomatis aktif</span>
+            </>
+          )}
+        </div>
       </div>
 
       {actionError && (

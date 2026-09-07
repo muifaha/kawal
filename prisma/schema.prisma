@@ -61,6 +61,7 @@ model User {
   bimbinganDilakukan    BimbinganKonseling[] @relation("BimbinganKonselorRelation")
   jadwalMengajar        JadwalPelajaran[]
   jurnalMengajar        JurnalMengajar[]
+  jurnalDraft           JurnalDraft[]
   penilaianKelas        PenilaianKelas[]
   prestasiDilaporkan    PrestasiSiswa[]      @relation("PrestasiReporterRelation")
 
@@ -385,6 +386,7 @@ model JadwalPelajaran {
   jamMulai    Int           // Jam ke-
   jamSelesai  Int           // Jam ke-
   jurnal      JurnalMengajar[]
+  jurnalDraft JurnalDraft[]
   createdAt   DateTime      @default(now())
 }
 
@@ -554,4 +556,19 @@ model PenilaianSiswa {
   updatedAt        DateTime       @updatedAt
 
   @@unique([penilaianKelasId, siswaId])
+}
+
+model JurnalDraft {
+  id             String          @id @default(uuid())
+  jadwalId       String
+  jadwal         JadwalPelajaran @relation(fields: [jadwalId], references: [id], onDelete: Cascade)
+  guruId         String
+  guru           User            @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  namaJurnal     String?
+  kegiatan       String?
+  photosJson     String?         // Array of { caption: string, preview: string (base64) }
+  attendanceJson String?         // Array of { siswaId: string, status: string }
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([jadwalId, guruId])
 }

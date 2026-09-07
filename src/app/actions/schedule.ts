@@ -238,12 +238,27 @@ export async function saveJurnalAction(formData: FormData) {
 
     for (let i = 0; i < 3; i++) {
       const file = formData.get(`foto_${i}`) as File | null;
+      const base64Data = formData.get(`fotoBase64_${i}`) as string | null;
       const ket = formData.get(`fotoKeterangan_${i}`) as string | null;
 
       if (file && file.size > 0) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
         const filename = `jurnal_${Date.now()}_${i}_${file.name.replace(/\s+/g, "_")}`;
+
+        const uploadDir = path.join(process.cwd(), "public", "uploads", "jurnal");
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        const fullPath = path.join(uploadDir, filename);
+        fs.writeFileSync(fullPath, buffer);
+        fotoUrls.push(`/uploads/jurnal/${filename}`);
+        fotoKeterangans.push(ket || "");
+      } else if (base64Data && base64Data.startsWith("data:image")) {
+        const rawBase64 = base64Data.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(rawBase64, "base64");
+        const filename = `jurnal_${Date.now()}_${i}.png`;
 
         const uploadDir = path.join(process.cwd(), "public", "uploads", "jurnal");
         if (!fs.existsSync(uploadDir)) {
@@ -310,6 +325,15 @@ export async function saveJurnalAction(formData: FormData) {
             })),
         });
       }
+      // Delete existing draft if any after successful submission
+      if (jadwalId) {
+        await tx.jurnalDraft.deleteMany({
+          where: {
+            jadwalId,
+            guruId: user.id,
+          },
+        });
+      }
     });
 
     revalidatePath("/jadwal");
@@ -318,6 +342,99 @@ export async function saveJurnalAction(formData: FormData) {
   } catch (error: any) {
     console.error("Save jurnal error:", error);
     return { error: error.message || "Gagal menyimpan jurnal mengajar." };
+  }
+}
+
+// Auto-Save Draft Jurnal Action
+export async function saveJurnalDraftAction(payload: {
+  jadwalId: string;
+  namaJurnal?: string;
+  kegiatan?: string;
+  photosJson?: string;
+  attendanceJson?: string;
+}) {
+  const user = await getSessionUser();
+  if (!user || (user.role !== "GURU" && user.role !== "WALAS" && user.role !== "WAKA")) {
+    return { error: "Akses ditolak." };
+  }
+
+  if (!payload.jadwalId) {
+    return { error: "Jadwal ID tidak valid." };
+  }
+
+  try {
+    const draft = await prisma.jurnalDraft.upsert({
+      where: {
+        jadwalId_guruId: {
+          jadwalId: payload.jadwalId,
+          guruId: user.id,
+        },
+      },
+      update: {
+        namaJurnal: payload.namaJurnal || null,
+        kegiatan: payload.kegiatan || null,
+        photosJson: payload.photosJson || null,
+        attendanceJson: payload.attendanceJson || null,
+      },
+      create: {
+        jadwalId: payload.jadwalId,
+        guruId: user.id,
+        namaJurnal: payload.namaJurnal || null,
+        kegiatan: payload.kegiatan || null,
+        photosJson: payload.photosJson || null,
+        attendanceJson: payload.attendanceJson || null,
+      },
+    });
+
+    const timeStr = draft.updatedAt.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+
+    return { success: true, message: `Draf tersimpan otomatis pukul ${timeStr}`, updatedAt: timeStr };
+  } catch (error: any) {
+    console.error("Save draft error:", error);
+    return { error: error.message || "Gagal menyimpan draf otomatis." };
+  }
+}
+
+// Get Jurnal Draft Action
+export async function getJurnalDraftAction(jadwalId: string) {
+  const user = await getSessionUser();
+  if (!user) return { error: "Akses ditolak." };
+
+  try {
+    const draft = await prisma.jurnalDraft.findUnique({
+      where: {
+        jadwalId_guruId: {
+          jadwalId,
+          guruId: user.id,
+        },
+      },
+    });
+
+    if (!draft) return { success: true, draft: null };
+
+    const timeStr = draft.updatedAt.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+
+    return {
+      success: true,
+      draft: {
+        namaJurnal: draft.namaJurnal || "",
+        kegiatan: draft.kegiatan || "",
+        photosJson: draft.photosJson || "[]",
+        attendanceJson: draft.attendanceJson || "[]",
+        updatedAt: timeStr,
+      },
+    };
+  } catch (error: any) {
+    console.error("Get draft error:", error);
+    return { error: error.message || "Gagal mengambil draf." };
   }
 }
 
