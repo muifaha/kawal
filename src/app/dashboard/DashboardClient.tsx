@@ -44,10 +44,14 @@ import {
   PlusCircle,
   Globe,
   Zap,
+  Edit3,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { resolveSummonsAction } from "@/app/actions/kesiswaan";
 import { sendDailyAttendanceToWAGroupAction } from "@/app/actions/attendance";
-import { printSingleSummons, printBulkSummons } from "@/lib/printUtils";
+import { printSingleSummons, printBulkSummons, printJurnalMengajarPDF, printJurnalMengajarDailyPDF } from "@/lib/printUtils";
+import { getJurnalFullDetailAction } from "@/app/actions/schedule";
 import { formatPoin } from "@/lib/attendanceUtils";
 import { toggleCensorViolationAction } from "@/app/actions/violation";
 import { calculateAttendanceRate } from "@/lib/attendanceUtils";
@@ -238,6 +242,7 @@ interface DashboardClientProps {
   settings: Record<string, string>;
   pendingReferrals?: ReferralSummaryItem[];
   todaySchedules?: TodayScheduleItem[];
+  teacherJournals?: any[];
   periods?: PeriodItem[];
   classesNotSubmittedToday?: ClassNotSubmitted[];
   pastUnsubmittedAttendanceDates?: Array<{
@@ -315,6 +320,7 @@ export default function DashboardClient({
   settings,
   pendingReferrals = [],
   todaySchedules = [],
+  teacherJournals = [],
   periods = [],
   classesNotSubmittedToday = [],
   pastUnsubmittedAttendanceDates = [],
@@ -533,7 +539,95 @@ export default function DashboardClient({
   };
 
   const isWakaOrBK = user.role === "WAKA" || user.role === "BK";
-  const isWakaOrBKOrWalas = user.role === "WAKA" || user.role === "BK" || user.role === "WALAS";
+  const isWakaOrBKOrWalas = user.role === "WAKA" || user.role === "BK" || user.role === "WALAS" || user.role === "GURU";
+
+  const [selectedJournal, setSelectedJournal] = useState<any>(null);
+  const [downloadingPdfId, setDownloadingPdfId] = useState<string | null>(null);
+  const [downloadingDailyDate, setDownloadingDailyDate] = useState<string | null>(null);
+
+  const filteredTeacherJournals = useMemo(() => {
+    return teacherJournals.filter((j: any) => {
+      const q = searchQuery.toLowerCase();
+      return (
+        (j.guru?.nama || "").toLowerCase().includes(q) ||
+        (j.mapel?.nama || "").toLowerCase().includes(q) ||
+        (j.kelas?.nama || "").toLowerCase().includes(q) ||
+        (j.namaJurnal || "").toLowerCase().includes(q) ||
+        (j.kegiatan || "").toLowerCase().includes(q)
+      );
+    });
+  }, [teacherJournals, searchQuery]);
+
+  const groupedTeacherJournalsByDate = useMemo(() => {
+    const map = new Map<string, typeof filteredTeacherJournals>();
+
+    filteredTeacherJournals.forEach((item) => {
+      const dKey = new Date(item.tanggal).toISOString().split("T")[0];
+      if (!map.has(dKey)) {
+        map.set(dKey, []);
+      }
+      map.get(dKey)!.push(item);
+    });
+
+    const result: {
+      dateKey: string;
+      dateLabel: string;
+      journals: typeof filteredTeacherJournals;
+      groupIndex: number;
+    }[] = [];
+
+    let idx = 1;
+    map.forEach((journals, dateKey) => {
+      const dateLabel = new Date(journals[0].tanggal).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+      result.push({
+        dateKey,
+        dateLabel,
+        journals,
+        groupIndex: idx++,
+      });
+    });
+
+    return result;
+  }, [filteredTeacherJournals]);
+
+  const handleDownloadJournalPDF = async (jurnalId: string) => {
+    setDownloadingPdfId(jurnalId);
+    try {
+      const res = await getJurnalFullDetailAction(jurnalId);
+      if (res.success && res.jurnal) {
+        printJurnalMengajarPDF(res.jurnal, res.schoolSettings);
+      } else {
+        alert(res.error || "Gagal mengunduh berkas Jurnal.");
+      }
+    } catch (e) {
+      alert("Terjadi kesalahan saat membuat dokumen PDF.");
+    } finally {
+      setDownloadingPdfId(null);
+    }
+  };
+
+  const handleDownloadDailyJournalPDF = async (jurnalIds: string[], dateLabel: string) => {
+    setDownloadingDailyDate(dateLabel);
+    try {
+      const resList = await Promise.all(jurnalIds.map((id) => getJurnalFullDetailAction(id)));
+      const fullJournals = resList.filter((r) => r.success && r.jurnal).map((r) => r.jurnal);
+      const schoolSettings = resList[0]?.schoolSettings || {};
+
+      if (fullJournals.length > 0) {
+        printJurnalMengajarDailyPDF(fullJournals, dateLabel, schoolSettings);
+      } else {
+        alert("Gagal memuat data jurnal harian.");
+      }
+    } catch (e) {
+      alert("Terjadi kesalahan saat membuat dokumen PDF Harian.");
+    } finally {
+      setDownloadingDailyDate(null);
+    }
+  };
 
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -2356,7 +2450,7 @@ export default function DashboardClient({
               : "border-transparent text-slate-400 hover:text-white"
           }`}
         >
-          {user.role === "WALAS" ? "Jadwal Hari ini" : "Ringkasan"}
+          {user.role === "WALAS" || user.role === "GURU" ? "Jadwal Hari ini" : "Ringkasan"}
         </button>
         {isWakaOrBKOrWalas && (
           <button
@@ -2371,7 +2465,7 @@ export default function DashboardClient({
                 : "border-transparent text-slate-400 hover:text-white"
             }`}
           >
-            {user.role === "WALAS" ? "Wali Kelas" : "Rekap Absensi & Pelanggaran"}
+            {user.role === "WALAS" || user.role === "GURU" ? "Riwayat Jurnal Mengajar" : "Rekap Absensi & Pelanggaran"}
           </button>
         )}
       </div>
@@ -2379,8 +2473,8 @@ export default function DashboardClient({
       {/* 1. Tab Summary & Statistics */}
       {activeTab === "summary" && (
         <div className="space-y-8 animate-fade-in">
-          {/* Stats Grid (Sembunyikan untuk Role WALAS di tab Jadwal Hari ini) */}
-          {user.role !== "WALAS" && (
+          {/* Stats Grid (Sembunyikan untuk Role WALAS & GURU di tab Jadwal Hari ini) */}
+          {user.role !== "WALAS" && user.role !== "GURU" && (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {/* Card Total Siswa */}
               <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 flex items-center gap-5">
@@ -2867,10 +2961,146 @@ export default function DashboardClient({
         </div>
       )}
 
-      {/* 2. Tab Rekap Absensi Siswa */}
+      {/* 2. Tab Rekap Absensi Siswa / Riwayat Jurnal Mengajar */}
       {activeTab === "absen_rekap" && isWakaOrBKOrWalas && (
         <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl animate-fade-in space-y-6">
-          {selectedStudentNis && selectedStudentInfo ? (
+          {(user.role === "GURU" || user.role === "WALAS") ? (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-indigo-400" />
+                    Riwayat Jurnal Mengajar Saya
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Kumpulan log jurnal kegiatan pembelajaran yang telah berhasil Anda catat.
+                  </p>
+                </div>
+                <div className="w-full sm:w-64 relative rounded-xl">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-slate-500" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Cari jurnal..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="block w-full pl-9 pr-3 py-1.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
+                <table className="min-w-[850px] w-full divide-y divide-slate-800 border-collapse">
+                  <thead>
+                    <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-950">
+                      <th className="px-4 py-3.5 w-12 text-center border-b border-r border-slate-800/60">No</th>
+                      <th className="px-4 py-3.5 w-36 text-center border-b border-r border-slate-800/60">Tanggal</th>
+                      <th className="px-4 py-3.5 w-64 border-b border-r border-slate-800/60">Nama Jurnal</th>
+                      <th className="px-4 py-3.5 border-b border-r border-slate-800/60">Deskripsi</th>
+                      <th className="px-4 py-3.5 w-52 text-center border-b border-r border-slate-800/60">Aksi Sesi</th>
+                      <th className="px-4 py-3.5 w-40 text-center border-b border-slate-800/60">Aksi Per Hari</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 text-sm">
+                    {groupedTeacherJournalsByDate.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="text-center py-10 text-slate-500">
+                          Belum ada data jurnal mengajar yang Anda catat.
+                        </td>
+                      </tr>
+                    ) : (
+                      groupedTeacherJournalsByDate.map((group) =>
+                        group.journals.map((item, itemIdx) => (
+                          <tr key={item.id} className="hover:bg-slate-800/30 transition">
+                            {itemIdx === 0 && (
+                              <>
+                                <td rowSpan={group.journals.length} className="px-4 py-4 text-center font-medium text-slate-400 align-middle border-r border-slate-800/60">
+                                  {group.groupIndex}
+                                </td>
+                                <td rowSpan={group.journals.length} className="px-4 py-4 text-center font-bold text-white align-middle border-r border-slate-800/60 whitespace-nowrap">
+                                  {group.dateLabel}
+                                </td>
+                              </>
+                            )}
+                            <td className="px-4 py-4 font-medium text-white border-r border-slate-800/60">
+                              <div className="font-semibold text-white text-sm leading-snug">{item.namaJurnal}</div>
+                              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 whitespace-nowrap">
+                                  Kelas {item.kelas?.nama || "-"}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
+                                  Jam ke-{item.jamMulai}{item.jamMulai !== item.jamSelesai ? `-${item.jamSelesai}` : ""}
+                                </span>
+                                {item.mapel?.nama && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
+                                    {item.mapel.nama}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 border-r border-slate-800/60">
+                              <p className="text-slate-300 line-clamp-2 text-xs sm:text-sm leading-relaxed" title={item.kegiatan}>
+                                {item.kegiatan}
+                              </p>
+                            </td>
+                            <td className="px-4 py-4 text-center border-r border-slate-800/60 align-middle">
+                              <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                <button
+                                  onClick={() => setSelectedJournal(item)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold transition cursor-pointer"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  Lihat
+                                </button>
+                                <Link
+                                  href={`/jadwal/jurnal/isi?jurnalId=${item.id}${item.jadwalId ? `&jadwalId=${item.jadwalId}` : ''}`}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition cursor-pointer"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                  Edit
+                                </Link>
+                                <button
+                                  onClick={() => handleDownloadJournalPDF(item.id)}
+                                  disabled={downloadingPdfId === item.id}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white text-[11px] font-bold transition cursor-pointer"
+                                >
+                                  {downloadingPdfId === item.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Download className="w-3.5 h-3.5" />
+                                  )}
+                                  Download
+                                </button>
+                              </div>
+                            </td>
+                            {itemIdx === 0 && (
+                              <td rowSpan={group.journals.length} className="px-4 py-4 text-center align-middle">
+                                <button
+                                  onClick={() => handleDownloadDailyJournalPDF(group.journals.map((j) => j.id), group.dateLabel)}
+                                  disabled={downloadingDailyDate === group.dateLabel}
+                                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer shadow-md shadow-sky-500/10 whitespace-nowrap"
+                                >
+                                  {downloadingDailyDate === group.dateLabel ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Printer className="w-3.5 h-3.5 text-sky-200" />
+                                  )}
+                                  <span>Download Perhari</span>
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        ))
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <>
+              {selectedStudentNis && selectedStudentInfo ? (
             /* Dedicated Student Profile Detail View */
             <div className="space-y-6 animate-fade-in">
               {/* Header with Back Button */}
@@ -3554,7 +3784,10 @@ export default function DashboardClient({
               </div>
             )
           )}
-        </div>
+          </div>
+        )
+      }
+      </>
       )}
     </div>
   )}
@@ -3866,6 +4099,101 @@ export default function DashboardClient({
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white rounded-xl transition-all cursor-pointer"
               >
                 Ekspor Excel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Jurnal Modal */}
+      {selectedJournal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h4 className="text-base font-bold text-white">Detail Jurnal Mengajar</h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {new Date(selectedJournal.tanggal).toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedJournal(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div>
+                <span className="text-slate-400 block font-semibold uppercase tracking-wider text-[10px]">Nama / Topik Jurnal:</span>
+                <p className="text-white font-medium text-sm mt-0.5">{selectedJournal.namaJurnal}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                <div>
+                  <span className="text-slate-500 block text-[10px] font-semibold">Kelas:</span>
+                  <span className="text-slate-200 font-bold">{selectedJournal.kelas?.nama || "-"}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px] font-semibold">Mata Pelajaran:</span>
+                  <span className="text-slate-200 font-bold">{selectedJournal.mapel?.nama || "-"}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px] font-semibold">Jam Ke:</span>
+                  <span className="text-slate-200 font-bold">
+                    Jam {selectedJournal.jamMulai}{selectedJournal.jamMulai !== selectedJournal.jamSelesai ? ` - ${selectedJournal.jamSelesai}` : ""}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px] font-semibold">Guru Pengajar:</span>
+                  <span className="text-slate-200 font-bold">{selectedJournal.guru?.nama || "-"}</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-slate-400 block font-semibold uppercase tracking-wider text-[10px]">Kegiatan Pembelajaran:</span>
+                <div className="mt-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 leading-relaxed max-h-48 overflow-y-auto whitespace-pre-line">
+                  {selectedJournal.kegiatan || "-"}
+                </div>
+              </div>
+
+              {selectedJournal.catatanSiswa && (
+                <div>
+                  <span className="text-slate-400 block font-semibold uppercase tracking-wider text-[10px]">Catatan Khusus / Siswa:</span>
+                  <div className="mt-1 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-amber-300 leading-relaxed max-h-36 overflow-y-auto whitespace-pre-line">
+                    {selectedJournal.catatanSiswa}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setSelectedJournal(null)}
+                className="px-4 py-2 border border-slate-800 rounded-xl hover:bg-slate-800 text-xs font-semibold text-slate-300 transition-all cursor-pointer"
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDownloadJournalPDF(selectedJournal.id)}
+                disabled={downloadingPdfId === selectedJournal.id}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white rounded-xl transition-all cursor-pointer disabled:opacity-50"
+              >
+                {downloadingPdfId === selectedJournal.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                <span>Download PDF</span>
               </button>
             </div>
           </div>

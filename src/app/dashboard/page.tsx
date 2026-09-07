@@ -1014,6 +1014,7 @@ export default async function DashboardPage() {
   const todayDayOfWeekForSched = new Date(`${todayStrForSched}T12:00:00Z`).getUTCDay();
   const targetDays = todayDayOfWeekForSched === 0 ? [0, 7] : [todayDayOfWeekForSched];
   
+  let teacherJournals: any[] = [];
   if (user.role === "GURU" || user.role === "WALAS") {
     const todayDate = new Date();
     todayDate.setUTCHours(0, 0, 0, 0);
@@ -1043,6 +1044,30 @@ export default async function DashboardPage() {
       jamMulai: s.jamMulai,
       jamSelesai: s.jamSelesai,
       filled: s.jurnal.length > 0,
+    }));
+
+    const rawTeacherJournals = await prisma.jurnalMengajar.findMany({
+      where: { guruId: user.id },
+      include: {
+        kelas: true,
+        guru: true,
+        mapel: true,
+      },
+      orderBy: { tanggal: "desc" },
+    });
+
+    teacherJournals = rawTeacherJournals.map((j) => ({
+      id: j.id,
+      jadwalId: j.jadwalId,
+      tanggal: j.tanggal.toISOString(),
+      namaJurnal: j.namaJurnal,
+      kegiatan: j.kegiatan,
+      catatanSiswa: (j as any).catatanSiswa || null,
+      jamMulai: j.jamMulai,
+      jamSelesai: j.jamSelesai,
+      kelas: j.kelas ? { id: j.kelas.id, nama: j.kelas.nama } : null,
+      guru: j.guru ? { id: j.guru.id, nama: j.guru.nama, nip: j.guru.nip } : null,
+      mapel: j.mapel ? { id: j.mapel.id, nama: j.mapel.nama } : null,
     }));
   }
 
@@ -1286,6 +1311,7 @@ export default async function DashboardPage() {
       wakaUser={wakaUser}
       pendingReferrals={pendingReferrals}
       todaySchedules={todaySchedules}
+      teacherJournals={teacherJournals}
       periods={periods}
       classes={classes.map((c) => ({ id: c.id, nama: c.nama }))}
       classesNotSubmittedToday={classesNotSubmittedToday}
