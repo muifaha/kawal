@@ -959,16 +959,16 @@ export default function JadwalClient({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-800 border-collapse">
+          <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
+            <table className="min-w-[850px] w-full divide-y divide-slate-800 border-collapse">
               <thead>
-                <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="pb-3 w-10 text-center">No</th>
-                  <th className="pb-3 w-32 text-center">Tanggal</th>
-                  <th className="pb-3 w-64">Nama Jurnal</th>
-                  <th className="pb-3">Deskripsi</th>
-                  <th className="pb-3 w-48 text-center">Aksi Sesi</th>
-                  <th className="pb-3 w-36 text-center">Aksi Per Hari</th>
+                <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-950">
+                  <th className="px-4 py-3.5 w-12 text-center border-b border-r border-slate-800/60">No</th>
+                  <th className="px-4 py-3.5 w-36 text-center border-b border-r border-slate-800/60">Tanggal</th>
+                  <th className="px-4 py-3.5 w-64 border-b border-r border-slate-800/60">Nama Jurnal</th>
+                  <th className="px-4 py-3.5 border-b border-r border-slate-800/60">Deskripsi</th>
+                  <th className="px-4 py-3.5 w-52 text-center border-b border-r border-slate-800/60">Aksi Sesi</th>
+                  <th className="px-4 py-3.5 w-40 text-center border-b border-slate-800/60">Aksi Per Hari</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-sm">
@@ -984,78 +984,78 @@ export default function JadwalClient({
                       <tr key={item.id} className="hover:bg-slate-800/30 transition">
                         {itemIdx === 0 && (
                           <>
-                            <td rowSpan={group.journals.length} className="py-4 text-center font-medium text-slate-400 align-middle border-r border-slate-800/60">
+                            <td rowSpan={group.journals.length} className="px-4 py-4 text-center font-medium text-slate-400 align-middle border-r border-slate-800/60">
                               {group.groupIndex}
                             </td>
-                            <td rowSpan={group.journals.length} className="py-4 text-center font-bold text-white align-middle border-r border-slate-800/60 whitespace-nowrap">
+                            <td rowSpan={group.journals.length} className="px-4 py-4 text-center font-bold text-white align-middle border-r border-slate-800/60 whitespace-nowrap">
                               {group.dateLabel}
                             </td>
                           </>
                         )}
-                        <td className="py-4 font-medium text-white pr-3">
-                          <div className="font-semibold text-white text-sm">{item.namaJurnal}</div>
-                          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                        <td className="px-4 py-4 font-medium text-white border-r border-slate-800/60">
+                          <div className="font-semibold text-white text-sm leading-snug">{item.namaJurnal}</div>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 whitespace-nowrap">
                               Kelas {item.kelas?.nama || "-"}
                             </span>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
                               Jam ke-{item.jamMulai}{item.jamMulai !== item.jamSelesai ? `-${item.jamSelesai}` : ""}
                             </span>
                             {item.mapel?.nama && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
                                 {item.mapel.nama}
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="py-4 pr-4">
-                          <p className="text-slate-300 line-clamp-2" title={item.kegiatan}>
+                        <td className="px-4 py-4 border-r border-slate-800/60">
+                          <p className="text-slate-300 line-clamp-2 text-xs sm:text-sm leading-relaxed" title={item.kegiatan}>
                             {item.kegiatan}
                           </p>
                         </td>
-                        <td className="py-4 text-center border-r border-slate-800/60">
+                        <td className="px-4 py-4 text-center border-r border-slate-800/60 align-middle">
                           <div className="flex items-center justify-center gap-1.5 flex-wrap">
                             <button
                               onClick={() => setSelectedJournal(item)}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold transition cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold transition cursor-pointer"
                             >
-                              <Eye className="w-3 h-3" />
+                              <Eye className="w-3.5 h-3.5" />
                               Lihat
                             </button>
                             <Link
                               href={`/jadwal/jurnal/isi?jurnalId=${item.id}${item.jadwalId ? `&jadwalId=${item.jadwalId}` : ''}`}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition cursor-pointer"
                             >
-                              <Edit3 className="w-3 h-3" />
+                              <Edit3 className="w-3.5 h-3.5" />
                               Edit
                             </Link>
                             <button
                               onClick={() => handleDownloadJournalPDF(item.id)}
                               disabled={downloadingPdfId === item.id}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white text-[11px] font-bold transition cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white text-[11px] font-bold transition cursor-pointer"
                             >
                               {downloadingPdfId === item.id ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
                               ) : (
-                                <Download className="w-3 h-3" />
+                                <Download className="w-3.5 h-3.5" />
                               )}
                               Download
                             </button>
                           </div>
                         </td>
                         {itemIdx === 0 && (
-                          <td rowSpan={group.journals.length} className="py-4 text-center align-middle">
+                          <td rowSpan={group.journals.length} className="px-4 py-4 text-center align-middle">
                             <button
                               onClick={() => handleDownloadDailyJournalPDF(group.journals.map((j) => j.id), group.dateLabel)}
                               disabled={downloadingDailyDate === group.dateLabel}
-                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer shadow-md shadow-sky-500/10"
+                              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer shadow-md shadow-sky-500/10 whitespace-nowrap"
                             >
                               {downloadingDailyDate === group.dateLabel ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                               ) : (
                                 <Printer className="w-3.5 h-3.5 text-sky-200" />
                               )}
-                              Download Perhari
+                              <span>Download Perhari</span>
                             </button>
                           </td>
                         )}

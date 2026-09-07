@@ -771,8 +771,8 @@ export function printJurnalMengajarPDF(jurnal: any, schoolSettings?: Record<stri
             margin: 4px 0;
           }
           .ttd-nama {
-            font-weight: 800;
-            color: #1e3a8a;
+            font-weight: bold;
+            color: #000000;
             text-decoration: underline;
           }
         </style>
@@ -1119,8 +1119,8 @@ export function printJurnalMengajarDailyPDF(
             margin: 4px 0;
           }
           .ttd-nama {
-            font-weight: 800;
-            color: #1e3a8a;
+            font-weight: bold;
+            color: #000000;
             text-decoration: underline;
           }
         </style>
