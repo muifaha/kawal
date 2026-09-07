@@ -40,6 +40,7 @@ model User {
   nama            String
   role            Role
   whatsappNumber  String?  // Untuk Wali Kelas menerima notifikasi
+  ttd             String?  // Tanda tangan digital
   activeSessions  String[] @default([]) // Array ID Sesi Perangkat Aktif (Maksimal 2 Perangkat)
 
   // Relasi jika user adalah Walas kelas tertentu

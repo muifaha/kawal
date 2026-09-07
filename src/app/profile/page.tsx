@@ -21,6 +21,7 @@ export default async function ProfilePage() {
       username: true,
       nama: true,
       role: true,
+      ttd: true,
     },
   });
 

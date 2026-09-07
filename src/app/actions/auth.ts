@@ -1,5 +1,7 @@
 "use server";
 
+import fs from "fs";
+import path from "path";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { setSession, clearSession, getSessionUser } from "@/lib/auth";
@@ -95,7 +97,12 @@ export async function logoutAction() {
   redirect("/login");
 }
 
-export async function updateProfileAction(nama: string, username: string, password?: string) {
+export async function updateProfileAction(
+  nama: string,
+  username: string,
+  password?: string,
+  ttdData?: string | null
+) {
   try {
     const sessionUser = await getSessionUser();
     if (!sessionUser) {
@@ -127,6 +134,22 @@ export async function updateProfileAction(nama: string, username: string, passwo
 
     if (password && password.trim().length > 0) {
       updateData.passwordHash = await bcrypt.hash(password.trim(), 10);
+    }
+
+    if (ttdData !== undefined) {
+      if (ttdData && ttdData.startsWith("data:image")) {
+        const rawBase64 = ttdData.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(rawBase64, "base64");
+        const filename = `ttd_${sessionUser.id}_${Date.now()}.png`;
+        const uploadDir = path.join(process.cwd(), "public", "uploads", "ttd");
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        fs.writeFileSync(path.join(uploadDir, filename), buffer);
+        updateData.ttd = `/uploads/ttd/${filename}`;
+      } else {
+        updateData.ttd = ttdData;
+      }
     }
 
     // Update user di database

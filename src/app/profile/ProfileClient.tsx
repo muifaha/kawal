@@ -3,7 +3,7 @@
 import React, { useState, useTransition } from "react";
 import { useToast } from "@/components/Toast";
 import { updateProfileAction } from "@/app/actions/auth";
-import { User, KeyRound, Save, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { User, KeyRound, Save, Eye, EyeOff, ShieldCheck, FileSignature, Upload, Trash2 } from "lucide-react";
 
 interface ProfileClientProps {
   currentUser: {
@@ -11,6 +11,7 @@ interface ProfileClientProps {
     username: string;
     nama: string;
     role: string;
+    ttd?: string | null;
   };
 }
 
@@ -23,8 +24,34 @@ export default function ProfileClient({ currentUser }: ProfileClientProps) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  const [ttdPreview, setTtdPreview] = useState<string | null>(currentUser.ttd || null);
+  const [ttdBase64, setTtdBase64] = useState<string | null | undefined>(undefined);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const handleTtdFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      showToast("Ukuran file gambar tanda tangan maksimal 2MB.", "error");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const result = evt.target?.result as string;
+      setTtdPreview(result);
+      setTtdBase64(result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveTtd = () => {
+    setTtdPreview(null);
+    setTtdBase64(null);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,13 +73,14 @@ export default function ProfileClient({ currentUser }: ProfileClientProps) {
     }
 
     startTransition(async () => {
-      const res = await updateProfileAction(nama, username, password || undefined);
+      const res = await updateProfileAction(nama, username, password || undefined, ttdBase64);
       if (res?.error) {
         showToast(res.error, "error");
       } else if (res?.success) {
         showToast(res.message || "Profil berhasil diperbarui!", "success");
         setPassword("");
         setConfirmPassword("");
+        setTtdBase64(undefined);
       }
     });
   };
@@ -130,6 +158,66 @@ export default function ProfileClient({ currentUser }: ProfileClientProps) {
             <p className="text-[10px] text-slate-500 mt-1.5 leading-normal">
               Catatan: Mengubah username akan memengaruhi nama pengguna saat Anda melakukan login berikutnya.
             </p>
+          </div>
+
+          <hr className="border-slate-850 my-6" />
+
+          {/* Tanda Tangan Digital Section */}
+          <div className="bg-slate-950/20 border border-slate-900/60 p-4 rounded-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-slate-300 flex items-center gap-1.5 uppercase tracking-wider">
+                <FileSignature className="w-4 h-4 text-indigo-400" />
+                Tanda Tangan Digital (TTD)
+              </h4>
+              {ttdPreview && (
+                <button
+                  type="button"
+                  onClick={handleRemoveTtd}
+                  className="text-rose-400 hover:text-rose-300 text-xxs font-bold flex items-center gap-1 cursor-pointer transition"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Hapus TTD
+                </button>
+              )}
+            </div>
+            <p className="text-[10px] text-slate-400 leading-normal">
+              Unggah file gambar hasil scan / foto tanda tangan digital Anda (PNG/JPG latar belakang transparan/putih). Tanda tangan ini akan otomatis dicetak pada lembar Jurnal Mengajar saat Anda mengunduh dokumen PDF.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              {ttdPreview ? (
+                <div className="w-48 h-24 bg-white p-2 rounded-xl border border-slate-700 flex items-center justify-center relative overflow-hidden group">
+                  <img
+                    src={ttdPreview}
+                    alt="Pratinjau Tanda Tangan"
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="w-48 h-24 bg-slate-950 border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center text-slate-500 text-[11px] p-2 text-center">
+                  <FileSignature className="w-6 h-6 mb-1 text-slate-600" />
+                  <span>Belum ada TTD</span>
+                </div>
+              )}
+
+              <div className="flex-1 w-full space-y-2">
+                <label className="block w-full cursor-pointer">
+                  <div className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition">
+                    <Upload className="w-4 h-4 text-indigo-400" />
+                    <span>{ttdPreview ? "Ganti File TTD" : "Unggah Gambar TTD"}</span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleTtdFileChange}
+                    className="hidden"
+                  />
+                </label>
+                <p className="text-[10px] text-slate-500 text-center sm:text-left">
+                  Format disarankan: PNG Transparan (Maksimal 2MB)
+                </p>
+              </div>
+            </div>
           </div>
 
           <hr className="border-slate-850 my-6" />

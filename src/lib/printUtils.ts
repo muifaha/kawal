@@ -789,7 +789,9 @@ export function printJurnalMengajarPDF(jurnal: any, schoolSettings?: Record<stri
           <div class="ttd-box">
             <div>Tangerang, ${ttdDateFormatted}</div>
             <div style="margin-top: 4px;">Guru Mata Pelajaran ${jurnal.mapel?.nama || ""}</div>
-            <div class="ttd-space"></div>
+            <div class="ttd-space" style="display: flex; align-items: center; justify-content: center;">
+              ${jurnal.guru?.ttd ? `<img src="${jurnal.guru.ttd}" style="max-height: 60px; max-width: 160px; object-fit: contain;" />` : ''}
+            </div>
             <div style="font-weight: bold; text-decoration: underline;">${jurnal.guru?.nama || "-"}</div>
             <div>NIP. ${jurnal.guru?.nip || "...................................."}</div>
           </div>
