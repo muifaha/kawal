@@ -13,7 +13,8 @@ import {
   Check,
   Send,
   Sparkles,
-  Award
+  Award,
+  Search,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -65,6 +66,7 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
 
   // Attendance map state
   const [attendance, setAttendance] = useState<Record<string, string>>({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState("");
@@ -78,6 +80,27 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
     });
     setAttendance(defaultAtt);
   }, [students]);
+
+  const filteredStudents = students.filter(
+    (s) =>
+      s.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.nis.includes(searchQuery)
+  );
+
+  const summary = { H: 0, S: 0, I: 0, A: 0, D: 0 };
+  students.forEach((s) => {
+    const status = (attendance[s.id] || "H") as keyof typeof summary;
+    summary[status] = (summary[status] || 0) + 1;
+  });
+
+  type StatusType = "H" | "S" | "I" | "A" | "D";
+  const rowColors: Record<StatusType, string> = {
+    H: "bg-transparent text-slate-300 border-slate-900/60",
+    S: "bg-amber-500/5 border-amber-500/10 text-amber-300",
+    I: "bg-sky-500/5 border-sky-500/10 text-sky-300",
+    A: "bg-rose-500/5 border-rose-500/10 text-rose-300",
+    D: "bg-purple-500/5 border-purple-500/10 text-purple-300",
+  };
 
   const handlePhotoSlotChange = (index: number, file: File | null) => {
     setPhotos((prev) => {
@@ -307,7 +330,7 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
           </div>
         </div>
 
-        {/* Right Side: Student Attendance & Assessment */}
+        {/* Right Side: Student Attendance & Summary (Unified Catat Absensi Layout) */}
         <div className="xl:col-span-2 bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -321,91 +344,156 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
             </div>
           </div>
 
-          {/* Desktop View Table */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-800">
-              <thead>
-                <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="pb-3 w-10">No</th>
-                  <th className="pb-3 w-32">Siswa</th>
-                  <th className="pb-3 text-center w-60">Status Kehadiran</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 text-sm">
-                {students.map((student, index) => {
-                  const currentStatus = attendance[student.id] || "H";
-                  return (
-                    <tr key={student.id}>
-                      <td className="py-3 text-slate-500">{index + 1}</td>
-                      <td className="py-3">
-                        <div className="font-bold text-white text-xs">{student.nama}</div>
-                        <div className="text-[10px] text-slate-500 font-mono">NIS: {student.nis}</div>
-                      </td>
-                      <td className="py-3 text-center">
-                        <div className="inline-flex items-center justify-center p-1 bg-slate-950/60 border border-slate-800 rounded-xl gap-1">
-                          {[
-                            { key: "H", label: "Hadir", color: "bg-emerald-500 text-white" },
-                            { key: "S", label: "Sakit", color: "bg-amber-500 text-white" },
-                            { key: "I", label: "Izin", color: "bg-blue-500 text-white" },
-                            { key: "A", label: "Alpha", color: "bg-rose-500 text-white" },
-                            { key: "D", label: "Dispen", color: "bg-purple-500 text-white" },
-                          ].map((st) => (
-                            <button
-                              type="button"
-                              key={st.key}
-                              onClick={() => handleAttendanceChange(student.id, st.key)}
-                              className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
-                                currentStatus === st.key
-                                  ? `${st.color} shadow-sm`
-                                  : "text-slate-400 hover:text-slate-200"
-                              }`}
-                            >
-                              {st.key}
-                            </button>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          {/* Search Bar */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="w-4 h-4 text-slate-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Cari nama atau NIS siswa..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="block w-full pl-9 pr-3 py-2 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+            />
           </div>
 
-          {/* Mobile View Card List */}
-          <div className="sm:hidden space-y-4">
-            {students.map((student, index) => {
-              const currentStatus = attendance[student.id] || "H";
-              return (
-                <div key={student.id} className="p-4 bg-slate-950/40 border border-slate-800 rounded-2xl space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] text-slate-500 font-bold mb-0.5">#{index + 1}</div>
-                      <div className="font-bold text-white text-sm leading-snug">{student.nama}</div>
-                      <div className="text-[9px] text-slate-500 font-mono">NIS: {student.nis}</div>
-                    </div>
-                    
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const statuses = ["H", "S", "I", "A", "D"];
-                        const nextIdx = (statuses.indexOf(currentStatus) + 1) % statuses.length;
-                        setAttendance((prev) => ({ ...prev, [student.id]: statuses[nextIdx] }));
-                      }}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-white transition-all active:scale-95 cursor-pointer shrink-0 ${
-                        currentStatus === "H"
-                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                          : currentStatus === "A"
-                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                          : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                      }`}
-                    >
-                      {currentStatus}
-                    </button>
-                  </div>
+          {/* Unified Table & Summary Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-4">
+            {/* Table (Responsive for Mobile & Desktop) */}
+            <div className="bg-slate-900/40 border border-slate-900 rounded-xl overflow-hidden">
+              <table className="min-w-full divide-y divide-slate-900">
+                <thead className="bg-slate-900/50">
+                  <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th className="py-3 px-1.5 sm:px-3 text-center w-7 sm:w-10 text-[11px] sm:text-xs">No</th>
+                    <th className="py-3 px-3 w-20 hidden sm:table-cell">NIS</th>
+                    <th className="py-3 px-2 sm:px-3">Nama Lengkap</th>
+                    <th className="py-3 px-1 sm:px-3 text-center w-auto sm:w-64">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-900/60 text-sm">
+                  {filteredStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-center py-10 text-slate-500">
+                        Tidak ada siswa ditemukan.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredStudents.map((student, index) => {
+                      const status = (attendance[student.id] || "H") as StatusType;
+                      return (
+                        <tr key={student.id} className={`transition-all ${rowColors[status]}`}>
+                          <td className="py-2.5 px-1.5 sm:px-3 text-center text-xs sm:text-sm font-medium text-slate-400">
+                            {index + 1}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-xs hidden sm:table-cell">
+                            {student.nis}
+                          </td>
+                          <td className="py-2.5 px-2 sm:px-3 text-xs sm:text-sm font-semibold whitespace-normal break-words leading-tight">
+                            {student.nama}
+                            <div className="sm:hidden text-[9px] text-slate-500 font-mono">NIS: {student.nis}</div>
+                          </td>
+                          <td className="py-2.5 px-1 sm:px-3">
+                            <div className="flex justify-center gap-1 sm:gap-1.5">
+                              {(["H", "S", "I", "A", "D"] as const).map((s) => {
+                                const active = {
+                                  H: "bg-emerald-500 text-emerald-950 font-bold border-emerald-500",
+                                  S: "bg-amber-500 text-amber-950 font-bold border-amber-500",
+                                  I: "bg-sky-500 text-sky-950 font-bold border-sky-500",
+                                  A: "bg-rose-500 text-white font-bold border-rose-500",
+                                  D: "bg-purple-500 text-white font-bold border-purple-500",
+                                };
+                                const inactive = {
+                                  H: "bg-slate-950/60 hover:bg-emerald-500/20 text-slate-300 border-slate-800",
+                                  S: "bg-slate-950/60 hover:bg-amber-500/20 text-slate-300 border-slate-800",
+                                  I: "bg-slate-950/60 hover:bg-sky-500/20 text-slate-300 border-slate-800",
+                                  A: "bg-slate-950/60 hover:bg-rose-500/20 text-slate-300 border-slate-800",
+                                  D: "bg-slate-950/60 hover:bg-purple-500/20 text-slate-300 border-slate-800",
+                                };
+                                return (
+                                  <button
+                                    key={s}
+                                    type="button"
+                                    onClick={() => handleAttendanceChange(student.id, s)}
+                                    className={`w-7 h-7 sm:w-10 sm:h-9 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold border flex items-center justify-center transition-all shrink-0 cursor-pointer ${
+                                      status === s ? active[s] : inactive[s]
+                                    }`}
+                                  >
+                                    {s}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Rekap Tidak Hadir Summary Card */}
+            <div className="bg-slate-900/40 border border-slate-900 rounded-xl p-5 space-y-4 h-fit xl:sticky xl:top-4">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-400" /> Rekap Tidak Hadir
+              </h3>
+              <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                <div className="p-2 border rounded-lg bg-amber-500/5 border-amber-500/20 text-amber-400">
+                  <p className="text-lg font-bold">{summary.S}</p> Sakit
                 </div>
-              );
-            })}
+                <div className="p-2 border rounded-lg bg-sky-500/5 border-sky-500/20 text-sky-400">
+                  <p className="text-lg font-bold">{summary.I}</p> Izin
+                </div>
+                <div className="p-2 border rounded-lg bg-rose-500/5 border-rose-500/20 text-rose-400">
+                  <p className="text-lg font-bold">{summary.A}</p> Alpha
+                </div>
+                <div className="p-2 border rounded-lg bg-purple-500/5 border-purple-500/20 text-purple-400">
+                  <p className="text-lg font-bold">{summary.D}</p> Disp
+                </div>
+              </div>
+
+              {/* Daftar Siswa Tidak Hadir */}
+              <div className="pt-3 border-t border-slate-800 space-y-2">
+                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Daftar Siswa Tidak Hadir ({students.filter((s) => (attendance[s.id] || "H") !== "H").length})
+                </h4>
+                {students.filter((s) => (attendance[s.id] || "H") !== "H").length === 0 ? (
+                  <p className="text-xs text-slate-500 italic py-2 text-center">✅ Nihil (Hadir Semua)</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                    {students
+                      .filter((s) => (attendance[s.id] || "H") !== "H")
+                      .map((s) => {
+                        const st = attendance[s.id] || "H";
+                        const badgeStyle: Record<string, string> = {
+                          S: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+                          I: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+                          A: "bg-rose-500/20 text-rose-300 border-rose-500/30",
+                          D: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+                        };
+                        const statusText: Record<string, string> = {
+                          S: "Sakit",
+                          I: "Izin",
+                          A: "Alpha",
+                          D: "Dispensasi",
+                        };
+                        return (
+                          <div
+                            key={s.id}
+                            className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-xs"
+                          >
+                            <span className="font-semibold text-white truncate max-w-[170px]">{s.nama}</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${badgeStyle[st] || ""}`}>
+                              {statusText[st] || st}
+                            </span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
