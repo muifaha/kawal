@@ -73,6 +73,18 @@ export default async function JadwalPage() {
       ],
     });
 
+    todaySchedules = await prisma.jadwalPelajaran.findMany({
+      where: {
+        hari: { in: targetDays },
+      },
+      include: {
+        kelas: true,
+        guru: true,
+        mapel: true,
+      },
+      orderBy: { jamMulai: "asc" },
+    });
+
     journals = await prisma.jurnalMengajar.findMany({
       include: {
         kelas: true,

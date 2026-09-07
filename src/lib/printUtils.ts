@@ -1150,12 +1150,18 @@ export function printJurnalMengajarDailyPDF(
         <div class="footer-section">
           <div class="ttd-box">
             <div>Tangerang, ${ttdDateFormatted}</div>
-            <div style="margin-top: 3px; font-weight: 600; color: #475569;">Guru Pengajar</div>
-            <div class="ttd-space" style="display: flex; align-items: center; justify-content: center;">
-              ${firstJournal.guru?.ttd ? `<img src="${firstJournal.guru.ttd}" style="max-height: 55px; max-width: 160px; object-fit: contain;" />` : ''}
+            <div style="margin-top: 3px; font-weight: 600; color: #475569;">
+              ${journals.every((j) => (j.guruId && j.guruId === firstJournal.guruId) || (j.guru?.nama && j.guru?.nama === firstJournal.guru?.nama)) ? "Guru Pengajar" : "Mengetahui, Waka Sekolah"}
             </div>
-            <div class="ttd-nama">${firstJournal.guru?.nama || "-"}</div>
-            <div style="font-size: 8.5pt; color: #475569;">NIP. ${firstJournal.guru?.nip || "...................................."}</div>
+            <div class="ttd-space" style="display: flex; align-items: center; justify-content: center;">
+              ${(journals.every((j) => (j.guruId && j.guruId === firstJournal.guruId) || (j.guru?.nama && j.guru?.nama === firstJournal.guru?.nama)) && firstJournal.guru?.ttd) ? `<img src="${firstJournal.guru.ttd}" style="max-height: 55px; max-width: 160px; object-fit: contain;" />` : ''}
+            </div>
+            <div class="ttd-nama">
+              ${journals.every((j) => (j.guruId && j.guruId === firstJournal.guruId) || (j.guru?.nama && j.guru?.nama === firstJournal.guru?.nama)) ? (firstJournal.guru?.nama || "-") : (schoolSettings?.waka_nama || "Tim Kurikulum / Kesiswaan")}
+            </div>
+            <div style="font-size: 8.5pt; color: #475569;">
+              ${journals.every((j) => (j.guruId && j.guruId === firstJournal.guruId) || (j.guru?.nama && j.guru?.nama === firstJournal.guru?.nama)) ? `NIP. ${firstJournal.guru?.nip || "...................................."}` : (schoolSettings?.waka_nip ? `NIP. ${schoolSettings.waka_nip}` : '')}
+            </div>
           </div>
         </div>
 

@@ -40,6 +40,10 @@ import {
   Edit3,
   Download,
   Printer,
+  UserX,
+  ChevronDown,
+  ChevronUp,
+  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
 import PenilaianManager from "@/components/PenilaianManager";
@@ -174,6 +178,116 @@ export default function JadwalClient({
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClassFilter, setSelectedClassFilter] = useState("ALL");
+
+  // Print & Pending Jurnal state for WAKA
+  const [printDate, setPrintDate] = useState<string>(() => {
+    const today = new Date();
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(today);
+  });
+  const [showPendingTeachers, setShowPendingTeachers] = useState(false);
+
+  // Compute today's string in WIB (Asia/Jakarta)
+  const todayWibStr = useMemo(() => {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  }, []);
+
+  // Compute journals submitted today
+  const todayJournals = useMemo(() => {
+    return journals.filter((j) => {
+      const jDateStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date(j.tanggal));
+      return jDateStr === todayWibStr;
+    });
+  }, [journals, todayWibStr]);
+
+  const todayFilledJadwalIds = useMemo(() => {
+    return new Set(todayJournals.map((j) => j.jadwalId).filter(Boolean));
+  }, [todayJournals]);
+
+  const todayFilledGuruKeySet = useMemo(() => {
+    return new Set(todayJournals.map((j) => `${j.guruId}_${j.kelasId}`));
+  }, [todayJournals]);
+
+  const pendingSchedulesToday = useMemo(() => {
+    return todaySchedules.filter((sched) => {
+      if (sched.id && todayFilledJadwalIds.has(sched.id)) return false;
+      if (todayFilledGuruKeySet.has(`${sched.guruId}_${sched.kelasId}`)) return false;
+      return true;
+    });
+  }, [todaySchedules, todayFilledJadwalIds, todayFilledGuruKeySet]);
+
+  const pendingTeachersList = useMemo(() => {
+    const map = new Map<
+      string,
+      { guruNama: string; items: Array<{ kelasNama: string; mapelNama: string; jamMulai: number; jamSelesai: number }> }
+    >();
+    pendingSchedulesToday.forEach((sched) => {
+      const guruId = sched.guruId || sched.guru?.nama;
+      if (!guruId) return;
+      if (!map.has(guruId)) {
+        map.set(guruId, {
+          guruNama: sched.guru?.nama || "Guru",
+          items: [],
+        });
+      }
+      map.get(guruId)!.items.push({
+        kelasNama: sched.kelas?.nama?.replace(/^Kelas\s+/i, "") || sched.kelas?.nama || "-",
+        mapelNama: sched.mapel?.nama || "-",
+        jamMulai: sched.jamMulai,
+        jamSelesai: sched.jamSelesai,
+      });
+    });
+    return Array.from(map.values());
+  }, [pendingSchedulesToday]);
+
+  const handlePrintAllJournalsForDate = () => {
+    if (!printDate) {
+      alert("Silakan pilih tanggal terlebih dahulu.");
+      return;
+    }
+
+    const targetJournals = journals.filter((j) => {
+      const jDateStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date(j.tanggal));
+      return jDateStr === printDate;
+    });
+
+    if (targetJournals.length === 0) {
+      alert(`Tidak ada laporan jurnal mengajar pada tanggal ${printDate}`);
+      return;
+    }
+
+    const dateObj = new Date(`${printDate}T12:00:00Z`);
+    const dateLabel = new Intl.DateTimeFormat("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "Asia/Jakarta",
+    }).format(dateObj);
+
+    printJurnalMengajarDailyPDF(targetJournals, dateLabel, {
+      school_name: "SMA NEGERI 6 TANGERANG",
+    });
+  };
 
   // Form states - Subject
   const [mapelKode, setMapelKode] = useState("");
@@ -1748,45 +1862,169 @@ export default function JadwalClient({
       {/* -------------------- TAB: WAKA VIEW ALL JOURNALS -------------------- */}
       {activeTab === "jurnal" && user.role === "WAKA" && (
         <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Header Controls & Bulk Print */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-800/60 pb-5">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-indigo-400" />
                 Semua Jurnal Mengajar Guru
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Laporan jurnal kegiatan KBM dari seluruh guru di setiap kelas.
+                Laporan jurnal kegiatan KBM seluruh guru. Gunakan fitur filter dan cetak laporan per-tanggal.
               </p>
             </div>
-            <div className="w-full sm:w-64 relative rounded-xl">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-slate-500" />
+
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search input */}
+              <div className="w-full sm:w-56 relative rounded-xl">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-slate-500" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Cari kelas, guru, mapel..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="block w-full pl-9 pr-3 py-1.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Cari kelas, guru, mapel, judul..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-9 pr-3 py-1.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+
+              {/* Date selection & Print all in 1 file button */}
+              <div className="flex items-center gap-2 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
+                <input
+                  type="date"
+                  value={printDate}
+                  onChange={(e) => setPrintDate(e.target.value)}
+                  className="px-2.5 py-1 text-xs bg-slate-900 border border-slate-800 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+                <button
+                  type="button"
+                  onClick={handlePrintAllJournalsForDate}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white rounded-lg transition-all shadow-sm cursor-pointer whitespace-nowrap"
+                  title="Cetak semua jurnal pada tanggal yang dipilih dalam 1 file PDF"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Cetak Semua (1 File)</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-800">
+          {/* Top Summary Banner: Status Pengisian Jurnal Hari Ini */}
+          <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <CalendarDays className="w-4 h-4 text-indigo-400" />
+                  Ringkasan Pengisian Jurnal Hari Ini
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Pantau guru yang telah dan belum mengisi jurnal mengajar pada agenda KBM hari ini.
+                </p>
+              </div>
+
+              {pendingTeachersList.length > 0 && (
+                <button
+                  onClick={() => setShowPendingTeachers(!showPendingTeachers)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-xs font-bold transition-all cursor-pointer w-fit"
+                >
+                  <UserX className="w-4 h-4" />
+                  <span>{pendingTeachersList.length} Guru Belum Mengisi</span>
+                  {showPendingTeachers ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                </button>
+              )}
+            </div>
+
+            {/* Stat Cards Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Agenda Sesi Hari Ini</p>
+                  <p className="text-xl font-black text-white mt-0.5">{todaySchedules.length} Sesi</p>
+                </div>
+                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
+                  <BookOpen className="w-5 h-5 text-indigo-400" />
+                </div>
+              </div>
+
+              <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Jurnal Terisi Hari Ini</p>
+                  <p className="text-xl font-black text-emerald-400 mt-0.5">{todayJournals.length} Sesi</p>
+                </div>
+                <div className="p-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                </div>
+              </div>
+
+              <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Belum Mengisi Hari Ini</p>
+                  <p className={`text-xl font-black mt-0.5 ${pendingTeachersList.length > 0 ? "text-amber-400" : "text-emerald-400"}`}>
+                    {pendingTeachersList.length} Guru ({pendingSchedulesToday.length} Sesi)
+                  </p>
+                </div>
+                <div className={`p-2.5 rounded-xl border ${pendingTeachersList.length > 0 ? "bg-amber-500/10 border-amber-500/20" : "bg-emerald-500/10 border-emerald-500/20"}`}>
+                  {pendingTeachersList.length > 0 ? <AlertTriangle className="w-5 h-5 text-amber-400" /> : <Check className="w-5 h-5 text-emerald-400" />}
+                </div>
+              </div>
+            </div>
+
+            {/* List of Teachers Pending Today */}
+            {pendingTeachersList.length === 0 ? (
+              <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl text-center text-xs text-emerald-400 font-semibold flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Semua guru yang memiliki agenda mengajar hari ini telah mengisikan jurnal! 🎉</span>
+              </div>
+            ) : (
+              (showPendingTeachers || pendingTeachersList.length <= 5) && (
+                <div className="pt-2 border-t border-slate-800/60 space-y-2">
+                  <p className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    Daftar Guru Belum Mengisi Jurnal Mengajar Hari Ini:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    {pendingTeachersList.map((teacher, tIdx) => (
+                      <div key={tIdx} className="bg-slate-900/80 p-3 rounded-xl border border-amber-500/20 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-white truncate max-w-[180px]">{teacher.guruNama}</span>
+                          <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-semibold border border-amber-500/20 shrink-0">
+                            {teacher.items.length} Sesi Belum
+                          </span>
+                        </div>
+                        <div className="space-y-1 text-[11px] text-slate-400">
+                          {teacher.items.map((item, iIdx) => (
+                            <div key={iIdx} className="flex items-center justify-between gap-1 bg-slate-950/60 px-2 py-1 rounded-lg border border-slate-800">
+                              <span className="font-semibold text-indigo-300 shrink-0">{item.kelasNama}</span>
+                              <span className="truncate text-slate-300">{item.mapelNama}</span>
+                              <span className="text-[9px] text-slate-500 shrink-0">Jam {item.jamMulai}-{item.jamSelesai}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+
+          {/* Clean Table Section */}
+          <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
+            <table className="min-w-[950px] w-full divide-y divide-slate-800 border-collapse">
               <thead>
-                <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="pb-3 w-10">No</th>
-                  <th className="pb-3 w-28">Tanggal</th>
-                  <th className="pb-3 w-24">Kelas</th>
-                  <th className="pb-3 w-28">Guru Pengajar</th>
-                  <th className="pb-3 w-32">Mata Pelajaran</th>
-                  <th className="pb-3 w-36">Nama Jurnal</th>
-                  <th className="pb-3">Kegiatan</th>
-                  <th className="pb-3 w-20 text-center">Aksi</th>
+                <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-950">
+                  <th className="px-4 py-3.5 w-12 text-center border-b border-r border-slate-800/60">No</th>
+                  <th className="px-4 py-3.5 w-36 text-center border-b border-r border-slate-800/60">Tanggal & Sesi</th>
+                  <th className="px-4 py-3.5 w-28 text-center border-b border-r border-slate-800/60">Kelas</th>
+                  <th className="px-4 py-3.5 w-48 border-b border-r border-slate-800/60">Guru Pengajar</th>
+                  <th className="px-4 py-3.5 w-44 border-b border-r border-slate-800/60">Mata Pelajaran</th>
+                  <th className="px-4 py-3.5 w-48 border-b border-r border-slate-800/60">Nama Jurnal</th>
+                  <th className="px-4 py-3.5 border-b border-r border-slate-800/60">Uraian Kegiatan</th>
+                  <th className="px-4 py-3.5 w-24 text-center border-b border-slate-800/60">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 text-sm">
+              <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
                 {filteredJournals.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="text-center py-10 text-slate-500">
@@ -1794,39 +2032,56 @@ export default function JadwalClient({
                     </td>
                   </tr>
                 ) : (
-                  filteredJournals.map((item, index) => (
-                    <tr key={item.id}>
-                      <td className="py-4 text-slate-500">{index + 1}</td>
-                      <td className="py-4 font-semibold text-white">
-                        {new Date(item.tanggal).toLocaleDateString("id-ID", {
-                          weekday: "short",
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                        <div className="text-xs text-slate-400 font-normal">
-                          Jam ke-{item.jamMulai} - {item.jamSelesai}
-                        </div>
-                      </td>
-                      <td className="py-4 text-slate-300">Kelas {item.kelas.nama}</td>
-                      <td className="py-4 font-medium text-white">{item.guru.nama}</td>
-                      <td className="py-4 text-slate-300">{item.mapel.nama}</td>
-                      <td className="py-4 text-white font-medium">{item.namaJurnal}</td>
-                      <td className="py-4 pr-4">
-                        <p className="text-slate-300 line-clamp-2" title={item.kegiatan}>
-                          {item.kegiatan}
-                        </p>
-                      </td>
-                      <td className="py-4 text-center">
-                        <button
-                          onClick={() => setSelectedJournal(item)}
-                          className="px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xxs font-bold border border-indigo-500/20 cursor-pointer"
-                        >
-                          Lihat Detail
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  filteredJournals.map((item, index) => {
+                    const cleanKelasNama = item.kelas?.nama?.replace(/^Kelas\s+/i, "") || "-";
+                    return (
+                      <tr key={item.id} className="hover:bg-slate-900/40 transition">
+                        <td className="px-4 py-3.5 text-center text-slate-500 font-medium border-r border-slate-800/60 align-middle">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-3.5 text-center border-r border-slate-800/60 align-middle">
+                          <div className="font-semibold text-white whitespace-nowrap">
+                            {new Date(item.tanggal).toLocaleDateString("id-ID", {
+                              weekday: "short",
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </div>
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 text-[10px] font-mono border border-indigo-500/20 whitespace-nowrap">
+                            Jam {item.jamMulai} - {item.jamSelesai}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-center border-r border-slate-800/60 align-middle">
+                          <span className="inline-flex px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-bold text-xs whitespace-nowrap">
+                            {cleanKelasNama}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 border-r border-slate-800/60 align-middle">
+                          <span className="font-semibold text-white leading-tight block">{item.guru?.nama || "-"}</span>
+                        </td>
+                        <td className="px-4 py-3.5 text-slate-300 border-r border-slate-800/60 align-middle font-medium">
+                          {item.mapel?.nama || "-"}
+                        </td>
+                        <td className="px-4 py-3.5 text-white font-medium border-r border-slate-800/60 align-middle">
+                          {item.namaJurnal}
+                        </td>
+                        <td className="px-4 py-3.5 border-r border-slate-800/60 align-middle">
+                          <p className="text-slate-300 text-xs line-clamp-2 leading-relaxed" title={item.kegiatan}>
+                            {item.kegiatan}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3.5 text-center align-middle">
+                          <button
+                            onClick={() => setSelectedJournal(item)}
+                            className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 text-xs font-bold border border-indigo-500/30 transition cursor-pointer whitespace-nowrap"
+                          >
+                            Detail
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
