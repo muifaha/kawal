@@ -39,6 +39,40 @@ interface SchedData {
   jamSelesai: number;
 }
 
+function compressImageFile(file: File, maxWidth = 800, quality = 0.7): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } else {
+          resolve((e.target?.result as string) || "");
+        }
+      };
+      img.onerror = () => resolve((e.target?.result as string) || "");
+      img.src = (e.target?.result as string) || "";
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
+
 interface IsiJurnalClientProps {
   user: {
     id: string;
@@ -144,28 +178,33 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
     const timer = setTimeout(async () => {
       setIsSavingDraft(true);
 
-      const attendanceArray = Object.entries(attendance).map(([siswaId, status]) => ({
-        siswaId,
-        status,
-      }));
+      try {
+        const attendanceArray = Object.entries(attendance).map(([siswaId, status]) => ({
+          siswaId,
+          status,
+        }));
 
-      const photosArray = photos.map((p) => ({
-        preview: p.preview || null,
-        caption: p.caption || "",
-      }));
+        const photosArray = photos.map((p) => ({
+          preview: p.preview || null,
+          caption: p.caption || "",
+        }));
 
-      const res = await saveJurnalDraftAction({
-        jadwalId: jadwal.id,
-        namaJurnal,
-        kegiatan,
-        photosJson: JSON.stringify(photosArray),
-        attendanceJson: JSON.stringify(attendanceArray),
-      });
+        const res = await saveJurnalDraftAction({
+          jadwalId: jadwal.id,
+          namaJurnal,
+          kegiatan,
+          photosJson: JSON.stringify(photosArray),
+          attendanceJson: JSON.stringify(attendanceArray),
+        });
 
-      if (res.success && res.updatedAt) {
-        setDraftStatus(`Draf tersimpan otomatis pukul ${res.updatedAt}`);
+        if (res.success && res.updatedAt) {
+          setDraftStatus(`Draf tersimpan otomatis pukul ${res.updatedAt}`);
+        }
+      } catch (err) {
+        console.error("Save draft error:", err);
+      } finally {
+        setIsSavingDraft(false);
       }
-      setIsSavingDraft(false);
     }, 1500);
 
     return () => clearTimeout(timer);
@@ -192,22 +231,18 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
     D: "bg-purple-500/5 border-purple-500/10 text-purple-300",
   };
 
-  const handlePhotoSlotChange = (index: number, file: File | null) => {
+  const handlePhotoSlotChange = async (index: number, file: File | null) => {
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64Str = reader.result as string;
-        setPhotos((prev) => {
-          const next = [...prev];
-          next[index] = {
-            file,
-            preview: base64Str,
-            caption: next[index].caption,
-          };
-          return next;
-        });
-      };
-      reader.readAsDataURL(file);
+      const compressedBase64 = await compressImageFile(file, 800, 0.7);
+      setPhotos((prev) => {
+        const next = [...prev];
+        next[index] = {
+          file,
+          preview: compressedBase64 || null,
+          caption: next[index].caption,
+        };
+        return next;
+      });
     } else {
       setPhotos((prev) => {
         const next = [...prev];
