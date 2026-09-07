@@ -2467,7 +2467,7 @@ export default function DashboardClient({
                 : "border-transparent text-slate-400 hover:text-white"
             }`}
           >
-            {user.role === "WALAS" || user.role === "GURU" ? "Riwayat Jurnal Mengajar" : "Rekap Absensi & Pelanggaran"}
+            {user.role === "WALAS" ? "Wali Kelas" : user.role === "GURU" ? "Riwayat Jurnal Mengajar" : "Rekap Absensi & Pelanggaran"}
           </button>
         )}
       </div>
@@ -2986,7 +2986,7 @@ export default function DashboardClient({
       {/* 2. Tab Rekap Absensi Siswa / Riwayat Jurnal Mengajar */}
       {activeTab === "absen_rekap" && isWakaOrBKOrWalas && (
         <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl animate-fade-in space-y-6">
-          {(user.role === "GURU" || user.role === "WALAS") ? (
+          {user.role === "GURU" ? (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
