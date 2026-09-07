@@ -82,9 +82,17 @@ interface IsiJurnalClientProps {
   };
   jadwal: SchedData;
   students: StudentItem[];
+  existingJurnal?: {
+    id: string;
+    namaJurnal: string;
+    kegiatan: string;
+    foto?: string | null;
+    fotoKeterangan?: string | null;
+    absensi: Array<{ siswaId: string; status: string }>;
+  } | null;
 }
 
-export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalClientProps) {
+export default function IsiJurnalClient({ user, jadwal, students, existingJurnal }: IsiJurnalClientProps) {
   const router = useRouter();
 
   // General fields
@@ -115,13 +123,51 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
   const [isSavingDraft, setIsSavingDraft] = useState<boolean>(false);
   const [isDraftLoaded, setIsDraftLoaded] = useState<boolean>(false);
 
-  // Prepopulate attendance with defaults & load cloud draft
+  // Prepopulate attendance with defaults & load cloud draft / existing journal
   useEffect(() => {
     const defaultAtt: Record<string, string> = {};
     students.forEach((s) => {
       defaultAtt[s.id] = s.defaultStatus;
     });
     setAttendance(defaultAtt);
+
+    // If existing journal data is passed from server (edit mode), pre-fill it!
+    if (existingJurnal) {
+      if (existingJurnal.namaJurnal) setNamaJurnal(existingJurnal.namaJurnal);
+      if (existingJurnal.kegiatan) setKegiatan(existingJurnal.kegiatan);
+
+      if (existingJurnal.absensi && existingJurnal.absensi.length > 0) {
+        const attMap: Record<string, string> = {};
+        existingJurnal.absensi.forEach((a) => {
+          attMap[a.siswaId] = a.status;
+        });
+        setAttendance((prev) => ({ ...prev, ...attMap }));
+      }
+
+      if (existingJurnal.foto) {
+        try {
+          const parsedUrls = JSON.parse(existingJurnal.foto);
+          const parsedKets = existingJurnal.fotoKeterangan ? JSON.parse(existingJurnal.fotoKeterangan) : [];
+          if (Array.isArray(parsedUrls)) {
+            setPhotos((prev) => {
+              const next = [...prev];
+              parsedUrls.forEach((url: string, idx: number) => {
+                if (idx < 3) {
+                  next[idx] = {
+                    file: null,
+                    preview: url,
+                    caption: parsedKets[idx] || "",
+                  };
+                }
+              });
+              return next;
+            });
+          }
+        } catch (e) {}
+      }
+      setIsDraftLoaded(true);
+      return;
+    }
 
     async function loadCloudDraft() {
       const res = await getJurnalDraftAction(jadwal.id);
@@ -169,7 +215,7 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
     }
 
     loadCloudDraft();
-  }, [students, jadwal.id]);
+  }, [students, jadwal.id, existingJurnal]);
 
   // Debounced Auto-Save Draft to Cloud (1.5s delay)
   useEffect(() => {
@@ -288,6 +334,9 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
     }));
 
     const formData = new FormData();
+    if (existingJurnal?.id) {
+      formData.append("jurnalId", existingJurnal.id);
+    }
     formData.append("jadwalId", jadwal.id);
     formData.append("kelasId", jadwal.kelasId);
     formData.append("mapelId", jadwal.mapelId);

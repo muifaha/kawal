@@ -275,6 +275,7 @@ export async function saveJurnalAction(formData: FormData) {
     const fotoUrl = fotoUrls.length > 0 ? JSON.stringify(fotoUrls) : null;
     const fotoKeterangan = fotoUrls.length > 0 ? JSON.stringify(fotoKeterangans) : null;
 
+    const existingJurnalId = formData.get("jurnalId") as string | null;
     const jamMulai = parseInt(jamMulaiStr, 10);
     const jamSelesai = parseInt(jamSelesaiStr, 10);
     const today = new Date();
@@ -283,29 +284,69 @@ export async function saveJurnalAction(formData: FormData) {
     const parsedAbsensi = JSON.parse(absensiJson) as Array<{ siswaId: string; status: string }>;
     const parsedPenilaian = JSON.parse(penilaianJson) as Array<{ siswaId: string; nilai: number; keterangan?: string }>;
 
-    // 2. Transaksi penyimpanan jurnal
-    await prisma.$transaction(async (tx) => {
-      const jurnal = await tx.jurnalMengajar.create({
-        data: {
-          jadwalId: jadwalId || null,
-          kelasId,
-          guruId: user.id,
-          mapelId,
-          jamMulai,
-          jamSelesai,
+    // Check existing journal for today or by ID
+    let existingTarget = null;
+    if (existingJurnalId) {
+      existingTarget = await prisma.jurnalMengajar.findUnique({
+        where: { id: existingJurnalId },
+      });
+    } else if (jadwalId) {
+      existingTarget = await prisma.jurnalMengajar.findFirst({
+        where: {
+          jadwalId,
           tanggal: today,
-          namaJurnal,
-          kegiatan,
-          foto: fotoUrl,
-          fotoKeterangan: fotoKeterangan || null,
+          guruId: user.id,
         },
       });
+    }
 
-      // Insert JurnalAbsensi (Terisolasi dari BK)
-      if (parsedAbsensi.length > 0) {
+    // 2. Transaksi penyimpanan / pembaruan jurnal
+    await prisma.$transaction(async (tx) => {
+      let targetJurnalId = "";
+
+      if (existingTarget) {
+        targetJurnalId = existingTarget.id;
+        const finalFotoUrl = fotoUrl !== null ? fotoUrl : existingTarget.foto;
+        const finalFotoKet = fotoKeterangan !== null ? fotoKeterangan : existingTarget.fotoKeterangan;
+
+        await tx.jurnalMengajar.update({
+          where: { id: existingTarget.id },
+          data: {
+            namaJurnal,
+            kegiatan,
+            foto: finalFotoUrl,
+            fotoKeterangan: finalFotoKet,
+          },
+        });
+
+        // Hapus absensi jurnal lama & tulis ulang
+        await tx.jurnalAbsensi.deleteMany({
+          where: { jurnalId: existingTarget.id },
+        });
+      } else {
+        const created = await tx.jurnalMengajar.create({
+          data: {
+            jadwalId: jadwalId || null,
+            kelasId,
+            guruId: user.id,
+            mapelId,
+            jamMulai,
+            jamSelesai,
+            tanggal: today,
+            namaJurnal,
+            kegiatan,
+            foto: fotoUrl,
+            fotoKeterangan: fotoKeterangan || null,
+          },
+        });
+        targetJurnalId = created.id;
+      }
+
+      // Insert JurnalAbsensi
+      if (parsedAbsensi.length > 0 && targetJurnalId) {
         await tx.jurnalAbsensi.createMany({
           data: parsedAbsensi.map((abs) => ({
-            jurnalId: jurnal.id,
+            jurnalId: targetJurnalId,
             siswaId: abs.siswaId,
             status: abs.status,
           })),
@@ -313,12 +354,12 @@ export async function saveJurnalAction(formData: FormData) {
       }
 
       // Insert JurnalPenilaian (Opsional)
-      if (parsedPenilaian.length > 0) {
+      if (parsedPenilaian.length > 0 && targetJurnalId) {
         await tx.jurnalPenilaian.createMany({
           data: parsedPenilaian
             .filter((p) => p.nilai !== undefined && p.nilai !== null)
             .map((p) => ({
-              jurnalId: jurnal.id,
+              jurnalId: targetJurnalId,
               siswaId: p.siswaId,
               nilai: Number(p.nilai),
               keterangan: p.keterangan || null,

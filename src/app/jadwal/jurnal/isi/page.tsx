@@ -86,14 +86,36 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
     defaultStatus: attendanceMap[s.id] || "H", // Default to "H" (Hadir) if not set in BK today
   }));
 
+  const existingJurnal = await prisma.jurnalMengajar.findFirst({
+    where: {
+      jadwalId: jadwal.id,
+      tanggal: today,
+      guruId: user.id,
+    },
+    include: {
+      absensi: true,
+    },
+  });
+
+  const existingJurnalData = existingJurnal ? {
+    id: existingJurnal.id,
+    namaJurnal: existingJurnal.namaJurnal,
+    kegiatan: existingJurnal.kegiatan,
+    foto: existingJurnal.foto,
+    fotoKeterangan: existingJurnal.fotoKeterangan,
+    absensi: existingJurnal.absensi.map((a) => ({ siswaId: a.siswaId, status: a.status })),
+  } : null;
+
   return (
     <SidebarLayout user={user}>
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white text-balance">
-          Formulir Jurnal Mengajar
+          {existingJurnalData ? "Edit Jurnal Mengajar" : "Formulir Jurnal Mengajar"}
         </h1>
         <p className="text-sm text-slate-400 mt-1">
-          Laporkan uraian materi kelas, absensi siswa terisolasi, unggah dokumentasi pembelajaran, serta penilaian kelas.
+          {existingJurnalData
+            ? "Perbarui uraian materi kelas, absensi siswa, atau dokumentasi foto yang telah diisi sebelumnya."
+            : "Laporkan uraian materi kelas, absensi siswa terisolasi, unggah dokumentasi pembelajaran, serta penilaian kelas."}
         </p>
       </div>
 
@@ -109,6 +131,7 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
           jamSelesai: jadwal.jamSelesai,
         }}
         students={students}
+        existingJurnal={existingJurnalData}
       />
     </SidebarLayout>
   );

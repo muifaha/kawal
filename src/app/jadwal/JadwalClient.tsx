@@ -34,6 +34,8 @@ import {
   Loader2,
   School,
   Award,
+  Eye,
+  Edit3,
 } from "lucide-react";
 import Link from "next/link";
 import PenilaianManager from "@/components/PenilaianManager";
@@ -811,9 +813,18 @@ export default function JadwalClient({
 
                     <div className="pt-4 border-t border-slate-800/50 mt-4">
                       {filled ? (
-                        <div className="text-xs text-emerald-400 flex items-center gap-1 font-semibold">
-                          <CheckCircle2 className="w-4 h-4" />
-                          Jurnal selesai dilaporkan hari ini.
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-[11px] text-emerald-400 flex items-center gap-1 font-semibold">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Jurnal Terisi
+                          </div>
+                          <Link
+                            href={`/jadwal/jurnal/isi?jadwalId=${sched.id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            Edit Jurnal
+                          </Link>
                         </div>
                       ) : (
                         <Link
@@ -875,38 +886,30 @@ export default function JadwalClient({
               <thead>
                 <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                   <th className="pb-3 w-10">No</th>
-                  <th className="pb-3 w-32">Tanggal</th>
-                  <th className="pb-3 w-24">Kelas</th>
-                  <th className="pb-3 w-32">Mata Pelajaran</th>
-                  <th className="pb-3 w-36">Nama Jurnal</th>
-                  <th className="pb-3">Kegiatan Pembelajaran</th>
-                  <th className="pb-3 w-28 text-center">Detail</th>
+                  <th className="pb-3 w-36">Tanggal</th>
+                  <th className="pb-3 w-48">Nama Jurnal</th>
+                  <th className="pb-3">Deskripsi</th>
+                  <th className="pb-3 w-24 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-sm">
                 {filteredJournals.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-10 text-slate-500">
+                    <td colSpan={5} className="text-center py-10 text-slate-500">
                       Belum ada data jurnal mengajar yang Anda catat.
                     </td>
                   </tr>
                 ) : (
                   filteredJournals.map((item, index) => (
-                    <tr key={item.id}>
+                    <tr key={item.id} className="hover:bg-slate-800/30 transition">
                       <td className="py-4 text-slate-500">{index + 1}</td>
                       <td className="py-4 font-semibold text-white">
                         {new Date(item.tanggal).toLocaleDateString("id-ID", {
-                          weekday: "short",
-                          year: "numeric",
-                          month: "short",
                           day: "numeric",
+                          month: "short",
+                          year: "numeric",
                         })}
-                        <div className="text-xs text-slate-400 font-normal">
-                          Jam ke-{item.jamMulai} - {item.jamSelesai}
-                        </div>
                       </td>
-                      <td className="py-4 text-slate-300">Kelas {item.kelas.nama}</td>
-                      <td className="py-4 text-slate-300">{item.mapel.nama}</td>
                       <td className="py-4 text-white font-medium">{item.namaJurnal}</td>
                       <td className="py-4 pr-4">
                         <p className="text-slate-300 line-clamp-2" title={item.kegiatan}>
@@ -916,9 +919,10 @@ export default function JadwalClient({
                       <td className="py-4 text-center">
                         <button
                           onClick={() => setSelectedJournal(item)}
-                          className="px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xxs font-bold border border-indigo-500/20 cursor-pointer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition cursor-pointer"
                         >
-                          Lihat Detail
+                          <Eye className="w-3.5 h-3.5" />
+                          Lihat
                         </button>
                       </td>
                     </tr>
