@@ -14,7 +14,7 @@ import {
   createCustomActivityJurnalAction,
   getJurnalFullDetailAction,
 } from "@/app/actions/schedule";
-import { printJurnalMengajarPDF } from "@/lib/printUtils";
+import { printJurnalMengajarPDF, printJurnalMengajarDailyPDF } from "@/lib/printUtils";
 import {
   Calendar,
   Clock,
@@ -343,6 +343,7 @@ export default function JadwalClient({
   };
 
   const [downloadingPdfId, setDownloadingPdfId] = useState<string | null>(null);
+  const [downloadingDailyDate, setDownloadingDailyDate] = useState<string | null>(null);
 
   const handleDownloadJournalPDF = async (jurnalId: string) => {
     setDownloadingPdfId(jurnalId);
@@ -357,6 +358,25 @@ export default function JadwalClient({
       alert("Terjadi kesalahan saat membuat dokumen PDF.");
     } finally {
       setDownloadingPdfId(null);
+    }
+  };
+
+  const handleDownloadDailyJournalPDF = async (jurnalIds: string[], dateLabel: string) => {
+    setDownloadingDailyDate(dateLabel);
+    try {
+      const resList = await Promise.all(jurnalIds.map((id) => getJurnalFullDetailAction(id)));
+      const fullJournals = resList.filter((r) => r.success && r.jurnal).map((r) => r.jurnal);
+      const schoolSettings = resList[0]?.schoolSettings || {};
+
+      if (fullJournals.length > 0) {
+        printJurnalMengajarDailyPDF(fullJournals, dateLabel, schoolSettings);
+      } else {
+        alert("Gagal memuat data jurnal harian.");
+      }
+    } catch (e) {
+      alert("Terjadi kesalahan saat membuat dokumen PDF Harian.");
+    } finally {
+      setDownloadingDailyDate(null);
     }
   };
 
@@ -639,6 +659,42 @@ export default function JadwalClient({
     return matchSearch;
   });
 
+  const groupedJournalsByDate = useMemo(() => {
+    const map = new Map<string, typeof filteredJournals>();
+
+    filteredJournals.forEach((item) => {
+      const dKey = new Date(item.tanggal).toISOString().split("T")[0];
+      if (!map.has(dKey)) {
+        map.set(dKey, []);
+      }
+      map.get(dKey)!.push(item);
+    });
+
+    const result: {
+      dateKey: string;
+      dateLabel: string;
+      journals: typeof filteredJournals;
+      groupIndex: number;
+    }[] = [];
+
+    let idx = 1;
+    map.forEach((journals, dateKey) => {
+      const dateLabel = new Date(journals[0].tanggal).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+      result.push({
+        dateKey,
+        dateLabel,
+        journals,
+        groupIndex: idx++,
+      });
+    });
+
+    return result;
+  }, [filteredJournals]);
+
   // Get time duration string from period database using start/end hours
   const getTimeString = (day: number, start: number, end: number) => {
     const type = (HARI_MAP[day] || "").toUpperCase();
@@ -904,72 +960,108 @@ export default function JadwalClient({
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-800">
+            <table className="min-w-full divide-y divide-slate-800 border-collapse">
               <thead>
                 <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="pb-3 w-10">No</th>
-                  <th className="pb-3 w-36">Tanggal</th>
-                  <th className="pb-3 w-48">Nama Jurnal</th>
+                  <th className="pb-3 w-10 text-center">No</th>
+                  <th className="pb-3 w-32 text-center">Tanggal</th>
+                  <th className="pb-3 w-64">Nama Jurnal</th>
                   <th className="pb-3">Deskripsi</th>
-                  <th className="pb-3 w-24 text-center">Aksi</th>
+                  <th className="pb-3 w-48 text-center">Aksi Sesi</th>
+                  <th className="pb-3 w-36 text-center">Aksi Per Hari</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-sm">
-                {filteredJournals.length === 0 ? (
+                {groupedJournalsByDate.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-10 text-slate-500">
+                    <td colSpan={6} className="text-center py-10 text-slate-500">
                       Belum ada data jurnal mengajar yang Anda catat.
                     </td>
                   </tr>
                 ) : (
-                  filteredJournals.map((item, index) => (
-                    <tr key={item.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-4 text-slate-500">{index + 1}</td>
-                      <td className="py-4 font-semibold text-white">
-                        {new Date(item.tanggal).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td className="py-4 text-white font-medium">{item.namaJurnal}</td>
-                      <td className="py-4 pr-4">
-                        <p className="text-slate-300 line-clamp-2" title={item.kegiatan}>
-                          {item.kegiatan}
-                        </p>
-                      </td>
-                      <td className="py-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => setSelectedJournal(item)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            Lihat
-                          </button>
-                          <Link
-                            href={`/jadwal/jurnal/isi?jurnalId=${item.id}${item.jadwalId ? `&jadwalId=${item.jadwalId}` : ''}`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition cursor-pointer"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            Edit
-                          </Link>
-                          <button
-                            onClick={() => handleDownloadJournalPDF(item.id)}
-                            disabled={downloadingPdfId === item.id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white text-xs font-bold transition cursor-pointer"
-                          >
-                            {downloadingPdfId === item.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Download className="w-3.5 h-3.5" />
+                  groupedJournalsByDate.map((group) =>
+                    group.journals.map((item, itemIdx) => (
+                      <tr key={item.id} className="hover:bg-slate-800/30 transition">
+                        {itemIdx === 0 && (
+                          <>
+                            <td rowSpan={group.journals.length} className="py-4 text-center font-medium text-slate-400 align-middle border-r border-slate-800/60">
+                              {group.groupIndex}
+                            </td>
+                            <td rowSpan={group.journals.length} className="py-4 text-center font-bold text-white align-middle border-r border-slate-800/60 whitespace-nowrap">
+                              {group.dateLabel}
+                            </td>
+                          </>
+                        )}
+                        <td className="py-4 font-medium text-white pr-3">
+                          <div className="font-semibold text-white text-sm">{item.namaJurnal}</div>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                              Kelas {item.kelas?.nama || "-"}
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                              Jam ke-{item.jamMulai}{item.jamMulai !== item.jamSelesai ? `-${item.jamSelesai}` : ""}
+                            </span>
+                            {item.mapel?.nama && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                                {item.mapel.nama}
+                              </span>
                             )}
-                            Download
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                          </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                          <p className="text-slate-300 line-clamp-2" title={item.kegiatan}>
+                            {item.kegiatan}
+                          </p>
+                        </td>
+                        <td className="py-4 text-center border-r border-slate-800/60">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            <button
+                              onClick={() => setSelectedJournal(item)}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold transition cursor-pointer"
+                            >
+                              <Eye className="w-3 h-3" />
+                              Lihat
+                            </button>
+                            <Link
+                              href={`/jadwal/jurnal/isi?jurnalId=${item.id}${item.jadwalId ? `&jadwalId=${item.jadwalId}` : ''}`}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition cursor-pointer"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              Edit
+                            </Link>
+                            <button
+                              onClick={() => handleDownloadJournalPDF(item.id)}
+                              disabled={downloadingPdfId === item.id}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white text-[11px] font-bold transition cursor-pointer"
+                            >
+                              {downloadingPdfId === item.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Download className="w-3 h-3" />
+                              )}
+                              Download
+                            </button>
+                          </div>
+                        </td>
+                        {itemIdx === 0 && (
+                          <td rowSpan={group.journals.length} className="py-4 text-center align-middle">
+                            <button
+                              onClick={() => handleDownloadDailyJournalPDF(group.journals.map((j) => j.id), group.dateLabel)}
+                              disabled={downloadingDailyDate === group.dateLabel}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer shadow-md shadow-sky-500/10"
+                            >
+                              {downloadingDailyDate === group.dateLabel ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Printer className="w-3.5 h-3.5 text-sky-200" />
+                              )}
+                              Download Perhari
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  )
                 )}
               </tbody>
             </table>

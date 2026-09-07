@@ -864,3 +864,301 @@ export function printJurnalMengajarPDF(jurnal: any, schoolSettings?: Record<stri
   printWindow.document.write(htmlContent);
   printWindow.document.close();
 }
+
+export function printJurnalMengajarDailyPDF(
+  journals: any[],
+  dateLabel: string,
+  schoolSettings?: Record<string, string>
+) {
+  if (!journals || journals.length === 0) return;
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) return;
+
+  const firstJournal = journals[0];
+  const schoolName = schoolSettings?.school_name || "SMA NEGERI 6 TANGERANG";
+  const schoolAddress = schoolSettings?.school_address || "Jl. Pt. YKK Mahkota, Pasir Jaya, Kec. Jatiuwung, Kota Tangerang, Banten 15135";
+
+  const ttdDateFormatted = new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(firstJournal.tanggal));
+
+  const statusBadges: Record<string, { label: string; bg: string; color: string; border: string }> = {
+    H: { label: "Hadir", bg: "#dcfce7", color: "#15803d", border: "#bbf7d0" },
+    S: { label: "Sakit", bg: "#fef3c7", color: "#b45309", border: "#fde68a" },
+    I: { label: "Izin", bg: "#dbeafe", color: "#1d4ed8", border: "#bfdbfe" },
+    A: { label: "Alfa", bg: "#ffe4e6", color: "#be123c", border: "#fecdd3" },
+    D: { label: "Dispensasi", bg: "#f3e8ff", color: "#6b21a8", border: "#e9d5ff" },
+  };
+
+  const schoolLogo = schoolSettings?.school_logo || "/logo.png";
+  const headerHtml = schoolSettings?.school_header
+    ? `<div style="margin-bottom: 15px; text-align: center;">
+        <img src="${schoolSettings.school_header}" style="width: 100%; max-height: 140px; object-fit: contain; display: block; margin: 0 auto;" />
+       </div>`
+    : `<div class="header-container">
+        <img src="${schoolLogo}" class="logo-img" alt="Logo Sekolah" />
+        <div class="header-text">
+          <h2>PEMERINTAH PROVINSI BANTEN</h2>
+          <h3>DINAS PENDIDIKAN DAN KEBUDAYAAN</h3>
+          <h2>${schoolName}</h2>
+          <p>${schoolAddress}</p>
+        </div>
+        <div style="width: 70px;"></div>
+       </div>`;
+
+  const journalEntriesHtml = journals.map((jurnal, index) => {
+    let photosHtml = "";
+    if (jurnal.foto) {
+      try {
+        const urls = JSON.parse(jurnal.foto);
+        const kets = jurnal.fotoKeterangan ? JSON.parse(jurnal.fotoKeterangan) : [];
+        if (Array.isArray(urls) && urls.length > 0) {
+          photosHtml = `
+            <div style="margin-top: 10px; margin-bottom: 12px; page-break-inside: avoid;">
+              <div style="font-weight: 800; font-size: 8.5pt; color: #1e3a8a; margin-bottom: 6px; text-transform: uppercase;">Foto Dokumentasi:</div>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                ${urls.map((url: string, idx: number) => `
+                  <div style="border: 1px solid #cbd5e1; padding: 4px; border-radius: 6px; text-align: center; width: 150px; background: #f8fafc;">
+                    <img src="${url}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px;" />
+                    ${kets[idx] ? `<div style="font-size: 7.5pt; color: #475569; margin-top: 3px; font-style: italic;">${kets[idx]}</div>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+      } catch (e) {}
+    }
+
+    const absensiRowsHtml = (jurnal.absensi || []).map((att: any, idx: number) => {
+      const badge = statusBadges[att.status] || { label: att.status, bg: "#f1f5f9", color: "#475569", border: "#cbd5e1" };
+      return `
+        <tr>
+          <td style="text-align: center; color: #64748b; font-size: 8pt;">${idx + 1}</td>
+          <td style="font-family: monospace; text-align: center; font-weight: 600; color: #334155;">${att.siswa?.nis || "-"}</td>
+          <td style="font-weight: 500; color: #0f172a;">${att.siswa?.nama || "-"}</td>
+          <td style="text-align: center;">
+            <span style="display: inline-block; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 7.5pt; background-color: ${badge.bg}; color: ${badge.color}; border: 1px solid ${badge.border};">
+              ${badge.label}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <div style="margin-bottom: 22px; page-break-inside: avoid; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #ffffff;">
+        <div style="background: #1e3a8a; color: #ffffff; padding: 8px 12px; font-weight: 800; font-size: 9.5pt; display: flex; justify-content: space-between; align-items: center;">
+          <span>Sesi #${index + 1}: ${jurnal.namaJurnal}</span>
+          <span style="font-size: 8.5pt; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">
+            Kelas ${jurnal.kelas?.nama || "-"} | Jam Ke-${jurnal.jamMulai} - ${jurnal.jamSelesai}
+          </span>
+        </div>
+
+        <div style="padding: 12px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 9pt;">
+            <tr>
+              <td style="width: 110px; font-weight: 700; color: #1e3a8a;">Mata Pelajaran</td>
+              <td style="width: 10px; color: #64748b;">:</td>
+              <td>${jurnal.mapel?.nama || "-"}</td>
+              <td style="width: 110px; font-weight: 700; color: #1e3a8a;">Nama Guru</td>
+              <td style="width: 10px; color: #64748b;">:</td>
+              <td><strong>${jurnal.guru?.nama || "-"}</strong></td>
+            </tr>
+          </table>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #2563eb; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px;">
+            <div style="font-weight: 800; font-size: 8.5pt; color: #1e3a8a; text-transform: uppercase; margin-bottom: 3px;">Deskripsi Pembelajaran:</div>
+            <div style="font-size: 9pt; color: #1e293b; white-space: pre-wrap; line-height: 1.4;">${jurnal.kegiatan}</div>
+          </div>
+
+          ${photosHtml}
+
+          ${jurnal.absensi && jurnal.absensi.length > 0 ? `
+            <div style="font-weight: 800; font-size: 8.5pt; color: #1e3a8a; text-transform: uppercase; margin-top: 10px; margin-bottom: 6px;">
+              Daftar Absensi Siswa:
+            </div>
+            <table class="data-table" style="margin-bottom: 0;">
+              <thead>
+                <tr>
+                  <th style="width: 30px; text-align: center;">No</th>
+                  <th style="width: 100px; text-align: center;">NIS</th>
+                  <th>Nama Lengkap Siswa</th>
+                  <th style="width: 90px; text-align: center;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${absensiRowsHtml}
+              </tbody>
+            </table>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Rekap Jurnal Mengajar Harian - ${dateLabel}</title>
+        <style>
+          @page {
+            size: A4;
+            margin: 12mm 16mm;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #0f172a;
+            font-size: 9.5pt;
+            line-height: 1.4;
+            padding: 0;
+            margin: 0;
+            background-color: #ffffff;
+          }
+          .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px double #1e3a8a;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+          }
+          .logo-img {
+            width: 70px;
+            height: auto;
+          }
+          .header-text {
+            text-align: center;
+            flex-grow: 1;
+            padding: 0 10px;
+          }
+          .header-text h2 {
+            margin: 0;
+            font-size: 13pt;
+            font-weight: 800;
+            color: #1e3a8a;
+            text-transform: uppercase;
+          }
+          .header-text h3 {
+            margin: 2px 0 0 0;
+            font-size: 10.5pt;
+            font-weight: 700;
+            color: #1e293b;
+            text-transform: uppercase;
+          }
+          .header-text p {
+            margin: 2px 0 0 0;
+            font-size: 8pt;
+            color: #475569;
+          }
+          .doc-title-container {
+            text-align: center;
+            margin: 14px 0 16px 0;
+          }
+          .doc-title {
+            display: inline-block;
+            font-size: 13pt;
+            font-weight: 800;
+            color: #1e3a8a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-bottom: 3px;
+            border-bottom: 2.5px solid #2563eb;
+          }
+          .doc-subtitle {
+            font-size: 9.5pt;
+            color: #475569;
+            font-weight: 600;
+            margin-top: 4px;
+          }
+          table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+          }
+          table.data-table th {
+            background-color: #1e3a8a;
+            color: #ffffff;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 8pt;
+            padding: 6px 8px;
+            border: 1px solid #1e3a8a;
+          }
+          table.data-table td {
+            border: 1px solid #e2e8f0;
+            padding: 5px 8px;
+            font-size: 8.5pt;
+            color: #1e293b;
+          }
+          table.data-table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+          }
+          .footer-section {
+            margin-top: 25px;
+            display: flex;
+            justify-content: flex-end;
+            page-break-inside: avoid;
+          }
+          .ttd-box {
+            text-align: center;
+            width: 250px;
+            font-size: 9.5pt;
+            color: #1e293b;
+          }
+          .ttd-space {
+            height: 60px;
+            margin: 4px 0;
+          }
+          .ttd-nama {
+            font-weight: 800;
+            color: #1e3a8a;
+            text-decoration: underline;
+          }
+        </style>
+      </head>
+      <body>
+        ${headerHtml}
+
+        <div class="doc-title-container">
+          <div class="doc-title">REKAP JURNAL MENGAJAR HARIAN</div>
+          <div class="doc-subtitle">Tanggal: ${dateLabel} | Total Sesi: ${journals.length} Kegiatan</div>
+        </div>
+
+        ${journalEntriesHtml}
+
+        <div class="footer-section">
+          <div class="ttd-box">
+            <div>Tangerang, ${ttdDateFormatted}</div>
+            <div style="margin-top: 3px; font-weight: 600; color: #475569;">Guru Pengajar</div>
+            <div class="ttd-space" style="display: flex; align-items: center; justify-content: center;">
+              ${firstJournal.guru?.ttd ? `<img src="${firstJournal.guru.ttd}" style="max-height: 60px; max-width: 160px; object-fit: contain;" />` : ''}
+            </div>
+            <div class="ttd-nama">${firstJournal.guru?.nama || "-"}</div>
+            <div style="font-size: 8.5pt; color: #475569;">NIP. ${firstJournal.guru?.nip || "...................................."}</div>
+          </div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 300);
+          }
+        </script>
+      </body>
+    </html>
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+}
