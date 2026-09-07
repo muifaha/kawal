@@ -132,6 +132,13 @@ export async function importJadwalFromExcel(filePath: string) {
 
     let currentDay = 1;
 
+    const rawSlots: {
+      hari: number;
+      jamKe: number;
+      guruId: string;
+      mapelId: string;
+    }[] = [];
+
     for (const row of json) {
       if (!row || row.length === 0) continue;
 
@@ -209,18 +216,64 @@ export async function importJadwalFromExcel(filePath: string) {
         createdMapelCount++;
       }
 
-      // Create JadwalPelajaran entry
+      rawSlots.push({
+        hari: currentDay,
+        jamKe,
+        guruId,
+        mapelId,
+      });
+    }
+
+    // Merge consecutive slots for the same class, day, guru, and mapel
+    const mergedBlocks: {
+      hari: number;
+      jamMulai: number;
+      jamSelesai: number;
+      guruId: string;
+      mapelId: string;
+    }[] = [];
+
+    // Sort raw slots by hari asc, jamKe asc
+    rawSlots.sort((a, b) => {
+      if (a.hari !== b.hari) return a.hari - b.hari;
+      return a.jamKe - b.jamKe;
+    });
+
+    for (const slot of rawSlots) {
+      const lastBlock = mergedBlocks[mergedBlocks.length - 1];
+      if (
+        lastBlock &&
+        lastBlock.hari === slot.hari &&
+        lastBlock.guruId === slot.guruId &&
+        lastBlock.mapelId === slot.mapelId &&
+        slot.jamKe === lastBlock.jamSelesai + 1
+      ) {
+        // Merge consecutive slot
+        lastBlock.jamSelesai = slot.jamKe;
+      } else {
+        // New schedule block
+        mergedBlocks.push({
+          hari: slot.hari,
+          jamMulai: slot.jamKe,
+          jamSelesai: slot.jamKe,
+          guruId: slot.guruId,
+          mapelId: slot.mapelId,
+        });
+      }
+    }
+
+    // Save merged blocks to Database
+    for (const block of mergedBlocks) {
       await prisma.jadwalPelajaran.create({
         data: {
           kelasId,
-          guruId,
-          mapelId,
-          hari: currentDay,
-          jamMulai: jamKe,
-          jamSelesai: jamKe,
+          guruId: block.guruId,
+          mapelId: block.mapelId,
+          hari: block.hari,
+          jamMulai: block.jamMulai,
+          jamSelesai: block.jamSelesai,
         },
       });
-
       totalJadwalCreated++;
     }
   }
