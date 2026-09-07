@@ -140,7 +140,8 @@ export async function updateProfileAction(
       if (ttdData && ttdData.startsWith("data:image")) {
         const rawBase64 = ttdData.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(rawBase64, "base64");
-        const filename = `ttd_${sessionUser.id}_${Date.now()}.png`;
+        const ext = ttdData.includes("image/webp") ? ".webp" : ".png";
+        const filename = `ttd_${sessionUser.id}_${Date.now()}${ext}`;
         const uploadDir = path.join(process.cwd(), "public", "uploads", "ttd");
         if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true });

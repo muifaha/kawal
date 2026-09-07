@@ -258,7 +258,8 @@ export async function saveJurnalAction(formData: FormData) {
       } else if (base64Data && base64Data.startsWith("data:image")) {
         const rawBase64 = base64Data.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(rawBase64, "base64");
-        const filename = `jurnal_${Date.now()}_${i}.png`;
+        const ext = base64Data.includes("image/webp") ? ".webp" : ".png";
+        const filename = `jurnal_${Date.now()}_${i}${ext}`;
 
         const uploadDir = path.join(process.cwd(), "public", "uploads", "jurnal");
         if (!fs.existsSync(uploadDir)) {
