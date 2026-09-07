@@ -582,6 +582,7 @@ export default function DashboardClient({
         day: "numeric",
         month: "short",
         year: "numeric",
+        timeZone: "Asia/Jakarta",
       });
       result.push({
         dateKey,
@@ -4120,6 +4121,7 @@ export default function DashboardClient({
                     day: "numeric",
                     month: "long",
                     year: "numeric",
+                    timeZone: "Asia/Jakarta",
                   })}
                 </p>
               </div>

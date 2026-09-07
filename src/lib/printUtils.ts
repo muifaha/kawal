@@ -23,7 +23,8 @@ export function printSingleSummons(
   if (!printWindow) return;
 
   const formattedDate = new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "long"
+    dateStyle: "long",
+    timeZone: "Asia/Jakarta",
   }).format(new Date());
 
   const letterLevel = student.level === 1 ? "I" : student.level === 2 ? "II" : "III";
@@ -269,7 +270,8 @@ export function printBulkSummons(
   if (!printWindow) return;
 
   const formattedDate = new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "long"
+    dateStyle: "long",
+    timeZone: "Asia/Jakarta",
   }).format(new Date());
 
   const schoolName = settings?.school_name || "SMK NEGERI KAWAL";
@@ -526,12 +528,14 @@ export function printJurnalMengajarPDF(jurnal: any, schoolSettings?: Record<stri
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "Asia/Jakarta",
   }).format(new Date(jurnal.tanggal));
 
   const ttdDateFormatted = new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "Asia/Jakarta",
   }).format(new Date(jurnal.tanggal));
 
   // Parse photos if present
@@ -882,6 +886,7 @@ export function printJurnalMengajarDailyPDF(
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "Asia/Jakarta",
   }).format(new Date(firstJournal.tanggal));
 
   const statusBadges: Record<string, { label: string; bg: string; color: string; border: string }> = {

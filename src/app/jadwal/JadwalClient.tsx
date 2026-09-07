@@ -683,6 +683,7 @@ export default function JadwalClient({
         day: "numeric",
         month: "short",
         year: "numeric",
+        timeZone: "Asia/Jakarta",
       });
       result.push({
         dateKey,
@@ -1867,6 +1868,7 @@ export default function JadwalClient({
                     year: "numeric",
                     month: "long",
                     day: "numeric",
+                    timeZone: "Asia/Jakarta",
                   })}
                 </p>
               </div>
