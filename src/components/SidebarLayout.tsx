@@ -27,6 +27,7 @@ import {
   UserCheck,
   GraduationCap,
   FileText,
+  Award,
 } from "lucide-react";
 
 interface SidebarLayoutProps {
@@ -262,6 +263,12 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       name: "Jadwal & Jurnal",
       href: "/jadwal",
       icon: CalendarCheck,
+      roles: ["WAKA", "WALAS", "GURU"],
+    },
+    {
+      name: "Penilaian Siswa",
+      href: "/penilaian",
+      icon: Award,
       roles: ["WAKA", "WALAS", "GURU"],
     },
     {

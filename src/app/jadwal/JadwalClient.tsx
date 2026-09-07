@@ -31,8 +31,11 @@ import {
   Upload,
   FileUp,
   Loader2,
+  School,
+  Award,
 } from "lucide-react";
 import Link from "next/link";
+import PenilaianManager from "@/components/PenilaianManager";
 
 interface ClassOption {
   id: string;
@@ -625,6 +628,36 @@ export default function JadwalClient({
             </button>
             <button
               onClick={() => {
+                setActiveTab("kelas");
+                setActionError("");
+                setActionSuccess("");
+              }}
+              className={`py-2.5 px-4 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "kelas"
+                  ? "border-indigo-500 text-indigo-400"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <School className="w-3.5 h-3.5" />
+              Kelas Saya
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("penilaian");
+                setActionError("");
+                setActionSuccess("");
+              }}
+              className={`py-2.5 px-4 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "penilaian"
+                  ? "border-indigo-500 text-indigo-400"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Award className="w-3.5 h-3.5" />
+              Penilaian Siswa
+            </button>
+            <button
+              onClick={() => {
                 setActiveTab("jurnal_saya");
                 setActionError("");
                 setActionSuccess("");
@@ -720,6 +753,16 @@ export default function JadwalClient({
             )}
           </div>
         </div>
+      )}
+
+      {/* -------------------- TAB: KELAS SAYA -------------------- */}
+      {activeTab === "kelas" && (
+        <PenilaianManager user={user} defaultMode="KELAS" />
+      )}
+
+      {/* -------------------- TAB: PENILAIAN SISWA -------------------- */}
+      {activeTab === "penilaian" && (
+        <PenilaianManager user={user} defaultMode="PENILAIAN" />
       )}
 
       {/* -------------------- TAB: GURU JURNAL SAYA -------------------- */}

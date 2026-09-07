@@ -66,10 +66,6 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
   // Attendance map state
   const [attendance, setAttendance] = useState<Record<string, string>>({});
 
-  // Assessment map state (optional)
-  const [scores, setScores] = useState<Record<string, { nilai?: number; keterangan?: string }>>({});
-  const [enableAssessment, setEnableAssessment] = useState(false);
-
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
@@ -114,25 +110,8 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
     });
   };
 
-  const handleScoreChange = (siswaId: string, val: string) => {
-    const numVal = val === "" ? undefined : parseInt(val, 10);
-    setScores((prev) => ({
-      ...prev,
-      [siswaId]: {
-        ...prev[siswaId],
-        nilai: numVal,
-      },
-    }));
-  };
-
-  const handleScoreKeteranganChange = (siswaId: string, val: string) => {
-    setScores((prev) => ({
-      ...prev,
-      [siswaId]: {
-        ...prev[siswaId],
-        keterangan: val,
-      },
-    }));
+  const handleAttendanceChange = (siswaId: string, status: string) => {
+    setAttendance((prev) => ({ ...prev, [siswaId]: status }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -151,14 +130,6 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
       status,
     }));
 
-    const scoresArray = Object.entries(scores)
-      .filter(([_, data]) => data.nilai !== undefined && !isNaN(data.nilai))
-      .map(([siswaId, data]) => ({
-        siswaId,
-        nilai: data.nilai!,
-        keterangan: data.keterangan || "Penilaian Sesi Kelas",
-      }));
-
     const formData = new FormData();
     formData.append("jadwalId", jadwal.id);
     formData.append("kelasId", jadwal.kelasId);
@@ -174,7 +145,7 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
       }
     });
     formData.append("absensiJson", JSON.stringify(attendanceArray));
-    formData.append("penilaianJson", JSON.stringify(enableAssessment ? scoresArray : []));
+    formData.append("penilaianJson", JSON.stringify([]));
 
     startTransition(async () => {
       const res = await saveJurnalAction(formData);
@@ -348,23 +319,6 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
                 Data absensi disalin otomatis dari BK hari ini. Modifikasi di bawah **tidak berdampak** pada database utama BK.
               </p>
             </div>
-
-            {/* Quick action buttons */}
-            <div className="flex items-center gap-1.5">
-
-              <button
-                type="button"
-                onClick={() => setEnableAssessment(!enableAssessment)}
-                className={`px-2 py-1 border text-[10px] font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                  enableAssessment
-                    ? "bg-amber-500/20 border-amber-500/30 text-amber-300"
-                    : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-300"
-                }`}
-              >
-                <Award className="w-3 h-3" />
-                {enableAssessment ? "Batalkan Penilaian" : "Aktifkan Penilaian"}
-              </button>
-            </div>
           </div>
 
           {/* Desktop View Table */}
@@ -374,13 +328,7 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
                 <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                   <th className="pb-3 w-10">No</th>
                   <th className="pb-3 w-32">Siswa</th>
-                  <th className={`pb-3 text-center ${enableAssessment ? "w-16 sm:w-60" : "w-60"}`}>Status Kehadiran</th>
-                  {enableAssessment && (
-                    <>
-                      <th className="pb-3 w-28 text-center">Nilai (0-100)</th>
-                      <th className="pb-3 text-center">Keterangan Nilai</th>
-                    </>
-                  )}
+                  <th className="pb-3 text-center w-60">Status Kehadiran</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-sm">
@@ -390,79 +338,33 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
                     <tr key={student.id}>
                       <td className="py-3 text-slate-500">{index + 1}</td>
                       <td className="py-3">
-                        <div className="font-semibold text-white">{student.nama}</div>
-                        <div className="text-[10px] text-slate-500">NIS: {student.nis}</div>
+                        <div className="font-bold text-white text-xs">{student.nama}</div>
+                        <div className="text-[10px] text-slate-500 font-mono">NIS: {student.nis}</div>
                       </td>
                       <td className="py-3 text-center">
-                        {/* Desktop view (or if assessment is disabled): Full 5-button selector */}
-                        <div className={`items-center gap-1.5 p-1 bg-slate-950 border border-slate-800 rounded-xl ${
-                          enableAssessment ? "hidden sm:inline-flex" : "inline-flex"
-                        }`}>
-                          {["H", "S", "I", "A", "D"].map((st) => (
+                        <div className="inline-flex items-center justify-center p-1 bg-slate-950/60 border border-slate-800 rounded-xl gap-1">
+                          {[
+                            { key: "H", label: "Hadir", color: "bg-emerald-500 text-white" },
+                            { key: "S", label: "Sakit", color: "bg-amber-500 text-white" },
+                            { key: "I", label: "Izin", color: "bg-blue-500 text-white" },
+                            { key: "A", label: "Alpha", color: "bg-rose-500 text-white" },
+                            { key: "D", label: "Dispen", color: "bg-purple-500 text-white" },
+                          ].map((st) => (
                             <button
-                              key={st}
                               type="button"
-                              onClick={() => setAttendance((prev) => ({ ...prev, [student.id]: st }))}
-                              className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                                currentStatus === st
-                                  ? st === "H"
-                                    ? "bg-emerald-500 text-white"
-                                    : st === "A"
-                                    ? "bg-rose-500 text-white"
-                                    : "bg-amber-500 text-white"
-                                  : "text-slate-500 hover:bg-slate-900"
+                              key={st.key}
+                              onClick={() => handleAttendanceChange(student.id, st.key)}
+                              className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                                currentStatus === st.key
+                                  ? `${st.color} shadow-sm`
+                                  : "text-slate-400 hover:text-slate-200"
                               }`}
                             >
-                              {st}
+                              {st.key}
                             </button>
                           ))}
                         </div>
-
-                        {/* Mobile view when assessment is active: Compact single badge toggle selector */}
-                        {enableAssessment && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const statuses = ["H", "S", "I", "A", "D"];
-                              const nextIdx = (statuses.indexOf(currentStatus) + 1) % statuses.length;
-                              setAttendance((prev) => ({ ...prev, [student.id]: statuses[nextIdx] }));
-                            }}
-                            className={`sm:hidden mx-auto w-8 h-8 rounded-full flex items-center justify-center font-bold text-white transition-all active:scale-95 cursor-pointer ${
-                              currentStatus === "H"
-                                ? "bg-emerald-500-emerald-500/20"
-                                : currentStatus === "A"
-                                ? "bg-rose-500-rose-500/20"
-                                : "bg-amber-500-amber-500/20"
-                            }`}
-                          >
-                            {currentStatus}
-                          </button>
-                        )}
                       </td>
-                      {enableAssessment && (
-                        <>
-                          <td className="py-3 text-center">
-                            <input
-                              type="number"
-                              min={0}
-                              max={100}
-                              placeholder="Nilai"
-                              value={scores[student.id]?.nilai !== undefined ? scores[student.id].nilai : ""}
-                              onChange={(e) => handleScoreChange(student.id, e.target.value)}
-                              className="block w-20 mx-auto px-2 py-1.5 border border-slate-800 rounded-lg bg-slate-950 text-center text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-                          </td>
-                          <td className="py-3">
-                            <input
-                              type="text"
-                              placeholder="Keaktifan / Kuis..."
-                              value={scores[student.id]?.keterangan || ""}
-                              onChange={(e) => handleScoreKeteranganChange(student.id, e.target.value)}
-                              className="block w-full px-2 py-1.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-                          </td>
-                        </>
-                      )}
                     </tr>
                   );
                 })}
@@ -483,7 +385,6 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
                       <div className="text-[9px] text-slate-500 font-mono">NIS: {student.nis}</div>
                     </div>
                     
-                    {/* Compact Attendance Toggle Button */}
                     <button
                       type="button"
                       onClick={() => {
@@ -493,43 +394,15 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
                       }}
                       className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-white transition-all active:scale-95 cursor-pointer shrink-0 ${
                         currentStatus === "H"
-                          ? "bg-emerald-500-emerald-500/20"
+                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                           : currentStatus === "A"
-                          ? "bg-rose-500-rose-500/20"
-                          : "bg-amber-500-amber-500/20"
+                          ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                          : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                       }`}
                     >
                       {currentStatus}
                     </button>
                   </div>
-
-                  {/* Assessment Fields inside Card (if enabled) */}
-                  {enableAssessment && (
-                    <div className="grid grid-cols-[80px_1fr] gap-3 pt-3 border-t border-slate-800/80">
-                      <div>
-                        <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nilai</label>
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          placeholder="0-100"
-                          value={scores[student.id]?.nilai !== undefined ? scores[student.id].nilai : ""}
-                          onChange={(e) => handleScoreChange(student.id, e.target.value)}
-                          className="block w-full px-2 py-1.5 border border-slate-800 rounded-lg bg-slate-950 text-center text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Keterangan Penilaian</label>
-                        <input
-                          type="text"
-                          placeholder="Contoh: Keaktifan kelas..."
-                          value={scores[student.id]?.keterangan || ""}
-                          onChange={(e) => handleScoreKeteranganChange(student.id, e.target.value)}
-                          className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })}

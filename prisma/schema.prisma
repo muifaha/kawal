@@ -61,6 +61,7 @@ model User {
   bimbinganDilakukan    BimbinganKonseling[] @relation("BimbinganKonselorRelation")
   jadwalMengajar        JadwalPelajaran[]
   jurnalMengajar        JurnalMengajar[]
+  penilaianKelas        PenilaianKelas[]
   prestasiDilaporkan    PrestasiSiswa[]      @relation("PrestasiReporterRelation")
 
   createdAt       DateTime @default(now())
@@ -99,6 +100,7 @@ model Kelas {
   siswaKelas    SiswaKelas[]
   jadwal        JadwalPelajaran[]
   jurnal        JurnalMengajar[]
+  penilaianKelas PenilaianKelas[]
   createdAt     DateTime    @default(now())
 }
 
@@ -121,6 +123,7 @@ model Siswa {
   bimbingan       BimbinganKonseling[]
   jurnalAbsensi   JurnalAbsensi[]
   jurnalPenilaian JurnalPenilaian[]
+  penilaianSiswa  PenilaianSiswa[]
   prestasiAnggota PrestasiSiswaAnggota[]
   tracerStudy     TracerStudy?
 
@@ -351,12 +354,13 @@ model BimbinganKonseling {
 }
 
 model MataPelajaran {
-  id        String            @id @default(uuid())
-  kode      String            @unique // Contoh: "MAT-01"
-  nama      String            // Contoh: "Matematika"
-  jadwal    JadwalPelajaran[]
-  jurnal    JurnalMengajar[]
-  createdAt DateTime          @default(now())
+  id             String            @id @default(uuid())
+  kode           String            @unique // Contoh: "MAT-01"
+  nama           String            // Contoh: "Matematika"
+  jadwal         JadwalPelajaran[]
+  jurnal         JurnalMengajar[]
+  penilaianKelas PenilaianKelas[]
+  createdAt      DateTime          @default(now())
 }
 
 model JamPelajaran {
@@ -520,4 +524,34 @@ model PpidKeberatan {
   tanggapan           String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+model PenilaianKelas {
+  id             String           @id @default(uuid())
+  kelasId        String
+  kelas          Kelas            @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+  mapelId        String
+  mapel          MataPelajaran    @relation(fields: [mapelId], references: [id], onDelete: Cascade)
+  guruId         String
+  guru           User             @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  namaPenilaian  String
+  tanggal        DateTime         @db.Date
+  deskripsi      String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  nilaiSiswa     PenilaianSiswa[]
+}
+
+model PenilaianSiswa {
+  id               String         @id @default(uuid())
+  penilaianKelasId String
+  penilaianKelas   PenilaianKelas @relation(fields: [penilaianKelasId], references: [id], onDelete: Cascade)
+  siswaId          String
+  siswa            Siswa          @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  nilai            Float
+  catatan          String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([penilaianKelasId, siswaId])
 }
