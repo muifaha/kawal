@@ -869,16 +869,69 @@ export function printJurnalMengajarPDF(jurnal: any, schoolSettings?: Record<stri
   printWindow.document.close();
 }
 
+export function parseKelasSortOrder(kelasNama: string): { grade: number; sub: string } {
+  if (!kelasNama) return { grade: 99, sub: "" };
+  const clean = kelasNama.trim().replace(/^Kelas\s+/i, "");
+
+  let grade = 99;
+  let sub = clean;
+
+  if (/^XII\b/i.test(clean)) {
+    grade = 3;
+    sub = clean.replace(/^XII\s*/i, "");
+  } else if (/^XI\b/i.test(clean)) {
+    grade = 2;
+    sub = clean.replace(/^XI\s*/i, "");
+  } else if (/^X\b/i.test(clean)) {
+    grade = 1;
+    sub = clean.replace(/^X\s*/i, "");
+  }
+
+  return { grade, sub };
+}
+
+export function sortJournalsByKelasAndJam(journals: any[]): any[] {
+  return [...journals].sort((a, b) => {
+    // 1. Sort by Grade: X (1) -> XI (2) -> XII (3)
+    const classA = parseKelasSortOrder(a.kelas?.nama || "");
+    const classB = parseKelasSortOrder(b.kelas?.nama || "");
+
+    if (classA.grade !== classB.grade) {
+      return classA.grade - classB.grade;
+    }
+
+    // 2. Sort by Class Subname (e.g. 1, 2, A1, B1)
+    const subComp = classA.sub.localeCompare(classB.sub, undefined, { numeric: true, sensitivity: 'base' });
+    if (subComp !== 0) return subComp;
+
+    // 3. Sort by Jam Mulai (1-9)
+    const jamMulaiA = Number(a.jamMulai) || 0;
+    const jamMulaiB = Number(b.jamMulai) || 0;
+    if (jamMulaiA !== jamMulaiB) {
+      return jamMulaiA - jamMulaiB;
+    }
+
+    // 4. Sort by Jam Selesai
+    const jamSelesaiA = Number(a.jamSelesai) || 0;
+    const jamSelesaiB = Number(b.jamSelesai) || 0;
+    return jamSelesaiA - jamSelesaiB;
+  });
+}
+
 export function printJurnalMengajarDailyPDF(
   journals: any[],
   dateLabel: string,
   schoolSettings?: Record<string, string>
 ) {
   if (!journals || journals.length === 0) return;
+
+  // Sort journals X -> XI -> XII and jam 1-9
+  const sortedJournals = sortJournalsByKelasAndJam(journals);
+
   const printWindow = window.open("", "_blank");
   if (!printWindow) return;
 
-  const firstJournal = journals[0];
+  const firstJournal = sortedJournals[0];
   const schoolName = schoolSettings?.school_name || "SMA NEGERI 6 TANGERANG";
   const schoolAddress = schoolSettings?.school_address || "Jl. Pt. YKK Mahkota, Pasir Jaya, Kec. Jatiuwung, Kota Tangerang, Banten 15135";
 
@@ -897,7 +950,7 @@ export function printJurnalMengajarDailyPDF(
     D: { label: "Dispensasi", bg: "#f3e8ff", color: "#6b21a8", border: "#e9d5ff" },
   };
 
-  const schoolLogo = schoolSettings?.school_logo || "/logo.png";
+  const schoolLogo = schoolSettings?.school_logo || "/icon.png";
   const headerHtml = schoolSettings?.school_header
     ? `<div style="margin-bottom: 15px; text-align: center;">
         <img src="${schoolSettings.school_header}" style="width: 100%; max-height: 140px; object-fit: contain; display: block; margin: 0 auto;" />
@@ -910,10 +963,27 @@ export function printJurnalMengajarDailyPDF(
           <h2>${schoolName}</h2>
           <p>${schoolAddress}</p>
         </div>
-        <div style="width: 70px;"></div>
+        <div style="width: 65px;"></div>
        </div>`;
 
-  const journalEntriesHtml = journals.map((jurnal, index) => {
+  const isSingleTeacher = sortedJournals.every(
+    (j) => (j.guruId && j.guruId === firstJournal.guruId) || (j.guru?.nama && j.guru?.nama === firstJournal.guru?.nama)
+  );
+
+  const wakaTitle = "Mengetahui,<br/>Waka Kurikulum";
+  const wakaNama = "CHRESTIAN PRASETIO H, S.E, MM.";
+  const wakaNip = "NIP. 197108152008011007";
+
+  const ttdRoleHtml = isSingleTeacher ? "Guru Pengajar" : wakaTitle;
+  const ttdNamaText = isSingleTeacher ? (firstJournal.guru?.nama || "-") : wakaNama;
+  const ttdNipText = isSingleTeacher
+    ? `NIP. ${firstJournal.guru?.nip || "...................................."}`
+    : wakaNip;
+  const ttdImgHtml = (isSingleTeacher && firstJournal.guru?.ttd)
+    ? `<img src="${firstJournal.guru.ttd}" style="max-height: 55px; max-width: 160px; object-fit: contain;" />`
+    : "";
+
+  const journalEntriesHtml = sortedJournals.map((jurnal, index) => {
     let photosHtml = "";
     if (jurnal.foto) {
       try {
@@ -1142,7 +1212,7 @@ export function printJurnalMengajarDailyPDF(
 
         <div class="doc-title-container">
           <div class="doc-title">JURNAL KEGIATAN HARIAN</div>
-          <div class="doc-subtitle">Tanggal: ${dateLabel} | Total Sesi: ${journals.length} Kegiatan</div>
+          <div class="doc-subtitle">Tanggal: ${dateLabel} | Total Sesi: ${sortedJournals.length} Kegiatan</div>
         </div>
 
         ${journalEntriesHtml}
@@ -1151,16 +1221,16 @@ export function printJurnalMengajarDailyPDF(
           <div class="ttd-box">
             <div>Tangerang, ${ttdDateFormatted}</div>
             <div style="margin-top: 3px; font-weight: 600; color: #475569;">
-              ${journals.every((j) => (j.guruId && j.guruId === firstJournal.guruId) || (j.guru?.nama && j.guru?.nama === firstJournal.guru?.nama)) ? "Guru Pengajar" : "Mengetahui, Waka Sekolah"}
+              ${ttdRoleHtml}
             </div>
             <div class="ttd-space" style="display: flex; align-items: center; justify-content: center;">
-              ${(journals.every((j) => (j.guruId && j.guruId === firstJournal.guruId) || (j.guru?.nama && j.guru?.nama === firstJournal.guru?.nama)) && firstJournal.guru?.ttd) ? `<img src="${firstJournal.guru.ttd}" style="max-height: 55px; max-width: 160px; object-fit: contain;" />` : ''}
+              ${ttdImgHtml}
             </div>
             <div class="ttd-nama">
-              ${journals.every((j) => (j.guruId && j.guruId === firstJournal.guruId) || (j.guru?.nama && j.guru?.nama === firstJournal.guru?.nama)) ? (firstJournal.guru?.nama || "-") : (schoolSettings?.waka_nama || "Tim Kurikulum / Kesiswaan")}
+              ${ttdNamaText}
             </div>
             <div style="font-size: 8.5pt; color: #475569;">
-              ${journals.every((j) => (j.guruId && j.guruId === firstJournal.guruId) || (j.guru?.nama && j.guru?.nama === firstJournal.guru?.nama)) ? `NIP. ${firstJournal.guru?.nip || "...................................."}` : (schoolSettings?.waka_nip ? `NIP. ${schoolSettings.waka_nip}` : '')}
+              ${ttdNipText}
             </div>
           </div>
         </div>
@@ -1179,4 +1249,207 @@ export function printJurnalMengajarDailyPDF(
   printWindow.document.open();
   printWindow.document.write(htmlContent);
   printWindow.document.close();
+}
+
+export async function exportKehadiranJurnalExcel(
+  journals: any[],
+  dateLabel: string,
+  schoolSettings?: Record<string, string>
+) {
+  if (!journals || journals.length === 0) return;
+
+  // Sort journals X -> XI -> XII and jam 1-9
+  const sortedJournals = sortJournalsByKelasAndJam(journals);
+
+  const ExcelJS = await import("exceljs");
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Kehadiran Jurnal", {
+    pageSetup: { paperSize: 9, orientation: "landscape" },
+  });
+
+  const schoolName = schoolSettings?.school_name || "SMA NEGERI 6 TANGERANG";
+
+  // Title Block
+  worksheet.mergeCells("A1:I1");
+  const cTitle1 = worksheet.getCell("A1");
+  cTitle1.value = "REKAPITULASI KEHADIRAN SISWA DALAM JURNAL MENGAJAR";
+  cTitle1.font = { name: "Arial", size: 14, bold: true, color: { argb: "FF1E3A8A" } };
+  cTitle1.alignment = { horizontal: "center", vertical: "middle" };
+
+  worksheet.mergeCells("A2:I2");
+  const cTitle2 = worksheet.getCell("A2");
+  cTitle2.value = schoolName.toUpperCase();
+  cTitle2.font = { name: "Arial", size: 12, bold: true, color: { argb: "FF0F172A" } };
+  cTitle2.alignment = { horizontal: "center", vertical: "middle" };
+
+  worksheet.mergeCells("A3:I3");
+  const cTitle3 = worksheet.getCell("A3");
+  cTitle3.value = `Tanggal: ${dateLabel} | Total ${sortedJournals.length} Sesi Pembelajaran`;
+  cTitle3.font = { name: "Arial", size: 10, italic: true, color: { argb: "FF475569" } };
+  cTitle3.alignment = { horizontal: "center", vertical: "middle" };
+
+  worksheet.addRow([]); // Row 4 space
+
+  // Table Headers (Row 5)
+  const headers = [
+    "No",
+    "Kelas",
+    "Sesi / Jam",
+    "Mata Pelajaran",
+    "Guru Pengajar",
+    "Nama Siswa",
+    "NIS / NIK",
+    "Status Kehadiran",
+    "Nama Jurnal / Catatan",
+  ];
+  const headerRow = worksheet.addRow(headers);
+  headerRow.height = 26;
+
+  headerRow.eachCell((cell) => {
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF1E3A8A" },
+    };
+    cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.border = {
+      top: { style: "thin", color: { argb: "FF1E3A8A" } },
+      bottom: { style: "medium", color: { argb: "FF0F172A" } },
+      left: { style: "thin", color: { argb: "FF334155" } },
+      right: { style: "thin", color: { argb: "FF334155" } },
+    };
+  });
+
+  const statusColors: Record<string, { label: string; bg: string; fg: string }> = {
+    H: { label: "Hadir", bg: "FFDCFCE7", fg: "FF15803D" },
+    S: { label: "Sakit", bg: "FFFDE68A", fg: "FFB45309" },
+    I: { label: "Izin", bg: "FFDBEAFE", fg: "FF1D4ED8" },
+    A: { label: "Alfa", bg: "FFFFCDD3", fg: "FFBE123C" },
+    D: { label: "Dispensasi", bg: "FFE9D5FF", fg: "FF6B21A8" },
+  };
+
+  let rowCounter = 1;
+
+  sortedJournals.forEach((jurnal) => {
+    const cleanKelas = jurnal.kelas?.nama?.replace(/^Kelas\s+/i, "") || "-";
+    const jamLabel = `Jam ${jurnal.jamMulai} - ${jurnal.jamSelesai}`;
+    const mapelNama = jurnal.mapel?.nama || "-";
+    const guruNama = jurnal.guru?.nama || "-";
+
+    const absensiList = jurnal.absensi || [];
+    if (absensiList.length === 0) {
+      const row = worksheet.addRow([
+        rowCounter++,
+        cleanKelas,
+        jamLabel,
+        mapelNama,
+        guruNama,
+        "- (Tidak Ada Absensi Terinput)",
+        "-",
+        "-",
+        jurnal.namaJurnal || "-",
+      ]);
+      row.height = 20;
+    } else {
+      absensiList.forEach((att: any) => {
+        const stInfo = statusColors[att.status] || { label: att.status || "-", bg: "FFF1F5F9", fg: "FF475569" };
+        const row = worksheet.addRow([
+          rowCounter++,
+          cleanKelas,
+          jamLabel,
+          mapelNama,
+          guruNama,
+          att.siswa?.nama || "-",
+          att.siswa?.nis || att.siswa?.nisn || "-",
+          stInfo.label,
+          att.keterangan || jurnal.namaJurnal || "-",
+        ]);
+        row.height = 20;
+
+        const statusCell = row.getCell(8);
+        statusCell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: stInfo.bg },
+        };
+        statusCell.font = { name: "Arial", size: 9, bold: true, color: { argb: stInfo.fg } };
+        statusCell.alignment = { horizontal: "center", vertical: "middle" };
+      });
+    }
+  });
+
+  // Apply default styles to data cells
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber > 5) {
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFE2E8F0" } },
+          bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+          left: { style: "thin", color: { argb: "FFE2E8F0" } },
+          right: { style: "thin", color: { argb: "FFE2E8F0" } },
+        };
+        if (colNumber !== 8) {
+          cell.font = { name: "Arial", size: 9, color: { argb: "FF0F172A" } };
+          if ([1, 2, 3, 7].includes(colNumber)) {
+            cell.alignment = { horizontal: "center", vertical: "middle" };
+          } else {
+            cell.alignment = { horizontal: "left", vertical: "middle" };
+          }
+        }
+      });
+    }
+  });
+
+  // TTD Block
+  worksheet.addRow([]);
+  const ttdDateFormatted = new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  }).format(new Date());
+
+  const rTtd1 = worksheet.addRow(["", "", "", "", "", "", "", "Tangerang, " + ttdDateFormatted, ""]);
+  rTtd1.getCell(8).alignment = { horizontal: "center" };
+  rTtd1.getCell(8).font = { name: "Arial", size: 10 };
+
+  const rTtd2 = worksheet.addRow(["", "", "", "", "", "", "", "Mengetahui,", ""]);
+  rTtd2.getCell(8).alignment = { horizontal: "center" };
+  rTtd2.getCell(8).font = { name: "Arial", size: 10, bold: true };
+
+  const rTtd3 = worksheet.addRow(["", "", "", "", "", "", "", "Waka Kurikulum", ""]);
+  rTtd3.getCell(8).alignment = { horizontal: "center" };
+  rTtd3.getCell(8).font = { name: "Arial", size: 10, bold: true };
+
+  worksheet.addRow([]);
+  worksheet.addRow([]);
+
+  const rTtd4 = worksheet.addRow(["", "", "", "", "", "", "", "CHRESTIAN PRASETIO H, S.E, MM.", ""]);
+  rTtd4.getCell(8).alignment = { horizontal: "center" };
+  rTtd4.getCell(8).font = { name: "Arial", size: 10, bold: true, underline: true };
+
+  const rTtd5 = worksheet.addRow(["", "", "", "", "", "", "", "NIP. 197108152008011007", ""]);
+  rTtd5.getCell(8).alignment = { horizontal: "center" };
+  rTtd5.getCell(8).font = { name: "Arial", size: 9, color: { argb: "FF475569" } };
+
+  // Set explicit column widths
+  worksheet.getColumn(1).width = 6;  // No
+  worksheet.getColumn(2).width = 12; // Kelas
+  worksheet.getColumn(3).width = 16; // Sesi
+  worksheet.getColumn(4).width = 26; // Mapel
+  worksheet.getColumn(5).width = 26; // Guru
+  worksheet.getColumn(6).width = 30; // Nama Siswa
+  worksheet.getColumn(7).width = 18; // NIS
+  worksheet.getColumn(8).width = 18; // Status
+  worksheet.getColumn(9).width = 32; // Keterangan
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `Kehadiran_Jurnal_${dateLabel.replace(/\s+/g, "_")}.xlsx`;
+  anchor.click();
+  window.URL.revokeObjectURL(url);
 }

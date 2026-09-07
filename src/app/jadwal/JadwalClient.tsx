@@ -14,7 +14,12 @@ import {
   createCustomActivityJurnalAction,
   getJurnalFullDetailAction,
 } from "@/app/actions/schedule";
-import { printJurnalMengajarPDF, printJurnalMengajarDailyPDF } from "@/lib/printUtils";
+import {
+  printJurnalMengajarPDF,
+  printJurnalMengajarDailyPDF,
+  exportKehadiranJurnalExcel,
+  sortJournalsByKelasAndJam,
+} from "@/lib/printUtils";
 import {
   Calendar,
   Clock,
@@ -254,10 +259,12 @@ export default function JadwalClient({
     return Array.from(map.values());
   }, [pendingSchedulesToday]);
 
-  const handlePrintAllJournalsForDate = () => {
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
+  const getFullJournalsForPrintDate = async () => {
     if (!printDate) {
       alert("Silakan pilih tanggal terlebih dahulu.");
-      return;
+      return null;
     }
 
     const targetJournals = journals.filter((j) => {
@@ -272,7 +279,7 @@ export default function JadwalClient({
 
     if (targetJournals.length === 0) {
       alert(`Tidak ada laporan jurnal mengajar pada tanggal ${printDate}`);
-      return;
+      return null;
     }
 
     const dateObj = new Date(`${printDate}T12:00:00Z`);
@@ -284,9 +291,39 @@ export default function JadwalClient({
       timeZone: "Asia/Jakarta",
     }).format(dateObj);
 
-    printJurnalMengajarDailyPDF(targetJournals, dateLabel, {
-      school_name: "SMA NEGERI 6 TANGERANG",
-    });
+    // Fetch full details (attendance lists & school settings)
+    const resList = await Promise.all(targetJournals.map((j) => getJurnalFullDetailAction(j.id)));
+    const fullJournals = resList.filter((r) => r.success && r.jurnal).map((r) => r.jurnal);
+    const schoolSettings = resList[0]?.schoolSettings || { school_name: "SMA NEGERI 6 TANGERANG" };
+
+    const sortedJournals = sortJournalsByKelasAndJam(fullJournals.length > 0 ? fullJournals : targetJournals);
+    return { sortedJournals, dateLabel, schoolSettings };
+  };
+
+  const handlePrintAllJournalsForDate = async () => {
+    try {
+      setIsBulkProcessing(true);
+      const data = await getFullJournalsForPrintDate();
+      if (!data) return;
+      printJurnalMengajarDailyPDF(data.sortedJournals, data.dateLabel, data.schoolSettings);
+    } catch (e) {
+      alert("Terjadi kesalahan saat memuat data untuk cetak PDF.");
+    } finally {
+      setIsBulkProcessing(false);
+    }
+  };
+
+  const handleExportKehadiranExcelForDate = async () => {
+    try {
+      setIsBulkProcessing(true);
+      const data = await getFullJournalsForPrintDate();
+      if (!data) return;
+      await exportKehadiranJurnalExcel(data.sortedJournals, data.dateLabel, data.schoolSettings);
+    } catch (e) {
+      alert("Terjadi kesalahan saat mengekspor data ke Excel.");
+    } finally {
+      setIsBulkProcessing(false);
+    }
   };
 
   // Form states - Subject
@@ -1889,22 +1926,38 @@ export default function JadwalClient({
                 />
               </div>
 
-              {/* Date selection & Print all in 1 file button */}
-              <div className="flex items-center gap-2 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
-                <input
-                  type="date"
-                  value={printDate}
-                  onChange={(e) => setPrintDate(e.target.value)}
-                  className="px-2.5 py-1 text-xs bg-slate-900 border border-slate-800 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
+              {/* Date selection & Action Buttons: PDF & Excel */}
+              <div className="flex flex-wrap items-center gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-900 border border-slate-800 rounded-lg">
+                  <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+                  <input
+                    type="date"
+                    value={printDate}
+                    onChange={(e) => setPrintDate(e.target.value)}
+                    className="bg-transparent text-xs text-white focus:outline-none cursor-pointer"
+                  />
+                </div>
+
                 <button
                   type="button"
+                  disabled={isBulkProcessing}
                   onClick={handlePrintAllJournalsForDate}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white rounded-lg transition-all shadow-sm cursor-pointer whitespace-nowrap"
-                  title="Cetak semua jurnal pada tanggal yang dipilih dalam 1 file PDF"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-xs font-bold text-white rounded-lg transition-all cursor-pointer whitespace-nowrap"
+                  title="Cetak semua jurnal pada tanggal yang dipilih dalam 1 file PDF (Urut Kelas X-XII & Jam 1-9)"
                 >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Cetak Semua (1 File)</span>
+                  {isBulkProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
+                  <span>Cetak PDF (1 File)</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isBulkProcessing}
+                  onClick={handleExportKehadiranExcelForDate}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-xs font-bold text-white rounded-lg transition-all cursor-pointer whitespace-nowrap"
+                  title="Ekspor rekap kehadiran siswa ke Excel (.xlsx) (Urut Kelas X-XII & Jam 1-9)"
+                >
+                  {isBulkProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
+                  <span>Cetak Kehadiran (Excel)</span>
                 </button>
               </div>
             </div>
@@ -2032,7 +2085,7 @@ export default function JadwalClient({
                     </td>
                   </tr>
                 ) : (
-                  filteredJournals.map((item, index) => {
+                  sortJournalsByKelasAndJam(filteredJournals).map((item, index) => {
                     const cleanKelasNama = item.kelas?.nama?.replace(/^Kelas\s+/i, "") || "-";
                     return (
                       <tr key={item.id} className="hover:bg-slate-900/40 transition">
