@@ -576,6 +576,22 @@ export function printJurnalMengajarPDF(jurnal: any, schoolSettings?: Record<stri
     </tr>
   `).join('');
 
+  const schoolLogo = schoolSettings?.school_logo || "/logo.png";
+  const headerHtml = schoolSettings?.school_header
+    ? `<div style="border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; text-align: center;">
+        <img src="${schoolSettings.school_header}" style="width: 100%; max-height: 140px; object-fit: contain; display: block; margin: 0 auto;" />
+       </div>`
+    : `<div class="header-container">
+        <img src="${schoolLogo}" class="logo-img" alt="Logo Sekolah" />
+        <div class="header-text">
+          <h2>PEMERINTAH PROVINSI BANTEN</h2>
+          <h3>DINAS PENDIDIKAN DAN KEBUDAYAAN</h3>
+          <h2>${schoolName}</h2>
+          <p>${schoolAddress}</p>
+        </div>
+        <div style="width: 70px;"></div>
+       </div>`;
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -714,16 +730,7 @@ export function printJurnalMengajarPDF(jurnal: any, schoolSettings?: Record<stri
         </style>
       </head>
       <body>
-        <div class="header-container">
-          <img src="/logo.png" class="logo-img" alt="Logo Sekolah" />
-          <div class="header-text">
-            <h2>PEMERINTAH PROVINSI BANTEN</h2>
-            <h3>DINAS PENDIDIKAN DAN KEBUDAYAAN</h3>
-            <h2>${schoolName}</h2>
-            <p>${schoolAddress}</p>
-          </div>
-          <div style="width: 70px;"></div>
-        </div>
+        ${headerHtml}
 
         <div class="doc-title">JURNAL MENGAJAR</div>
 

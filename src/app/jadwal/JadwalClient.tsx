@@ -349,7 +349,7 @@ export default function JadwalClient({
     try {
       const res = await getJurnalFullDetailAction(jurnalId);
       if (res.success && res.jurnal) {
-        printJurnalMengajarPDF(res.jurnal);
+        printJurnalMengajarPDF(res.jurnal, res.schoolSettings);
       } else {
         alert(res.error || "Gagal mengunduh berkas Jurnal.");
       }

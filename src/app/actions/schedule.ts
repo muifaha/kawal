@@ -504,7 +504,13 @@ export async function getJurnalFullDetailAction(jurnalId: string) {
       return { error: "Data jurnal mengajar tidak ditemukan." };
     }
 
-    return { success: true, jurnal };
+    const appSettingsList = await prisma.appSetting.findMany();
+    const schoolSettings: Record<string, string> = {};
+    appSettingsList.forEach((s) => {
+      schoolSettings[s.key] = s.value;
+    });
+
+    return { success: true, jurnal, schoolSettings };
   } catch (error: any) {
     console.error("getJurnalFullDetailAction error:", error);
     return { error: "Gagal memuat data detail jurnal." };
