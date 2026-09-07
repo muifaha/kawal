@@ -469,14 +469,15 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
             />
           </div>
 
-          <div className="bg-slate-900/40 border border-slate-900 rounded-xl overflow-hidden">
-            <table className="min-w-full divide-y divide-slate-900">
+          {/* Table (Responsive with smooth Horizontal Scroll for Mobile) */}
+          <div className="bg-slate-900/40 border border-slate-900 rounded-xl overflow-x-auto">
+            <table className="w-full min-w-[340px] divide-y divide-slate-900">
               <thead className="bg-slate-900/50">
                 <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="py-3 px-3 text-center w-10">No</th>
+                  <th className="py-3 px-2 sm:px-3 text-center w-7 sm:w-10 text-[11px] sm:text-xs">No</th>
                   <th className="py-3 px-3 w-20 hidden sm:table-cell">NIS</th>
-                  <th className="py-3 px-3">Nama Lengkap</th>
-                  <th className="py-3 px-3 text-center w-48">Status</th>
+                  <th className="py-3 px-2 sm:px-3">Nama Lengkap</th>
+                  <th className="py-3 px-2 sm:px-3 text-center min-w-[180px]">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-900/60 text-sm">
@@ -489,11 +490,14 @@ export default function IsiJurnalClient({ user, jadwal, students }: IsiJurnalCli
                     const status = (attendance[student.id] || "H") as StatusType;
                     return (
                       <tr key={student.id} className={`transition-all ${rowColors[status]}`}>
-                        <td className="py-2.5 px-3 text-center text-sm font-medium text-slate-400">{index + 1}</td>
+                        <td className="py-2.5 px-2 sm:px-3 text-center text-xs sm:text-sm font-medium text-slate-400">{index + 1}</td>
                         <td className="py-2.5 px-3 font-mono text-xs hidden sm:table-cell">{student.nis}</td>
-                        <td className="py-2.5 px-3 text-sm font-semibold">{student.nama}</td>
-                        <td className="py-2.5 px-3">
-                          <div className="flex justify-center gap-1 sm:gap-1.5">
+                        <td className="py-2.5 px-2 sm:px-3 text-xs sm:text-sm font-semibold whitespace-normal break-words leading-tight">
+                          {student.nama}
+                          <div className="sm:hidden text-[9px] text-slate-500 font-mono mt-0.5">NIS: {student.nis}</div>
+                        </td>
+                        <td className="py-2.5 px-2 sm:px-3">
+                          <div className="flex justify-center gap-1 sm:gap-1.5 min-w-[170px]">
                             {(["H", "S", "I", "A", "D"] as const).map((s) => {
                               const active = {
                                 H: "bg-emerald-500 text-emerald-950 font-bold border-emerald-500",
