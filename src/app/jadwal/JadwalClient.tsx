@@ -11,6 +11,7 @@ import {
   deleteJadwalAction,
   bulkDeleteJadwalAction,
   importJadwalExcelAction,
+  createCustomActivityJurnalAction,
 } from "@/app/actions/schedule";
 import {
   Calendar,
@@ -241,6 +242,101 @@ export default function JadwalClient({
   const [actionSuccess, setActionSuccess] = useState("");
 
   const [selectedJournal, setSelectedJournal] = useState<JournalItem | null>(null);
+
+  // Custom Activity Modal State
+  const [showCustomActivityModal, setShowCustomActivityModal] = useState(false);
+  const [activityTitle, setActivityTitle] = useState("");
+  const [activityDate, setActivityDate] = useState(new Date().toISOString().split("T")[0]);
+  const [activityTime, setActivityTime] = useState("");
+  const [activityClassId, setActivityClassId] = useState("");
+  const [activityMapelId, setActivityMapelId] = useState("");
+  const [activityDescription, setActivityDescription] = useState("");
+  interface CustomPhotoDoc {
+    file: File | null;
+    preview: string | null;
+    caption: string;
+  }
+  const [activityPhotos, setActivityPhotos] = useState<CustomPhotoDoc[]>([
+    { file: null, preview: null, caption: "" },
+    { file: null, preview: null, caption: "" },
+    { file: null, preview: null, caption: "" },
+  ]);
+
+  const handleCustomActivityPhotoChange = (index: number, file: File | null) => {
+    setActivityPhotos((prev) => {
+      const next = [...prev];
+      if (file) {
+        next[index] = {
+          file,
+          preview: URL.createObjectURL(file),
+          caption: next[index].caption,
+        };
+      } else {
+        next[index] = {
+          file: null,
+          preview: null,
+          caption: "",
+        };
+      }
+      return next;
+    });
+  };
+
+  const handleCustomActivityCaptionChange = (index: number, caption: string) => {
+    setActivityPhotos((prev) => {
+      const next = [...prev];
+      next[index] = {
+        ...next[index],
+        caption,
+      };
+      return next;
+    });
+  };
+
+  const handleCustomActivitySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activityTitle || !activityDescription || !activityClassId || !activityMapelId) {
+      setActionError("Nama Kegiatan, Kelas, Mata Pelajaran, dan Deskripsi Kegiatan wajib diisi.");
+      return;
+    }
+
+    setActionError("");
+    setActionSuccess("");
+
+    const formData = new FormData();
+    formData.append("namaJurnal", activityTitle);
+    formData.append("tanggal", activityDate);
+    formData.append("waktu", activityTime);
+    formData.append("kelasId", activityClassId);
+    formData.append("mapelId", activityMapelId);
+    formData.append("kegiatan", activityDescription);
+
+    activityPhotos.forEach((doc, idx) => {
+      if (doc.file) {
+        formData.append(`foto_${idx}`, doc.file);
+        formData.append(`fotoKeterangan_${idx}`, doc.caption);
+      }
+    });
+
+    startTransition(async () => {
+      const res = await createCustomActivityJurnalAction(formData);
+      if (res.error) {
+        setActionError(res.error);
+      } else {
+        setActionSuccess(res.message || "Kegiatan berhasil ditambahkan ke Jurnal.");
+        setShowCustomActivityModal(false);
+        setActivityTitle("");
+        setActivityTime("");
+        setActivityDescription("");
+        setActivityPhotos([
+          { file: null, preview: null, caption: "" },
+          { file: null, preview: null, caption: "" },
+          { file: null, preview: null, caption: "" },
+        ]);
+        window.location.reload();
+      }
+    });
+  };
 
   // Bulk Delete Handlers
   const handleSelectAllSched = (filteredList: ScheduleItem[]) => {
@@ -679,14 +775,28 @@ export default function JadwalClient({
       {/* -------------------- TAB: GURU TODAY AGENDA -------------------- */}
       {activeTab === "today" && (
         <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
-          <div>
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <CalendarDays className="w-5 h-5 text-indigo-400" />
-              Agenda Jadwal Mengajar Hari Ini ({HARI_MAP[new Date().getDay()] || "Minggu"})
-            </h3>
-            <p className="text-xs text-slate-400 mt-1">
-              Daftar kelas mengajar Anda hari ini. Segera isi jurnal mengajar setelah sesi kelas selesai.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <CalendarDays className="w-5 h-5 text-indigo-400" />
+                Agenda Jadwal Mengajar Hari Ini ({HARI_MAP[new Date().getDay()] || "Minggu"})
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Daftar kelas mengajar Anda hari ini. Segera isi jurnal mengajar setelah sesi kelas selesai.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                if (classes.length > 0) setActivityClassId(classes[0].id);
+                if (subjectList.length > 0) setActivityMapelId(subjectList[0].id);
+                setShowCustomActivityModal(true);
+              }}
+              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              Tambah Kegiatan
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -1817,6 +1927,201 @@ export default function JadwalClient({
                 >
                   {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                   {isImporting ? "Mengimpor Data..." : "Mulai Import Jadwal"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: TAMBAH KEGIATAN BARU */}
+      {showCustomActivityModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-6 space-y-5 my-8">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-indigo-400" />
+                  Tambah Kegiatan Jurnal Baru
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Tambahkan catatan kegiatan di luar jadwal reguler (Ekstrakurikuler, Pembinaan, KBM Tambahan, dll).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCustomActivityModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCustomActivitySubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Nama Kegiatan *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Pembinaan Siswa / KBM Tambahan"
+                    value={activityTitle}
+                    onChange={(e) => setActivityTitle(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Tanggal (Otomatis Hari Ini) *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={activityDate}
+                    onChange={(e) => setActivityDate(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Waktu (Tulis Manual)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: 08:00 - 09:30"
+                    value={activityTime}
+                    onChange={(e) => setActivityTime(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Pilih Kelas *
+                  </label>
+                  <select
+                    required
+                    value={activityClassId}
+                    onChange={(e) => setActivityClassId(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">-- Pilih Kelas --</option>
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        Kelas {c.nama}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Mata Pelajaran *
+                  </label>
+                  <select
+                    required
+                    value={activityMapelId}
+                    onChange={(e) => setActivityMapelId(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">-- Pilih Mapel --</option>
+                    {subjectList.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.nama}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Deskripsi Kegiatan Pembelajaran *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Uraikan jalannya kegiatan atau materi yang disampaikan..."
+                  value={activityDescription}
+                  onChange={(e) => setActivityDescription(e.target.value)}
+                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Foto Kegiatan & Dokumentasi (Maksimal 3 Foto)
+                </label>
+                <div className="grid grid-cols-1 gap-3">
+                  {activityPhotos.map((doc, idx) => (
+                    <div key={idx} className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase">
+                        <span>Foto Dokumentasi #{idx + 1}</span>
+                        {doc.preview && (
+                          <button
+                            type="button"
+                            onClick={() => handleCustomActivityPhotoChange(idx, null)}
+                            className="text-rose-400 hover:text-rose-300 font-semibold cursor-pointer"
+                          >
+                            Hapus
+                          </button>
+                        )}
+                      </div>
+
+                      {doc.preview ? (
+                        <div className="grid grid-cols-[100px_1fr] gap-3">
+                          <img src={doc.preview} alt={`Preview ${idx + 1}`} className="rounded-lg h-16 w-full object-cover border border-slate-800" />
+                          <div className="flex flex-col justify-center">
+                            <input
+                              type="text"
+                              placeholder="Keterangan foto..."
+                              value={doc.caption}
+                              onChange={(e) => handleCustomActivityCaptionChange(idx, e.target.value)}
+                              className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <label className="flex items-center justify-center w-full h-12 border border-dashed border-slate-800 rounded-xl cursor-pointer bg-slate-950/20 hover:bg-slate-950/40 transition-all gap-2">
+                          <Upload className="w-3.5 h-3.5 text-slate-400" />
+                          <span className="text-xs text-slate-400">Upload Berkas Foto #{idx + 1}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] || null;
+                              handleCustomActivityPhotoChange(idx, file);
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowCustomActivityModal(false)}
+                  className="px-4 py-2 border border-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer"
+                >
+                  {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  {isPending ? "Menyimpan..." : "Simpan Kegiatan Jurnal"}
                 </button>
               </div>
             </form>

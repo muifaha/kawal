@@ -345,6 +345,85 @@ export async function saveJurnalAction(formData: FormData) {
   }
 }
 
+// Tambah Kegiatan Baru Jurnal (GURU/WALAS Only)
+export async function createCustomActivityJurnalAction(formData: FormData) {
+  const user = await getSessionUser();
+  if (!user || (user.role !== "GURU" && user.role !== "WALAS" && user.role !== "WAKA")) {
+    return { error: "Akses ditolak." };
+  }
+
+  const namaJurnal = formData.get("namaJurnal") as string;
+  const tanggalStr = formData.get("tanggal") as string;
+  const waktuStr = formData.get("waktu") as string;
+  const kelasId = formData.get("kelasId") as string;
+  const mapelId = formData.get("mapelId") as string;
+  const kegiatan = formData.get("kegiatan") as string;
+
+  if (!namaJurnal || !kegiatan || !kelasId || !mapelId) {
+    return { error: "Nama Kegiatan, Kelas, Mata Pelajaran, dan Deskripsi Kegiatan wajib diisi." };
+  }
+
+  try {
+    const fotoUrls: string[] = [];
+    const fotoKeterangans: string[] = [];
+
+    for (let i = 0; i < 3; i++) {
+      const file = formData.get(`foto_${i}`) as File | null;
+      const ket = formData.get(`fotoKeterangan_${i}`) as string | null;
+
+      if (file && file.size > 0) {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const filename = `jurnal_kegiatan_${Date.now()}_${i}_${file.name.replace(/\s+/g, "_")}`;
+
+        const uploadDir = path.join(process.cwd(), "public", "uploads", "jurnal");
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        const fullPath = path.join(uploadDir, filename);
+        fs.writeFileSync(fullPath, buffer);
+        fotoUrls.push(`/uploads/jurnal/${filename}`);
+        fotoKeterangans.push(ket || "");
+      }
+    }
+
+    const fotoUrl = fotoUrls.length > 0 ? JSON.stringify(fotoUrls) : null;
+    const fotoKeterangan = fotoUrls.length > 0 ? JSON.stringify(fotoKeterangans) : null;
+
+    const tanggal = tanggalStr ? new Date(tanggalStr) : new Date();
+
+    const titleWithTime = waktuStr ? `${namaJurnal.trim()} (${waktuStr.trim()})` : namaJurnal.trim();
+
+    const newJurnal = await prisma.jurnalMengajar.create({
+      data: {
+        kelasId,
+        guruId: user.id,
+        mapelId,
+        jamMulai: 1,
+        jamSelesai: 1,
+        tanggal,
+        namaJurnal: titleWithTime,
+        kegiatan: kegiatan.trim(),
+        foto: fotoUrl,
+        fotoKeterangan,
+      },
+    });
+
+    revalidatePath("/jadwal");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      message: "Kegiatan baru berhasil ditambahkan ke Jurnal Mengajar!",
+      data: newJurnal,
+    };
+  } catch (error: any) {
+    console.error("createCustomActivityJurnalAction error:", error);
+    return { error: error.message || "Gagal menambahkan kegiatan." };
+  }
+}
+
 // Auto-Save Draft Jurnal Action
 export async function saveJurnalDraftAction(payload: {
   jadwalId: string;
