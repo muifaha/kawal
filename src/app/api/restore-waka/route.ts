@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { PrismaClient, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
 
 export async function GET() {
   try {
@@ -35,7 +34,5 @@ export async function GET() {
       { success: false, error: error.message || "Gagal memulihkan akun Waka." },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

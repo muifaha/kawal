@@ -807,10 +807,11 @@ export async function importJadwalExcelAction(fileBase64: string) {
 
     const defaultPasswordHash = await bcrypt.hash("guru123", 10);
 
-    const existingUsers = await prisma.user.findMany();
-    const existingMapel = await prisma.mataPelajaran.findMany();
+    const existingUsers = await prisma.user.findMany({ select: { id: true, nama: true } });
+    const existingMapel = await prisma.mataPelajaran.findMany({ select: { id: true, nama: true, kode: true } });
     const existingKelas = await prisma.kelas.findMany({
       where: { tahunAjaranId: activeTa.id },
+      select: { id: true, nama: true },
     });
 
     const userMapByNama = new Map<string, string>();

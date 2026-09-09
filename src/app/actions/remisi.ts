@@ -226,15 +226,31 @@ export async function checkAndApplyAutomaticRemissions() {
       return { success: true, message: "Pengecekan remisi otomatis sudah berjalan hari ini." };
     }
 
-    // 2. Cari seluruh siswa aktif dengan poin pelanggaran
+    // 2. Cari siswa aktif yang memiliki pelanggaran disetujui
     const activeStudents = await prisma.siswa.findMany({
-      where: { status: "AKTIF" },
-      include: {
+      where: {
+        status: "AKTIF",
+        pelanggaran: {
+          some: { status: "APPROVED" },
+        },
+      },
+      select: {
+        id: true,
+        createdAt: true,
         pelanggaran: {
           where: { status: "APPROVED" },
-          include: { detailPelanggaran: true },
+          select: {
+            approvedAt: true,
+            detailPelanggaran: { select: { poin: true } },
+          },
         },
-        remisi: true,
+        remisi: {
+          select: {
+            jenis: true,
+            tanggal: true,
+            poinDikurangi: true,
+          },
+        },
       },
     });
 
