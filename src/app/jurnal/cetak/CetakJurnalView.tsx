@@ -109,7 +109,7 @@ export default function CetakJurnalView({
         >
           {/* Header Kop Sekolah */}
           {schoolHeader ? (
-            <div style={{ borderColor: "#0f172a" }} className="mb-6 border-b-2 pb-4">
+            <div className="mb-6">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={schoolHeader}
