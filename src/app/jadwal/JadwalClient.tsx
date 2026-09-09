@@ -22,6 +22,7 @@ import {
   sortJournalsByKelasAndJam,
 } from "@/lib/printUtils";
 import { RENCANA_AKSI_OPTIONS } from "@/lib/rencanaAksiService";
+import { compressImageFile } from "@/lib/imageUtils";
 import {
   Calendar,
   Clock,
@@ -522,24 +523,46 @@ export default function JadwalClient({
     { file: null, preview: null, caption: "" },
   ]);
 
-  const handleCustomActivityPhotoChange = (index: number, file: File | null) => {
-    setActivityPhotos((prev) => {
-      const next = [...prev];
-      if (file) {
-        next[index] = {
-          file,
-          preview: URL.createObjectURL(file),
-          caption: next[index].caption,
+  const handleCustomActivityPhotoChange = async (index: number, file: File | null) => {
+    if (file) {
+      try {
+        const compressedBase64 = await compressImageFile(file, 1200, 0.75);
+        setActivityPhotos((prev) => {
+          const next = [...prev];
+          next[index] = {
+            file: null,
+            preview: compressedBase64,
+            caption: next[index].caption,
+          };
+          return next;
+        });
+      } catch (err) {
+        console.error("Compression error:", err);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setActivityPhotos((prev) => {
+            const next = [...prev];
+            next[index] = {
+              file: null,
+              preview: reader.result as string,
+              caption: next[index].caption,
+            };
+            return next;
+          });
         };
-      } else {
+        reader.readAsDataURL(file);
+      }
+    } else {
+      setActivityPhotos((prev) => {
+        const next = [...prev];
         next[index] = {
           file: null,
           preview: null,
           caption: "",
         };
-      }
-      return next;
-    });
+        return next;
+      });
+    }
   };
 
   const handleCustomActivityCaptionChange = (index: number, caption: string) => {
@@ -576,35 +599,42 @@ export default function JadwalClient({
     if (activityMapelId) formData.append("mapelId", activityMapelId);
 
     activityPhotos.forEach((doc, idx) => {
-      if (doc.file) {
-        formData.append(`foto_${idx}`, doc.file);
-        formData.append(`fotoKeterangan_${idx}`, doc.caption);
-      } else if (doc.preview && doc.preview.startsWith("data:image")) {
+      if (doc.preview && doc.preview.startsWith("data:image")) {
         formData.append(`fotoBase64_${idx}`, doc.preview);
+        formData.append(`fotoKeterangan_${idx}`, doc.caption);
+      } else if (doc.file) {
+        formData.append(`foto_${idx}`, doc.file);
         formData.append(`fotoKeterangan_${idx}`, doc.caption);
       }
     });
 
     startTransition(async () => {
-      const res = await createCustomActivityJurnalAction(formData);
-      if (res.error) {
-        setModalCustomError(res.error);
-        setActionError(res.error);
-      } else {
-        setActionSuccess(res.message || "Kegiatan berhasil ditambahkan ke Jurnal.");
-        setShowCustomActivityModal(false);
-        setActivityTitle("");
-        setActivityJamMulai("07.45");
-        setActivityJamSelesai("09.00");
-        setActivityRencanaAksi(RENCANA_AKSI_OPTIONS[0]);
-        setActivityDescription("");
-        setModalCustomError("");
-        setActivityPhotos([
-          { file: null, preview: null, caption: "" },
-          { file: null, preview: null, caption: "" },
-          { file: null, preview: null, caption: "" },
-        ]);
-        window.location.reload();
+      try {
+        const res = await createCustomActivityJurnalAction(formData);
+        if (res.error) {
+          setModalCustomError(res.error);
+          setActionError(res.error);
+        } else {
+          setActionSuccess(res.message || "Kegiatan berhasil ditambahkan ke Jurnal.");
+          setShowCustomActivityModal(false);
+          setActivityTitle("");
+          setActivityJamMulai("07.45");
+          setActivityJamSelesai("09.00");
+          setActivityRencanaAksi(RENCANA_AKSI_OPTIONS[0]);
+          setActivityDescription("");
+          setModalCustomError("");
+          setActivityPhotos([
+            { file: null, preview: null, caption: "" },
+            { file: null, preview: null, caption: "" },
+            { file: null, preview: null, caption: "" },
+          ]);
+          window.location.reload();
+        }
+      } catch (err: any) {
+        console.error("Submit custom activity error:", err);
+        setModalCustomError(
+          err.message || "Gagal mengunggah foto. Silakan coba lagi."
+        );
       }
     });
   };
