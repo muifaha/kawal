@@ -1325,16 +1325,24 @@ export default function JadwalClient({
                         <td className="px-4 py-4 font-medium text-white border-r border-slate-800/60">
                           <div className="font-semibold text-white text-sm leading-snug">{item.namaJurnal}</div>
                           <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 whitespace-nowrap">
-                              Kelas {item.kelas?.nama || "-"}
-                            </span>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
-                              Jam ke-{item.jamMulai}{item.jamMulai !== item.jamSelesai ? `-${item.jamSelesai}` : ""}
-                            </span>
-                            {item.mapel?.nama && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
-                                {item.mapel.nama}
+                            {!item.jadwalId || item.kelas?.nama === "KEGIATAN UMUM" || item.mapel?.nama === "Kegiatan Pembelajaran" ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
+                                Kegiatan Tambahan
                               </span>
+                            ) : (
+                              <>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 whitespace-nowrap">
+                                  Kelas {item.kelas?.nama || "-"}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
+                                  Jam ke-{item.jamMulai}{item.jamMulai !== item.jamSelesai ? `-${item.jamSelesai}` : ""}
+                                </span>
+                                {item.mapel?.nama && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
+                                    {item.mapel.nama}
+                                  </span>
+                                )}
+                              </>
                             )}
                           </div>
                         </td>
@@ -2264,6 +2272,7 @@ export default function JadwalClient({
                   </tr>
                 ) : (
                   sortJournalsByKelasAndJam(filteredJournals).map((item, index) => {
+                    const isCustomActivityRow = !item.jadwalId || item.kelas?.nama === "KEGIATAN UMUM" || item.mapel?.nama === "Kegiatan Pembelajaran";
                     const cleanKelasNama = item.kelas?.nama?.replace(/^Kelas\s+/i, "") || "-";
                     return (
                       <tr key={item.id} className="hover:bg-slate-900/40 transition">
@@ -2279,20 +2288,32 @@ export default function JadwalClient({
                               year: "numeric",
                             })}
                           </div>
-                          <span className="inline-block mt-1 px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 text-[10px] font-mono border border-indigo-500/20 whitespace-nowrap">
-                            Jam {item.jamMulai} - {item.jamSelesai}
-                          </span>
+                          {isCustomActivityRow ? (
+                            <span className="inline-block mt-1 px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-semibold border border-amber-500/20 whitespace-nowrap">
+                              Non-KBM
+                            </span>
+                          ) : (
+                            <span className="inline-block mt-1 px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 text-[10px] font-mono border border-indigo-500/20 whitespace-nowrap">
+                              Jam {item.jamMulai} - {item.jamSelesai}
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3.5 text-center border-r border-slate-800/60 align-middle">
-                          <span className="inline-flex px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-bold text-xs whitespace-nowrap">
-                            {cleanKelasNama}
-                          </span>
+                          {isCustomActivityRow ? (
+                            <span className="inline-flex px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold text-xs whitespace-nowrap">
+                              Kegiatan Tambahan
+                            </span>
+                          ) : (
+                            <span className="inline-flex px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-bold text-xs whitespace-nowrap">
+                              {cleanKelasNama}
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3.5 border-r border-slate-800/60 align-middle">
                           <span className="font-semibold text-white leading-tight block">{item.guru?.nama || "-"}</span>
                         </td>
                         <td className="px-4 py-3.5 text-slate-300 border-r border-slate-800/60 align-middle font-medium">
-                          {item.mapel?.nama || "-"}
+                          {isCustomActivityRow ? "Kegiatan Tambahan" : item.mapel?.nama || "-"}
                         </td>
                         <td className="px-4 py-3.5 text-white font-medium border-r border-slate-800/60 align-middle">
                           {item.namaJurnal}
@@ -2324,17 +2345,28 @@ export default function JadwalClient({
       {selectedJournal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-6 overflow-y-auto max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div>
-                <h4 className="text-base font-bold text-white">{selectedJournal.namaJurnal}</h4>
-                <p className="text-xs text-slate-400">
-                  {selectedJournal.mapel.nama} &bull; Kelas {selectedJournal.kelas.nama}
-                </p>
-              </div>
-              <span className="px-2.5 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-300 text-[10px] font-mono border border-indigo-500/20">
-                Jam ke-{selectedJournal.jamMulai} - {selectedJournal.jamSelesai}
-              </span>
-            </div>
+            {(() => {
+              const isCustomActivityModal = !selectedJournal.jadwalId || selectedJournal.kelas?.nama === "KEGIATAN UMUM" || selectedJournal.mapel?.nama === "Kegiatan Pembelajaran";
+              return (
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div>
+                    <h4 className="text-base font-bold text-white">{selectedJournal.namaJurnal}</h4>
+                    <p className="text-xs text-slate-400">
+                      {isCustomActivityModal ? (
+                        <span className="text-amber-400 font-semibold">Kegiatan Tambahan</span>
+                      ) : (
+                        <>{selectedJournal.mapel?.nama} &bull; Kelas {selectedJournal.kelas?.nama}</>
+                      )}
+                    </p>
+                  </div>
+                  {!isCustomActivityModal && (
+                    <span className="px-2.5 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-300 text-[10px] font-mono border border-indigo-500/20">
+                      Jam ke-{selectedJournal.jamMulai} - {selectedJournal.jamSelesai}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="space-y-4">
               <div>

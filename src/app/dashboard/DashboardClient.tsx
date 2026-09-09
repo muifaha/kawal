@@ -3048,16 +3048,24 @@ export default function DashboardClient({
                             <td className="px-4 py-4 font-medium text-white border-r border-slate-800/60">
                               <div className="font-semibold text-white text-sm leading-snug">{item.namaJurnal}</div>
                               <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 whitespace-nowrap">
-                                  Kelas {item.kelas?.nama || "-"}
-                                </span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
-                                  Jam ke-{item.jamMulai}{item.jamMulai !== item.jamSelesai ? `-${item.jamSelesai}` : ""}
-                                </span>
-                                {item.mapel?.nama && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
-                                    {item.mapel.nama}
+                                {!item.jadwalId || item.kelas?.nama === "KEGIATAN UMUM" || item.mapel?.nama === "Kegiatan Pembelajaran" ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
+                                    Kegiatan Tambahan
                                   </span>
+                                ) : (
+                                  <>
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 whitespace-nowrap">
+                                      Kelas {item.kelas?.nama || "-"}
+                                    </span>
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
+                                      Jam ke-{item.jamMulai}{item.jamMulai !== item.jamSelesai ? `-${item.jamSelesai}` : ""}
+                                    </span>
+                                    {item.mapel?.nama && (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
+                                        {item.mapel.nama}
+                                      </span>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </td>
