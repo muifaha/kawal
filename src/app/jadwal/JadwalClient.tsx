@@ -2883,7 +2883,7 @@ export default function JadwalClient({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                  Deskripsi Kegiatan Pembelajaran *
+                  Deskripsi Kegiatan *
                 </label>
                 <textarea
                   required
