@@ -49,7 +49,8 @@ export async function getRencanaAksiSingleDate(
   teachers: Array<{ id: string; nama: string; nip: string | null; username: string }>,
   baseUrl: string,
   guruIdFilter?: string,
-  nipFilter?: string
+  nipFilter?: string,
+  token?: string
 ): Promise<RencanaAksiItem[]> {
   const dateObj = new Date(`${targetDateStr}T12:00:00.000Z`);
   const jsDay = dateObj.getUTCDay();
@@ -128,7 +129,8 @@ export async function getRencanaAksiSingleDate(
     let pdfLink: string | null = null;
     if (isComplete) {
       const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-      pdfLink = `${cleanBaseUrl}/jurnal/cetak?guruId=${teacher.id}&tanggal=${targetDateStr}`;
+      const tokenQuery = token ? `&token=${encodeURIComponent(token)}` : "";
+      pdfLink = `${cleanBaseUrl}/jurnal/cetak?guruId=${teacher.id}&tanggal=${targetDateStr}${tokenQuery}`;
     }
 
     const item: RencanaAksiItem = {
@@ -175,8 +177,9 @@ export async function getRencanaAksiData(options: {
   nip?: string;
   search?: string;
   baseUrl?: string;
+  token?: string;
 }): Promise<RencanaAksiItem[]> {
-  const { tanggalStr, dariStr, sampaiStr, bulanStr, guruId, nip, search, baseUrl = "" } = options;
+  const { tanggalStr, dariStr, sampaiStr, bulanStr, guruId, nip, search, baseUrl = "", token } = options;
 
   // Build user filter
   const userWhere: any = {
@@ -253,7 +256,7 @@ export async function getRencanaAksiData(options: {
   const allResults: RencanaAksiItem[] = [];
 
   for (const dateStr of datesToProcess) {
-    const items = await getRencanaAksiSingleDate(dateStr, teachers, baseUrl, guruId, nip);
+    const items = await getRencanaAksiSingleDate(dateStr, teachers, baseUrl, guruId, nip, token);
     allResults.push(...items);
   }
 

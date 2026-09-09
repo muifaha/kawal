@@ -5,6 +5,36 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
+    // Token Authentication
+    const expectedToken = process.env.RENCANA_AKSI_TOKEN || process.env.API_TOKEN || "kawal-rencana-aksi-token-2026";
+
+    const authHeader = request.headers.get("authorization");
+    const headerToken =
+      (authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null) ||
+      request.headers.get("x-api-key") ||
+      request.headers.get("x-api-token");
+    const queryToken = searchParams.get("token") || searchParams.get("api_key") || searchParams.get("key");
+
+    const providedToken = (headerToken || queryToken || "").trim();
+
+    if (!providedToken || providedToken !== expectedToken) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Akses ditolak. Token API tidak valid atau tidak disertakan.",
+          hint: "Sertakan token melalui Header 'Authorization: Bearer <token>', 'X-API-Key: <token>', atau Query Param '?token=<token>'",
+        },
+        {
+          status: 401,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key",
+          },
+        }
+      );
+    }
+
     // Support single date
     const tanggalStr = searchParams.get("tanggal") || searchParams.get("date") || undefined;
 
@@ -43,6 +73,7 @@ export async function GET(request: NextRequest) {
       nip,
       search,
       baseUrl,
+      token: providedToken,
     });
 
     return NextResponse.json(
@@ -62,7 +93,7 @@ export async function GET(request: NextRequest) {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key",
         },
       }
     );
@@ -84,7 +115,7 @@ export async function OPTIONS() {
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key",
     },
   });
 }

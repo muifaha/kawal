@@ -1,16 +1,26 @@
 import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import CetakJurnalView from "./CetakJurnalView";
 
 export default async function CetakJurnalPage({
   searchParams,
 }: {
-  searchParams: Promise<{ guruId?: string; tanggal?: string }>;
+  searchParams: Promise<{ guruId?: string; tanggal?: string; token?: string }>;
 }) {
   const params = await searchParams;
-  const { guruId, tanggal } = params;
+  const { guruId, tanggal, token } = params;
 
   if (!guruId || !tanggal) {
+    return notFound();
+  }
+
+  // Validate Authentication (Token or Session)
+  const expectedToken = process.env.RENCANA_AKSI_TOKEN || process.env.API_TOKEN || "kawal-rencana-aksi-token-2026";
+  const user = await getSessionUser();
+
+  const isTokenValid = token && token.trim() === expectedToken;
+  if (!isTokenValid && !user) {
     return notFound();
   }
 
