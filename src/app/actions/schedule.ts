@@ -209,10 +209,10 @@ export async function bulkDeleteJadwalAction(ids: string[]) {
   }
 }
 
-// Jurnal Mengajar (GURU/WALAS Only)
+// Jurnal Mengajar (GURU/WALAS/WAKA Only)
 export async function saveJurnalAction(formData: FormData) {
   const user = await getSessionUser();
-  if (!user || (user.role !== "GURU" && user.role !== "WALAS")) {
+  if (!user || (user.role !== "GURU" && user.role !== "WALAS" && user.role !== "WAKA")) {
     return { error: "Akses ditolak. Hanya Guru Pengajar yang dapat mengisi jurnal mengajar." };
   }
 
@@ -233,6 +233,17 @@ export async function saveJurnalAction(formData: FormData) {
   }
 
   try {
+    // Check if jadwalId actually exists in JadwalPelajaran table to avoid FK constraint crashes
+    let validJadwalId: string | null = null;
+    if (jadwalId && jadwalId.trim() !== "") {
+      const dbJadwal = await prisma.jadwalPelajaran.findUnique({
+        where: { id: jadwalId },
+      });
+      if (dbJadwal) {
+        validJadwalId = dbJadwal.id;
+      }
+    }
+
     // 1. Proses upload file foto kegiatan jika ada (maksimal 3)
     const fotoUrls: string[] = [];
     const fotoKeterangans: string[] = [];
@@ -240,6 +251,7 @@ export async function saveJurnalAction(formData: FormData) {
     for (let i = 0; i < 3; i++) {
       const file = formData.get(`foto_${i}`);
       const base64Data = formData.get(`fotoBase64_${i}`) as string | null;
+      const existingUrl = formData.get(`fotoUrl_${i}`) as string | null;
       const ket = formData.get(`fotoKeterangan_${i}`) as string | null;
 
       if (file && typeof file === "object" && "arrayBuffer" in file && (file as File).size > 0) {
@@ -272,6 +284,9 @@ export async function saveJurnalAction(formData: FormData) {
         fs.writeFileSync(fullPath, buffer);
         fotoUrls.push(`/uploads/jurnal/${filename}`);
         fotoKeterangans.push(ket || "");
+      } else if (existingUrl && typeof existingUrl === "string" && existingUrl.trim() !== "") {
+        fotoUrls.push(existingUrl.trim());
+        fotoKeterangans.push(ket || "");
       }
     }
 
@@ -282,13 +297,16 @@ export async function saveJurnalAction(formData: FormData) {
     const jamMulai = parseInt(jamMulaiStr, 10);
     const jamSelesai = parseInt(jamSelesaiStr, 10);
 
+    const todayWibStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
     const tanggalStr = formData.get("tanggal") as string | null;
-    let targetDate = new Date();
-    if (tanggalStr && /^\d{4}-\d{2}-\d{2}$/.test(tanggalStr)) {
-      targetDate = new Date(`${tanggalStr}T00:00:00.000Z`);
-    } else {
-      targetDate.setUTCHours(0, 0, 0, 0); // Midnight UTC safe
-    }
+    const validTanggalStr = (tanggalStr && /^\d{4}-\d{2}-\d{2}$/.test(tanggalStr)) ? tanggalStr : todayWibStr;
+    const targetDate = new Date(`${validTanggalStr}T00:00:00.000Z`);
 
     const parsedAbsensi = JSON.parse(absensiJson) as Array<{ siswaId: string; status: string }>;
     const parsedPenilaian = JSON.parse(penilaianJson) as Array<{ siswaId: string; nilai: number; keterangan?: string }>;
@@ -299,10 +317,10 @@ export async function saveJurnalAction(formData: FormData) {
       existingTarget = await prisma.jurnalMengajar.findUnique({
         where: { id: existingJurnalId },
       });
-    } else if (jadwalId) {
+    } else if (validJadwalId) {
       existingTarget = await prisma.jurnalMengajar.findFirst({
         where: {
-          jadwalId,
+          jadwalId: validJadwalId,
           tanggal: targetDate,
           guruId: user.id,
         },
@@ -329,14 +347,17 @@ export async function saveJurnalAction(formData: FormData) {
           },
         });
 
-        // Hapus absensi jurnal lama & tulis ulang
+        // Hapus absensi & penilaian jurnal lama & tulis ulang
         await tx.jurnalAbsensi.deleteMany({
+          where: { jurnalId: existingTarget.id },
+        });
+        await tx.jurnalPenilaian.deleteMany({
           where: { jurnalId: existingTarget.id },
         });
       } else {
         const created = await tx.jurnalMengajar.create({
           data: {
-            jadwalId: jadwalId || null,
+            jadwalId: validJadwalId,
             kelasId,
             guruId: user.id,
             mapelId,
@@ -378,10 +399,10 @@ export async function saveJurnalAction(formData: FormData) {
         });
       }
       // Delete existing draft if any after successful submission
-      if (jadwalId) {
+      if (validJadwalId) {
         await tx.jurnalDraft.deleteMany({
           where: {
-            jadwalId,
+            jadwalId: validJadwalId,
             guruId: user.id,
           },
         });
@@ -397,13 +418,14 @@ export async function saveJurnalAction(formData: FormData) {
   }
 }
 
-// Tambah Kegiatan Baru Jurnal (GURU/WALAS Only)
+// Tambah / Edit Kegiatan Baru Jurnal (GURU/WALAS/WAKA Only)
 export async function createCustomActivityJurnalAction(formData: FormData) {
   const user = await getSessionUser();
   if (!user || (user.role !== "GURU" && user.role !== "WALAS" && user.role !== "WAKA")) {
     return { error: "Akses ditolak." };
   }
 
+  const existingJurnalId = formData.get("jurnalId") as string | null;
   const namaJurnal = formData.get("namaJurnal") as string;
   const tanggalStr = formData.get("tanggal") as string;
   const jamMulaiStr = (formData.get("jamMulai") as string) || "";
@@ -451,6 +473,7 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
     for (let i = 0; i < 3; i++) {
       const file = formData.get(`foto_${i}`);
       const base64Data = formData.get(`fotoBase64_${i}`) as string | null;
+      const existingUrl = formData.get(`fotoUrl_${i}`) as string | null;
       const ket = formData.get(`fotoKeterangan_${i}`) as string | null;
 
       if (file && typeof file === "object" && "arrayBuffer" in file && (file as File).size > 0) {
@@ -483,6 +506,9 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
         fs.writeFileSync(fullPath, buffer);
         fotoUrls.push(`/uploads/jurnal/${filename}`);
         fotoKeterangans.push(ket || "");
+      } else if (existingUrl && typeof existingUrl === "string" && existingUrl.trim() !== "") {
+        fotoUrls.push(existingUrl.trim());
+        fotoKeterangans.push(ket || "");
       }
     }
 
@@ -504,6 +530,37 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
     }
 
     const titleWithTime = timeLabel ? `${namaJurnal.trim()} (${timeLabel})` : namaJurnal.trim();
+
+    if (existingJurnalId && existingJurnalId.trim() !== "") {
+      const existing = await prisma.jurnalMengajar.findUnique({
+        where: { id: existingJurnalId },
+      });
+      if (existing) {
+        const finalFotoUrl = fotoUrl !== null ? fotoUrl : existing.foto;
+        const finalFotoKet = fotoKeterangan !== null ? fotoKeterangan : existing.fotoKeterangan;
+
+        const updatedJurnal = await prisma.jurnalMengajar.update({
+          where: { id: existingJurnalId },
+          data: {
+            tanggal: targetDate,
+            namaJurnal: titleWithTime,
+            kegiatan: kegiatan.trim(),
+            rencanaAksi: rencanaAksi ? rencanaAksi.trim() : existing.rencanaAksi,
+            foto: finalFotoUrl,
+            fotoKeterangan: finalFotoKet,
+          },
+        });
+
+        revalidatePath("/jadwal");
+        revalidatePath("/dashboard");
+
+        return {
+          success: true,
+          message: "Kegiatan tambahan berhasil diperbarui!",
+          data: updatedJurnal,
+        };
+      }
+    }
 
     const newJurnal = await prisma.jurnalMengajar.create({
       data: {
@@ -531,7 +588,7 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
     };
   } catch (error: any) {
     console.error("createCustomActivityJurnalAction error:", error);
-    return { error: error.message || "Gagal menambahkan kegiatan." };
+    return { error: error.message || "Gagal menyimpan kegiatan." };
   }
 }
 

@@ -502,6 +502,7 @@ export default function JadwalClient({
   const [selectedJournal, setSelectedJournal] = useState<JournalItem | null>(null);
 
   // Custom Activity Modal State
+  const [editingCustomActivityId, setEditingCustomActivityId] = useState<string | null>(null);
   const [showCustomActivityModal, setShowCustomActivityModal] = useState(false);
   const [activityTitle, setActivityTitle] = useState("");
   const [activityDate, setActivityDate] = useState(new Date().toISOString().split("T")[0]);
@@ -523,6 +524,122 @@ export default function JadwalClient({
     { file: null, preview: null, caption: "" },
     { file: null, preview: null, caption: "" },
   ]);
+
+  const parseCustomActivityTitle = (namaJurnal: string) => {
+    let title = namaJurnal || "";
+    let jamMulai = "07.45";
+    let jamSelesai = "09.00";
+
+    const match = title.match(/^(.*?)\s*\((.*?)\)$/);
+    if (match) {
+      title = match[1].trim();
+      const timeRange = match[2].trim();
+      const parts = timeRange.split("-").map((p) => p.trim());
+      if (parts.length === 2) {
+        jamMulai = parts[0];
+        jamSelesai = parts[1];
+      } else if (parts.length === 1 && parts[0]) {
+        jamMulai = parts[0];
+      }
+    }
+
+    return { title, jamMulai, jamSelesai };
+  };
+
+  const parseCustomActivityPhotos = (fotoStr?: string | null, ketStr?: string | null): CustomPhotoDoc[] => {
+    const result: CustomPhotoDoc[] = [
+      { file: null, preview: null, caption: "" },
+      { file: null, preview: null, caption: "" },
+      { file: null, preview: null, caption: "" },
+    ];
+
+    if (!fotoStr) return result;
+
+    let urls: string[] = [];
+    let kets: string[] = [];
+
+    try {
+      urls = fotoStr.startsWith("[") ? JSON.parse(fotoStr) : [fotoStr];
+    } catch {
+      urls = [fotoStr];
+    }
+
+    if (ketStr) {
+      try {
+        kets = ketStr.startsWith("[") ? JSON.parse(ketStr) : [ketStr];
+      } catch {
+        kets = [ketStr];
+      }
+    }
+
+    urls.forEach((url, idx) => {
+      if (idx < 3) {
+        result[idx] = {
+          file: null,
+          preview: url,
+          caption: kets[idx] || "",
+        };
+      }
+    });
+
+    return result;
+  };
+
+  const handleOpenAddCustomActivityModal = () => {
+    if (classes.length > 0) setActivityClassId(classes[0].id);
+    if (subjects.length > 0) setActivityMapelId(subjects[0].id);
+    setEditingCustomActivityId(null);
+    setActivityTitle("");
+    setActivityDate(todayWibStr);
+    setActivityJamMulai("07.45");
+    setActivityJamSelesai("09.00");
+    setActivityRencanaAksi(RENCANA_AKSI_OPTIONS[0]);
+    setActivityDescription("");
+    setActivityPhotos([
+      { file: null, preview: null, caption: "" },
+      { file: null, preview: null, caption: "" },
+      { file: null, preview: null, caption: "" },
+    ]);
+    setModalCustomError("");
+    setShowCustomActivityModal(true);
+  };
+
+  const handleEditCustomActivity = (item: any) => {
+    const { title, jamMulai, jamSelesai } = parseCustomActivityTitle(item.namaJurnal || "");
+    const dateStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(item.tanggal));
+
+    setEditingCustomActivityId(item.id);
+    setActivityTitle(title);
+    setActivityDate(dateStr);
+    setActivityJamMulai(jamMulai);
+    setActivityJamSelesai(jamSelesai);
+    setActivityRencanaAksi(item.rencanaAksi || RENCANA_AKSI_OPTIONS[0]);
+    setActivityDescription(item.kegiatan || "");
+    setActivityPhotos(parseCustomActivityPhotos(item.foto, item.fotoKeterangan));
+    if (item.kelasId) setActivityClassId(item.kelasId);
+    if (item.mapelId) setActivityMapelId(item.mapelId);
+    setModalCustomError("");
+    setSelectedJournal(null);
+    setShowCustomActivityModal(true);
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const editCustomId = params.get("editCustomId");
+      if (editCustomId) {
+        const found = journals.find((j) => j.id === editCustomId);
+        if (found) {
+          handleEditCustomActivity(found);
+        }
+      }
+    }
+  }, [journals]);
 
   const handleCustomActivityPhotoChange = async (index: number, file: File | null) => {
     if (file) {
@@ -589,6 +706,9 @@ export default function JadwalClient({
     setActionSuccess("");
 
     const formData = new FormData();
+    if (editingCustomActivityId) {
+      formData.append("jurnalId", editingCustomActivityId);
+    }
     formData.append("namaJurnal", activityTitle);
     formData.append("tanggal", activityDate);
     formData.append("jamMulai", activityJamMulai);
@@ -600,11 +720,15 @@ export default function JadwalClient({
     if (activityMapelId) formData.append("mapelId", activityMapelId);
 
     activityPhotos.forEach((doc, idx) => {
-      if (doc.preview && doc.preview.startsWith("data:image")) {
-        formData.append(`fotoBase64_${idx}`, doc.preview);
-        formData.append(`fotoKeterangan_${idx}`, doc.caption);
-      } else if (doc.file) {
+      if (doc.file) {
         formData.append(`foto_${idx}`, doc.file);
+        formData.append(`fotoKeterangan_${idx}`, doc.caption);
+      } else if (doc.preview) {
+        if (doc.preview.startsWith("data:image")) {
+          formData.append(`fotoBase64_${idx}`, doc.preview);
+        } else {
+          formData.append(`fotoUrl_${idx}`, doc.preview);
+        }
         formData.append(`fotoKeterangan_${idx}`, doc.caption);
       }
     });
@@ -616,8 +740,9 @@ export default function JadwalClient({
           setModalCustomError(res.error);
           setActionError(res.error);
         } else {
-          setActionSuccess(res.message || "Kegiatan berhasil ditambahkan ke Jurnal.");
+          setActionSuccess(res.message || (editingCustomActivityId ? "Kegiatan berhasil diperbarui." : "Kegiatan berhasil ditambahkan ke Jurnal."));
           setShowCustomActivityModal(false);
+          setEditingCustomActivityId(null);
           setActivityTitle("");
           setActivityJamMulai("07.45");
           setActivityJamSelesai("09.00");
@@ -1176,11 +1301,7 @@ export default function JadwalClient({
               )}
 
               <button
-                onClick={() => {
-                  if (classes.length > 0) setActivityClassId(classes[0].id);
-                  if (subjectList.length > 0) setActivityMapelId(subjectList[0].id);
-                  setShowCustomActivityModal(true);
-                }}
+                onClick={handleOpenAddCustomActivityModal}
                 className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
@@ -1382,13 +1503,24 @@ export default function JadwalClient({
                               <Eye className="w-3.5 h-3.5" />
                               Lihat
                             </button>
-                            <Link
-                              href={`/jadwal/jurnal/isi?jurnalId=${item.id}${item.jadwalId ? `&jadwalId=${item.jadwalId}` : ''}`}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition cursor-pointer"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                              Edit
-                            </Link>
+                            {(!item.jadwalId || item.kelas?.nama === "KEGIATAN UMUM" || item.mapel?.nama === "Kegiatan Pembelajaran") ? (
+                              <button
+                                type="button"
+                                onClick={() => handleEditCustomActivity(item)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition cursor-pointer"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                Edit
+                              </button>
+                            ) : (
+                              <Link
+                                href={`/jadwal/jurnal/isi?jurnalId=${item.id}${item.jadwalId ? `&jadwalId=${item.jadwalId}` : ''}&tanggal=${new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(item.tanggal))}`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition cursor-pointer"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                Edit
+                              </Link>
+                            )}
                             {(!item.jadwalId || item.kelas?.nama === "KEGIATAN UMUM" || item.mapel?.nama === "Kegiatan Pembelajaran") && (
                               <button
                                 onClick={() => handleDeleteCustomActivity(item.id, item.namaJurnal)}
@@ -2507,16 +2639,25 @@ export default function JadwalClient({
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
               {(!selectedJournal.jadwalId || selectedJournal.kelas?.nama === "KEGIATAN UMUM" || selectedJournal.mapel?.nama === "Kegiatan Pembelajaran") && (
-                <button
-                  onClick={() => {
-                    const id = selectedJournal.id;
-                    const nama = selectedJournal.namaJurnal;
-                    setSelectedJournal(null);
-                    handleDeleteCustomActivity(id, nama);
-                  }}
-                  disabled={deletingJournalId === selectedJournal.id}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:bg-rose-800 text-xs font-bold text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
-                >
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleEditCustomActivity(selectedJournal)}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-xs font-bold text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    Edit Kegiatan
+                  </button>
+                  <button
+                    onClick={() => {
+                      const id = selectedJournal.id;
+                      const nama = selectedJournal.namaJurnal;
+                      setSelectedJournal(null);
+                      handleDeleteCustomActivity(id, nama);
+                    }}
+                    disabled={deletingJournalId === selectedJournal.id}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:bg-rose-800 text-xs font-bold text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                  >
                   {deletingJournalId === selectedJournal.id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
@@ -2636,10 +2777,12 @@ export default function JadwalClient({
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <Plus className="w-5 h-5 text-indigo-400" />
-                  Tambah Kegiatan Jurnal Baru
+                  {editingCustomActivityId ? "Edit Kegiatan Jurnal" : "Tambah Kegiatan Jurnal Baru"}
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Tambahkan catatan kegiatan di luar jadwal reguler (Ekstrakurikuler, Pembinaan, KBM Tambahan, dll).
+                  {editingCustomActivityId
+                    ? "Perbarui uraian kegiatan tambahan atau dokumentasi foto."
+                    : "Tambahkan catatan kegiatan di luar jadwal reguler (Ekstrakurikuler, Pembinaan, KBM Tambahan, dll)."}
                 </p>
               </div>
               <button
@@ -2816,7 +2959,7 @@ export default function JadwalClient({
                   className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer"
                 >
                   {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  {isPending ? "Menyimpan..." : "Simpan Kegiatan Jurnal"}
+                  {isPending ? "Menyimpan..." : (editingCustomActivityId ? "Simpan Perubahan Kegiatan" : "Simpan Kegiatan Jurnal")}
                 </button>
               </div>
             </form>

@@ -23,7 +23,7 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
     redirect("/login");
   }
 
-  if (user.role !== "GURU" && user.role !== "WALAS") {
+  if (user.role !== "GURU" && user.role !== "WALAS" && user.role !== "WAKA") {
     redirect("/jadwal");
   }
 
@@ -40,13 +40,6 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
     });
   }
 
-  let targetDate = new Date();
-  if (tanggal && /^\d{4}-\d{2}-\d{2}$/.test(tanggal)) {
-    targetDate = new Date(`${tanggal}T00:00:00.000Z`);
-  } else {
-    targetDate.setUTCHours(0, 0, 0, 0);
-  }
-
   const targetJadwalId = jadwalId || existingJurnal?.jadwalId;
   let jadwal: any = null;
 
@@ -60,6 +53,42 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
       },
     });
   }
+
+  const todayWibStr = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
+  let dateStr = tanggal;
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    if (existingJurnal?.tanggal) {
+      dateStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date(existingJurnal.tanggal));
+    } else if (jadwal && jadwal.hari) {
+      // Infers the most recent date matching schedule day (1 = Senin, ..., 7 = Minggu)
+      const todayObj = new Date(`${todayWibStr}T12:00:00.000Z`);
+      const currentDay = todayObj.getUTCDay() === 0 ? 7 : todayObj.getUTCDay();
+      let diff = currentDay - jadwal.hari;
+      if (diff < 0) diff += 7;
+      todayObj.setUTCDate(todayObj.getUTCDate() - diff);
+      dateStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(todayObj);
+    } else {
+      dateStr = todayWibStr;
+    }
+  }
+
+  const targetDate = new Date(`${dateStr}T00:00:00.000Z`);
 
   if (!existingJurnal && targetJadwalId) {
     existingJurnal = await prisma.jurnalMengajar.findFirst({

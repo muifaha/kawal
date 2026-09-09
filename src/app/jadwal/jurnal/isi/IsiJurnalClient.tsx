@@ -336,7 +336,11 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
         formData.append(`foto_${idx}`, doc.file);
         formData.append(`fotoKeterangan_${idx}`, doc.caption);
       } else if (doc.preview) {
-        formData.append(`fotoBase64_${idx}`, doc.preview);
+        if (doc.preview.startsWith("data:image")) {
+          formData.append(`fotoBase64_${idx}`, doc.preview);
+        } else {
+          formData.append(`fotoUrl_${idx}`, doc.preview);
+        }
         formData.append(`fotoKeterangan_${idx}`, doc.caption);
       }
     });

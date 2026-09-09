@@ -2597,7 +2597,7 @@ export default function DashboardClient({
                                     Terlaporkan
                                   </span>
                                   <Link
-                                    href={`/jadwal/jurnal/isi?${sched.jurnalId ? `jurnalId=${sched.jurnalId}&` : ''}jadwalId=${sched.id}`}
+                                    href={`/jadwal/jurnal/isi?${sched.jurnalId ? `jurnalId=${sched.jurnalId}&` : ''}jadwalId=${sched.id}&tanggal=${todayWibStr}`}
                                     className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-600/90 hover:bg-amber-500 text-white text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer"
                                   >
                                     <Pencil className="w-3.5 h-3.5" />
@@ -2606,7 +2606,7 @@ export default function DashboardClient({
                                 </div>
                               ) : (
                                 <Link
-                                  href={`/jadwal/jurnal/isi?jadwalId=${sched.id}`}
+                                  href={`/jadwal/jurnal/isi?jadwalId=${sched.id}&tanggal=${todayWibStr}`}
                                   className="w-full inline-flex items-center justify-center gap-1 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white rounded-lg transition-all cursor-pointer"
                                 >
                                   Isi Jurnal Mengajar
@@ -3083,13 +3083,23 @@ export default function DashboardClient({
                                   <Eye className="w-3.5 h-3.5" />
                                   Lihat
                                 </button>
-                                <Link
-                                  href={`/jadwal/jurnal/isi?jurnalId=${item.id}${item.jadwalId ? `&jadwalId=${item.jadwalId}` : ''}`}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition cursor-pointer"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                  Edit
-                                </Link>
+                                 {!item.jadwalId || item.kelas?.nama === "KEGIATAN UMUM" || item.mapel?.nama === "Kegiatan Pembelajaran" ? (
+                                  <Link
+                                    href={`/jadwal?editCustomId=${item.id}`}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition cursor-pointer"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                    Edit
+                                  </Link>
+                                ) : (
+                                  <Link
+                                    href={`/jadwal/jurnal/isi?jurnalId=${item.id}${item.jadwalId ? `&jadwalId=${item.jadwalId}` : ''}&tanggal=${new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(item.tanggal))}`}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition cursor-pointer"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                    Edit
+                                  </Link>
+                                )}
                                 <button
                                   onClick={() => handleDownloadJournalPDF(item.id)}
                                   disabled={downloadingPdfId === item.id}
