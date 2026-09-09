@@ -18,9 +18,9 @@ export default async function RekapPpidPage() {
     redirect("/dashboard?error=unauthorized");
   }
 
-  const res = await getPpidDataAction();
-  const permohonanList = res.success && res.permohonanList ? res.permohonanList : [];
-  const keberatanList = res.success && res.keberatanList ? res.keberatanList : [];
+  const resData = await getPpidDataAction();
+  const permohonanList = resData.success && resData.permohonanList ? resData.permohonanList : [];
+  const keberatanList = resData.success && resData.keberatanList ? resData.keberatanList : [];
 
   return (
     <SidebarLayout user={user}>

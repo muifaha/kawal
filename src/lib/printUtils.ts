@@ -598,12 +598,19 @@ export function generateSingleJurnalHtmlSection(jurnal: any, schoolSettings?: Re
         <div style="width: 70px;"></div>
        </div>`;
 
+  const isCustomActivity = !jurnal.jadwalId || jurnal.kelas?.nama === "KEGIATAN UMUM";
+  const docTitle = isCustomActivity ? "DOKUMENTASI KEGIATAN GURU" : "JURNAL MENGAJAR";
+  const displayKelas = isCustomActivity ? "Kegiatan Non-KBM" : `Kelas ${jurnal.kelas?.nama || "-"}`;
+  const displayMapel = isCustomActivity ? "Agenda / Kegiatan Sekolah" : (jurnal.mapel?.nama || "-");
+  const boxTitle = isCustomActivity ? "Deskripsi Kegiatan" : "Deskripsi Pembelajaran";
+  const ttdRole = isCustomActivity ? "Guru Pelaksana Kegiatan" : `Guru Mata Pelajaran ${jurnal.mapel?.nama || ""}`;
+
   return `
     <div class="session-page-wrapper">
       ${headerHtml}
 
       <div class="doc-title-container">
-        <div class="doc-title">JURNAL MENGAJAR</div>
+        <div class="doc-title">${docTitle}</div>
       </div>
 
       <div class="info-card">
@@ -617,18 +624,18 @@ export function generateSingleJurnalHtmlSection(jurnal: any, schoolSettings?: Re
             <td>${tanggalFormatted}</td>
           </tr>
           <tr>
-            <td class="label">Kelas</td>
+            <td class="label">Kategori / Kelas</td>
             <td class="colon">:</td>
-            <td>Kelas ${jurnal.kelas?.nama || "-"}</td>
-            <td class="label">Jam Pelajaran</td>
+            <td>${displayKelas}</td>
+            <td class="label">Sesi / Jam</td>
             <td class="colon">:</td>
             <td>Jam ke-${jurnal.jamMulai}${jurnal.jamMulai !== jurnal.jamSelesai ? ` - ${jurnal.jamSelesai}` : ""}</td>
           </tr>
           <tr>
-            <td class="label">Mata Pelajaran</td>
+            <td class="label">Mata Pelajaran / Agenda</td>
             <td class="colon">:</td>
-            <td>${jurnal.mapel?.nama || "-"}</td>
-            <td class="label">Nama Jurnal</td>
+            <td>${displayMapel}</td>
+            <td class="label">Nama Kegiatan</td>
             <td class="colon">:</td>
             <td><strong style="color: #1e3a8a;">${jurnal.namaJurnal}</strong></td>
           </tr>
@@ -636,7 +643,7 @@ export function generateSingleJurnalHtmlSection(jurnal: any, schoolSettings?: Re
       </div>
 
       <div class="box-section">
-        <div class="box-title">Deskripsi Pembelajaran</div>
+        <div class="box-title">${boxTitle}</div>
         <div class="box-content">${jurnal.kegiatan}</div>
       </div>
 
@@ -662,7 +669,7 @@ export function generateSingleJurnalHtmlSection(jurnal: any, schoolSettings?: Re
       <div class="footer-section">
         <div class="ttd-box">
           <div>Tangerang, ${ttdDateFormatted}</div>
-          <div style="margin-top: 3px; font-weight: 600; color: #475569;">Guru Mata Pelajaran ${jurnal.mapel?.nama || ""}</div>
+          <div style="margin-top: 3px; font-weight: 600; color: #475569;">${ttdRole}</div>
           <div class="ttd-space" style="display: flex; align-items: center; justify-content: center;">
             ${jurnal.guru?.ttd ? `<img src="${jurnal.guru.ttd}" style="max-height: 60px; max-width: 160px; object-fit: contain;" />` : ''}
           </div>

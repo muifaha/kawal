@@ -4159,26 +4159,37 @@ export default function DashboardClient({
                 <p className="text-white font-medium text-sm mt-0.5">{selectedJournal.namaJurnal}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-                <div>
-                  <span className="text-slate-500 block text-[10px] font-semibold">Kelas:</span>
-                  <span className="text-slate-200 font-bold">{selectedJournal.kelas?.nama || "-"}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[10px] font-semibold">Mata Pelajaran:</span>
-                  <span className="text-slate-200 font-bold">{selectedJournal.mapel?.nama || "-"}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[10px] font-semibold">Jam Ke:</span>
-                  <span className="text-slate-200 font-bold">
-                    Jam {selectedJournal.jamMulai}{selectedJournal.jamMulai !== selectedJournal.jamSelesai ? ` - ${selectedJournal.jamSelesai}` : ""}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[10px] font-semibold">Guru Pengajar:</span>
-                  <span className="text-slate-200 font-bold">{selectedJournal.guru?.nama || "-"}</span>
-                </div>
-              </div>
+              {(() => {
+                const isCustomActivityDash = !selectedJournal.jadwalId || selectedJournal.kelas?.nama === "KEGIATAN UMUM";
+                return (
+                  <div className="grid grid-cols-2 gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                    <div>
+                      <span className="text-slate-500 block text-[10px] font-semibold">Kategori / Kelas:</span>
+                      <span className="text-slate-200 font-bold">
+                        {isCustomActivityDash ? "Kegiatan Non-KBM" : selectedJournal.kelas?.nama || "-"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px] font-semibold">Mata Pelajaran / Agenda:</span>
+                      <span className="text-slate-200 font-bold">
+                        {isCustomActivityDash ? "Kegiatan Sekolah" : selectedJournal.mapel?.nama || "-"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px] font-semibold">Jam Ke / Sesi:</span>
+                      <span className="text-slate-200 font-bold">
+                        {isCustomActivityDash
+                          ? "Kegiatan"
+                          : `Jam ${selectedJournal.jamMulai}${selectedJournal.jamMulai !== selectedJournal.jamSelesai ? ` - ${selectedJournal.jamSelesai}` : ""}`}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px] font-semibold">Guru Pelaksana:</span>
+                      <span className="text-slate-200 font-bold">{selectedJournal.guru?.nama || "-"}</span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div>
                 <span className="text-slate-400 block font-semibold uppercase tracking-wider text-[10px]">Kegiatan Pembelajaran:</span>
