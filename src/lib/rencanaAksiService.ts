@@ -113,9 +113,9 @@ export function extractTimeInfo(namaJurnal: string): { jamMulai: string; jamSele
     }
   }
   return {
-    jamMulai: "07.45",
-    jamSelesai: "15.00",
-    jam: "07.45 - 15.00",
+    jamMulai: "07.00",
+    jamSelesai: "16.00",
+    jam: "07.00 - 16.00",
     cleanNamaJurnal: namaJurnal,
   };
 }
@@ -257,9 +257,9 @@ export async function getRencanaAksiSingleDate(
     }
 
     // Determine top-level jam values
-    let topJamMulai = "07.45";
-    let topJamSelesai = "15.00";
-    let topJam = "07.45 - 15.00";
+    let topJamMulai = "07.00";
+    let topJamSelesai = "16.00";
+    let topJam = "07.00 - 16.00";
 
     if (totalJadwal === 0 && listKegiatanTambahan.length > 0) {
       topJamMulai = listKegiatanTambahan[0].jamMulai;

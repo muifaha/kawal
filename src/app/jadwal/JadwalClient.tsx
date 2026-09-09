@@ -506,8 +506,8 @@ export default function JadwalClient({
   const [showCustomActivityModal, setShowCustomActivityModal] = useState(false);
   const [activityTitle, setActivityTitle] = useState("");
   const [activityDate, setActivityDate] = useState(new Date().toISOString().split("T")[0]);
-  const [activityJamMulai, setActivityJamMulai] = useState("07.45");
-  const [activityJamSelesai, setActivityJamSelesai] = useState("09.00");
+  const [activityJamMulai, setActivityJamMulai] = useState("07.00");
+  const [activityJamSelesai, setActivityJamSelesai] = useState("16.00");
   const [activityRencanaAksi, setActivityRencanaAksi] = useState(RENCANA_AKSI_OPTIONS[0]);
   const [activityClassId, setActivityClassId] = useState("");
   const [activityMapelId, setActivityMapelId] = useState("");
@@ -527,8 +527,8 @@ export default function JadwalClient({
 
   const parseCustomActivityTitle = (namaJurnal: string) => {
     let title = namaJurnal || "";
-    let jamMulai = "07.45";
-    let jamSelesai = "09.00";
+    let jamMulai = "07.00";
+    let jamSelesai = "16.00";
 
     const match = title.match(/^(.*?)\s*\((.*?)\)$/);
     if (match) {
@@ -591,8 +591,8 @@ export default function JadwalClient({
     setEditingCustomActivityId(null);
     setActivityTitle("");
     setActivityDate(todayWibStr);
-    setActivityJamMulai("07.45");
-    setActivityJamSelesai("09.00");
+    setActivityJamMulai("07.00");
+    setActivityJamSelesai("16.00");
     setActivityRencanaAksi(RENCANA_AKSI_OPTIONS[0]);
     setActivityDescription("");
     setActivityPhotos([
@@ -744,8 +744,8 @@ export default function JadwalClient({
           setShowCustomActivityModal(false);
           setEditingCustomActivityId(null);
           setActivityTitle("");
-          setActivityJamMulai("07.45");
-          setActivityJamSelesai("09.00");
+          setActivityJamMulai("07.00");
+          setActivityJamSelesai("16.00");
           setActivityRencanaAksi(RENCANA_AKSI_OPTIONS[0]);
           setActivityDescription("");
           setModalCustomError("");
@@ -2842,7 +2842,7 @@ export default function JadwalClient({
                     <input
                       type="text"
                       required
-                      placeholder="07.45"
+                      placeholder="07.00"
                       value={activityJamMulai}
                       onChange={(e) => setActivityJamMulai(e.target.value)}
                       className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -2855,7 +2855,7 @@ export default function JadwalClient({
                     <input
                       type="text"
                       required
-                      placeholder="09.00"
+                      placeholder="16.00"
                       value={activityJamSelesai}
                       onChange={(e) => setActivityJamSelesai(e.target.value)}
                       className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
