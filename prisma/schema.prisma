@@ -208,6 +208,8 @@ model SiswaKelas {
   createdAt     DateTime    @default(now())
 
   @@unique([siswaId, tahunAjaranId]) // Satu siswa hanya boleh terdaftar di satu kelas per tahun ajaran
+  @@index([kelasId, tahunAjaranId])
+  @@index([tahunAjaranId])
 }
 
 
@@ -247,6 +249,10 @@ model LaporanPelanggaran {
   notes               String?
   bukti               String[]          @default([])
   isCensored          Boolean           @default(false)
+
+  @@index([status])
+  @@index([siswaId, status])
+  @@index([tanggal])
 }
 
 model MasterRemisi {
@@ -286,6 +292,8 @@ model Absensi {
   createdAt  DateTime         @default(now())
 
   @@unique([siswaId, tanggal]) // Satu siswa hanya boleh memiliki satu record per tanggal
+  @@index([tanggal])
+  @@index([status])
 }
 
 model HariLibur {
@@ -389,6 +397,9 @@ model JadwalPelajaran {
   jurnal      JurnalMengajar[]
   jurnalDraft JurnalDraft[]
   createdAt   DateTime      @default(now())
+
+  @@index([guruId, hari])
+  @@index([kelasId, hari])
 }
 
 model JurnalMengajar {
@@ -412,6 +423,10 @@ model JurnalMengajar {
   absensi        JurnalAbsensi[]
   penilaian      JurnalPenilaian[]
   createdAt      DateTime         @default(now())
+
+  @@index([guruId, tanggal])
+  @@index([kelasId, tanggal])
+  @@index([tanggal])
 }
 
 model JurnalAbsensi {
