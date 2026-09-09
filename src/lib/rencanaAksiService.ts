@@ -24,6 +24,7 @@ export interface KegiatanTambahanDetail {
   kelas: string;
   mapel: string;
   tipe: string;
+  buktiDukung: string | null;
   // Duplicate keys with exact prompt casing for maximum API client compatibility
   "Nama Jurnal"?: string;
   "Kegiatan"?: string;
@@ -37,6 +38,7 @@ export interface KegiatanTambahanDetail {
   "Kelas"?: string;
   "Mapel"?: string;
   "Tipe"?: string;
+  "Bukti Dukung"?: string | null;
 }
 
 export interface RencanaAksiItem {
@@ -198,6 +200,9 @@ export async function getRencanaAksiSingleDate(
     const totalJadwal = teacherSchedules.length;
     const totalJurnalTerisi = teacherJournals.length;
 
+    const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+    const tokenQuery = token ? `&token=${encodeURIComponent(token)}` : "";
+
     // Detect Jurnal Kegiatan Tambahan (Custom activity journals)
     const customActivityJournals = teacherJournals.filter(
       (j) => !j.jadwalId || j.kelas?.nama === "KEGIATAN UMUM" || j.mapel?.nama === "Kegiatan Pembelajaran"
@@ -207,6 +212,7 @@ export async function getRencanaAksiSingleDate(
       const timeInfo = extractTimeInfo(j.namaJurnal);
       const namaKelas = j.kelas?.nama || "KEGIATAN UMUM";
       const namaMapel = j.mapel?.nama || "Kegiatan Pembelajaran";
+      const singleBuktiLink = `${cleanBaseUrl}/jurnal/cetak?guruId=${teacher.id}&tanggal=${targetDateStr}&jurnalId=${j.id}${tokenQuery}`;
       return {
         id: j.id,
         namaJurnal: timeInfo.cleanNamaJurnal,
@@ -221,6 +227,7 @@ export async function getRencanaAksiSingleDate(
         kelas: namaKelas,
         mapel: namaMapel,
         tipe: "KEGIATAN_TAMBAHAN",
+        buktiDukung: singleBuktiLink,
         "Nama Jurnal": timeInfo.cleanNamaJurnal,
         "Kegiatan": j.kegiatan,
         "Jam Mulai": timeInfo.jamMulai,
@@ -233,6 +240,7 @@ export async function getRencanaAksiSingleDate(
         "Kelas": namaKelas,
         "Mapel": namaMapel,
         "Tipe": "KEGIATAN_TAMBAHAN",
+        "Bukti Dukung": singleBuktiLink,
       };
     });
 
@@ -266,12 +274,16 @@ export async function getRencanaAksiSingleDate(
     const isComplete = (totalJadwal > 0 && totalJurnalTerisi >= totalJadwal) || (totalJadwal === 0 && customActivityJournals.length > 0);
     const statusJurnal = (totalJadwal === 0 && customActivityJournals.length === 0) ? "TIDAK_ADA_JADWAL" : isComplete ? "LENGKAP" : "BELUM_LENGKAP";
 
-    // Generate PDF link if all journals for the day are filled or custom activity completed
+    // Generate PDF link:
+    // If teacher has KBM schedules, top-level buktiDukung links to KBM print view (`tipe=kbm`)
+    // If teacher has NO KBM schedules but has custom activities, top-level buktiDukung links to custom activities print view (`tipe=tambahan`)
     let pdfLink: string | null = null;
     if (isComplete) {
-      const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-      const tokenQuery = token ? `&token=${encodeURIComponent(token)}` : "";
-      pdfLink = `${cleanBaseUrl}/jurnal/cetak?guruId=${teacher.id}&tanggal=${targetDateStr}${tokenQuery}`;
+      if (totalJadwal > 0) {
+        pdfLink = `${cleanBaseUrl}/jurnal/cetak?guruId=${teacher.id}&tanggal=${targetDateStr}&tipe=kbm${tokenQuery}`;
+      } else {
+        pdfLink = `${cleanBaseUrl}/jurnal/cetak?guruId=${teacher.id}&tanggal=${targetDateStr}&tipe=tambahan${tokenQuery}`;
+      }
     }
 
     const item: RencanaAksiItem = {

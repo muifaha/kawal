@@ -20,6 +20,8 @@ export default async function CetakJurnalPage({
   const guruId = params.guruId;
   const tanggal = params.tanggal;
   const token = params.token;
+  const jurnalId = params.jurnalId;
+  const tipe = params.tipe;
 
   if (!guruId || !tanggal) {
     return notFound();
@@ -94,7 +96,7 @@ export default async function CetakJurnalPage({
   });
 
   // Filter exact matching date in WIB (Asia/Jakarta)
-  const journals = candidateJournals.filter((j) => {
+  let journals = candidateJournals.filter((j) => {
     const jDateStr = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Jakarta",
       year: "numeric",
@@ -103,6 +105,18 @@ export default async function CetakJurnalPage({
     }).format(new Date(j.tanggal));
     return jDateStr === tanggal;
   });
+
+  if (jurnalId) {
+    journals = journals.filter((j) => j.id === jurnalId);
+  } else if (tipe === "kbm") {
+    journals = journals.filter(
+      (j) => j.jadwalId && j.kelas?.nama !== "KEGIATAN UMUM" && j.mapel?.nama !== "Kegiatan Pembelajaran"
+    );
+  } else if (tipe === "tambahan") {
+    journals = journals.filter(
+      (j) => !j.jadwalId || j.kelas?.nama === "KEGIATAN UMUM" || j.mapel?.nama === "Kegiatan Pembelajaran"
+    );
+  }
 
   const dateLabel = new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
