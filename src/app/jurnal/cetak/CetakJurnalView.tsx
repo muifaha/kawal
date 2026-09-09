@@ -80,7 +80,7 @@ export default function CetakJurnalView({
             <div>
               <h1 style={{ color: "#0f172a" }} className="text-sm sm:text-base font-bold flex items-center gap-2">
                 <FileText className="w-4 h-4 text-emerald-600" />
-                Dokumen Cetak / Bukti Dukung Jurnal Mengajar
+                Jurnal Kegiatan dan Jurnal Mengajar
               </h1>
               <p style={{ color: "#64748b" }} className="text-xs">
                 {teacher.nama} • {dateLabel}
@@ -146,7 +146,7 @@ export default function CetakJurnalView({
                 </h2>
                 <p style={{ color: "#334155" }} className="text-xs font-medium mt-1 leading-snug">{schoolAddress}</p>
                 <p style={{ color: "#475569" }} className="text-[11px] font-bold tracking-wider mt-0.5">
-                  NPSN: {schoolNpsn} | JURNAL MENGAJAR HARIAN GURU
+                  NPSN: {schoolNpsn} | JURNAL KEGIATAN DAN JURNAL MENGAJAR
                 </p>
               </div>
 
@@ -157,7 +157,7 @@ export default function CetakJurnalView({
           {/* Document Title */}
           <div className="text-center mb-6">
             <h3 style={{ color: "#0f172a" }} className="text-base font-black uppercase tracking-widest underline underline-offset-4">
-              LAPORAN RENCANA AKSI & JURNAL MENGAJAR
+              LAPORAN JURNAL KEGIATAN DAN JURNAL MENGAJAR
             </h3>
             <p style={{ color: "#475569" }} className="text-xs font-semibold mt-1">Hari & Tanggal: {dateLabel}</p>
           </div>
