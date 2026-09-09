@@ -24,6 +24,13 @@ export interface RencanaAksiItem {
   statusJurnal: "LENGKAP" | "BELUM_LENGKAP" | "TIDAK_ADA_JADWAL";
   totalJadwal: number;
   totalJurnalTerisi: number;
+  kegiatanTambahan?: Array<{
+    id: string;
+    namaJurnal: string;
+    kegiatan: string;
+    rencanaAksi: string | null;
+    foto: string | null;
+  }>;
   guruId: string;
   // Duplicate keys with exact prompt casing for maximum API client compatibility
   "Nama Guru"?: string;
@@ -128,24 +135,49 @@ export async function getRencanaAksiSingleDate(
       }
     }
 
-    const kegiatanText = formatKegiatanMengajar(classNames);
+    const baseKegiatanText = formatKegiatanMengajar(classNames);
     const totalJadwal = teacherSchedules.length;
     const totalJurnalTerisi = teacherJournals.length;
+
+    // Detect Jurnal Kegiatan Tambahan (Custom activity journals)
+    const customActivityJournals = teacherJournals.filter(
+      (j) => !j.jadwalId || j.kelas?.nama === "KEGIATAN UMUM" || j.mapel?.nama === "Kegiatan Pembelajaran"
+    );
+
+    let combinedKegiatan = baseKegiatanText;
+    if (customActivityJournals.length > 0) {
+      const customTitles = customActivityJournals
+        .map((j) => (j.kegiatan ? `${j.namaJurnal} (${j.kegiatan})` : j.namaJurnal))
+        .join("; ");
+      if (totalJadwal === 0 || baseKegiatanText === "Tidak ada jadwal mengajar pada tanggal ini") {
+        combinedKegiatan = `Kegiatan Tambahan: ${customTitles}`;
+      } else {
+        combinedKegiatan = `${baseKegiatanText}; Kegiatan Tambahan: ${customTitles}`;
+      }
+    }
 
     // Use teacher's selected rencanaAksi if stored in journal, or fallback default
     const customRencanaAksi = teacherJournals.find((j) => j.rencanaAksi)?.rencanaAksi;
     const activeRencanaAksi = customRencanaAksi || CONSTANT_RENCANA_AKSI;
 
-    const isComplete = totalJadwal > 0 && totalJurnalTerisi >= totalJadwal;
-    const statusJurnal = totalJadwal === 0 ? "TIDAK_ADA_JADWAL" : isComplete ? "LENGKAP" : "BELUM_LENGKAP";
+    const isComplete = (totalJadwal > 0 && totalJurnalTerisi >= totalJadwal) || (totalJadwal === 0 && customActivityJournals.length > 0);
+    const statusJurnal = (totalJadwal === 0 && customActivityJournals.length === 0) ? "TIDAK_ADA_JADWAL" : isComplete ? "LENGKAP" : "BELUM_LENGKAP";
 
-    // Generate PDF link if all journals for the day are filled
+    // Generate PDF link if all journals for the day are filled or custom activity completed
     let pdfLink: string | null = null;
     if (isComplete) {
       const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
       const tokenQuery = token ? `&token=${encodeURIComponent(token)}` : "";
       pdfLink = `${cleanBaseUrl}/jurnal/cetak?guruId=${teacher.id}&tanggal=${targetDateStr}${tokenQuery}`;
     }
+
+    const listKegiatanTambahan = customActivityJournals.map((j) => ({
+      id: j.id,
+      namaJurnal: j.namaJurnal,
+      kegiatan: j.kegiatan,
+      rencanaAksi: j.rencanaAksi || null,
+      foto: j.foto || null,
+    }));
 
     const item: RencanaAksiItem = {
       guruId: teacher.id,
@@ -156,25 +188,26 @@ export async function getRencanaAksiSingleDate(
       jamMulai: "07.45",
       jamSelesai: "15.00",
       jam: "07.45 - 15.00",
-      kegiatan: kegiatanText,
+      kegiatan: combinedKegiatan,
       realisasi: 1,
       buktiDukung: pdfLink,
       statusJurnal,
       totalJadwal,
       totalJurnalTerisi,
+      kegiatanTambahan: listKegiatanTambahan,
       // Duplicate casing for prompt exact keys
       "Nama Guru": teacher.nama,
       "NIP": teacher.nip || "-",
       "Rencana Aksi": activeRencanaAksi,
       "Tanggal": targetDateStr,
       "Jam": "07.45 - 15.00",
-      "Kegiatan": kegiatanText,
+      "Kegiatan": combinedKegiatan,
       "Realisasi": 1,
       "Bukti Dukung": pdfLink,
     };
 
-    // Filter out teachers who have no schedules on this day unless specifically requested by guruId/nip
-    if (totalJadwal > 0 || guruIdFilter || nipFilter) {
+    // Include teacher if they have schedules, custom activities, or if specifically filtered
+    if (totalJadwal > 0 || customActivityJournals.length > 0 || guruIdFilter || nipFilter) {
       result.push(item);
     }
   }
