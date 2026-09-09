@@ -143,6 +143,13 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
     jamSelesai: jadwal?.jamSelesai || existingJurnal?.jamSelesai || 2,
   };
 
+  const targetDateStr = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(targetDate);
+
   return (
     <SidebarLayout user={user}>
       <div className="mb-6">
@@ -161,6 +168,7 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
         jadwal={jadwalData}
         students={students}
         existingJurnal={existingJurnalData}
+        targetDateStr={targetDateStr}
       />
     </SidebarLayout>
   );

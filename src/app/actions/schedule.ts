@@ -279,13 +279,19 @@ export async function saveJurnalAction(formData: FormData) {
     const existingJurnalId = formData.get("jurnalId") as string | null;
     const jamMulai = parseInt(jamMulaiStr, 10);
     const jamSelesai = parseInt(jamSelesaiStr, 10);
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0); // Midnight UTC safe
+
+    const tanggalStr = formData.get("tanggal") as string | null;
+    let targetDate = new Date();
+    if (tanggalStr && /^\d{4}-\d{2}-\d{2}$/.test(tanggalStr)) {
+      targetDate = new Date(`${tanggalStr}T00:00:00.000Z`);
+    } else {
+      targetDate.setUTCHours(0, 0, 0, 0); // Midnight UTC safe
+    }
 
     const parsedAbsensi = JSON.parse(absensiJson) as Array<{ siswaId: string; status: string }>;
     const parsedPenilaian = JSON.parse(penilaianJson) as Array<{ siswaId: string; nilai: number; keterangan?: string }>;
 
-    // Check existing journal for today or by ID
+    // Check existing journal for targetDate or by ID
     let existingTarget = null;
     if (existingJurnalId) {
       existingTarget = await prisma.jurnalMengajar.findUnique({
@@ -295,7 +301,7 @@ export async function saveJurnalAction(formData: FormData) {
       existingTarget = await prisma.jurnalMengajar.findFirst({
         where: {
           jadwalId,
-          tanggal: today,
+          tanggal: targetDate,
           guruId: user.id,
         },
       });
@@ -333,7 +339,7 @@ export async function saveJurnalAction(formData: FormData) {
             mapelId,
             jamMulai,
             jamSelesai,
-            tanggal: today,
+            tanggal: targetDate,
             namaJurnal,
             kegiatan,
             foto: fotoUrl,

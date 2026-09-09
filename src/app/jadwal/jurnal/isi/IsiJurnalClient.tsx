@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useEffect } from "react";
+import React, { useState, useTransition, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { saveJurnalAction, saveJurnalDraftAction, getJurnalDraftAction } from "@/app/actions/schedule";
 import {
@@ -57,10 +57,23 @@ interface IsiJurnalClientProps {
     fotoKeterangan?: string | null;
     absensi: Array<{ siswaId: string; status: string }>;
   } | null;
+  targetDateStr?: string;
 }
 
-export default function IsiJurnalClient({ user, jadwal, students, existingJurnal }: IsiJurnalClientProps) {
+export default function IsiJurnalClient({ user, jadwal, students, existingJurnal, targetDateStr }: IsiJurnalClientProps) {
   const router = useRouter();
+
+  const formattedDateLabel = useMemo(() => {
+    if (!targetDateStr) return "Hari Ini";
+    const dateObj = new Date(`${targetDateStr}T12:00:00.000Z`);
+    return new Intl.DateTimeFormat("id-ID", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "Asia/Jakarta",
+    }).format(dateObj);
+  }, [targetDateStr]);
 
   // General fields
   const [namaJurnal, setNamaJurnal] = useState("");
@@ -304,6 +317,9 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
     if (existingJurnal?.id) {
       formData.append("jurnalId", existingJurnal.id);
     }
+    if (targetDateStr) {
+      formData.append("tanggal", targetDateStr);
+    }
     formData.append("jadwalId", jadwal.id);
     formData.append("kelasId", jadwal.kelasId);
     formData.append("mapelId", jadwal.mapelId);
@@ -398,7 +414,7 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
           </div>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-950/40 border border-slate-800/80 rounded-xl text-xs">
+            <div className="grid grid-cols-3 gap-3 p-4 bg-slate-950/40 border border-slate-800/80 rounded-xl text-xs">
               <div>
                 <span className="block text-[10px] font-semibold text-slate-500 uppercase">Kelas Target</span>
                 <span className="font-bold text-white text-sm">{jadwal.kelasNama}</span>
@@ -406,6 +422,10 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
               <div>
                 <span className="block text-[10px] font-semibold text-slate-500 uppercase">Mata Pelajaran</span>
                 <span className="font-bold text-indigo-400 text-sm">{jadwal.mapelNama}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-semibold text-slate-500 uppercase">Tanggal Jurnal</span>
+                <span className="font-bold text-emerald-400 text-xs">{formattedDateLabel}</span>
               </div>
             </div>
 
