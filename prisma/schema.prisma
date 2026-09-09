@@ -406,6 +406,7 @@ model JurnalMengajar {
   tanggal        DateTime         @db.Date
   namaJurnal     String           // Contoh: "Pertemuan 1"
   kegiatan       String           // Deskripsi kegiatan
+  rencanaAksi    String?          // Rencana Aksi Kinerja
   foto           String?          // File path foto kegiatan
   fotoKeterangan String?          // Keterangan foto
   absensi        JurnalAbsensi[]

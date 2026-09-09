@@ -21,6 +21,7 @@ import {
   exportKehadiranJurnalExcelMatrix,
   sortJournalsByKelasAndJam,
 } from "@/lib/printUtils";
+import { RENCANA_AKSI_OPTIONS } from "@/lib/rencanaAksiService";
 import {
   Calendar,
   Clock,
@@ -502,10 +503,14 @@ export default function JadwalClient({
   const [showCustomActivityModal, setShowCustomActivityModal] = useState(false);
   const [activityTitle, setActivityTitle] = useState("");
   const [activityDate, setActivityDate] = useState(new Date().toISOString().split("T")[0]);
-  const [activityTime, setActivityTime] = useState("");
+  const [activityJamMulai, setActivityJamMulai] = useState("07.45");
+  const [activityJamSelesai, setActivityJamSelesai] = useState("09.00");
+  const [activityRencanaAksi, setActivityRencanaAksi] = useState(RENCANA_AKSI_OPTIONS[0]);
   const [activityClassId, setActivityClassId] = useState("");
   const [activityMapelId, setActivityMapelId] = useState("");
   const [activityDescription, setActivityDescription] = useState("");
+  const [modalCustomError, setModalCustomError] = useState("");
+
   interface CustomPhotoDoc {
     file: File | null;
     preview: string | null;
@@ -551,22 +556,31 @@ export default function JadwalClient({
   const handleCustomActivitySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activityTitle || !activityDescription) {
-      setActionError("Nama Kegiatan dan Deskripsi Kegiatan wajib diisi.");
+      setModalCustomError("Nama Kegiatan dan Deskripsi Kegiatan wajib diisi.");
       return;
     }
 
+    setModalCustomError("");
     setActionError("");
     setActionSuccess("");
 
     const formData = new FormData();
     formData.append("namaJurnal", activityTitle);
     formData.append("tanggal", activityDate);
-    formData.append("waktu", activityTime);
+    formData.append("jamMulai", activityJamMulai);
+    formData.append("jamSelesai", activityJamSelesai);
+    formData.append("waktu", `${activityJamMulai} - ${activityJamSelesai}`);
+    formData.append("rencanaAksi", activityRencanaAksi);
     formData.append("kegiatan", activityDescription);
+    if (activityClassId) formData.append("kelasId", activityClassId);
+    if (activityMapelId) formData.append("mapelId", activityMapelId);
 
     activityPhotos.forEach((doc, idx) => {
       if (doc.file) {
         formData.append(`foto_${idx}`, doc.file);
+        formData.append(`fotoKeterangan_${idx}`, doc.caption);
+      } else if (doc.preview && doc.preview.startsWith("data:image")) {
+        formData.append(`fotoBase64_${idx}`, doc.preview);
         formData.append(`fotoKeterangan_${idx}`, doc.caption);
       }
     });
@@ -574,13 +588,17 @@ export default function JadwalClient({
     startTransition(async () => {
       const res = await createCustomActivityJurnalAction(formData);
       if (res.error) {
+        setModalCustomError(res.error);
         setActionError(res.error);
       } else {
         setActionSuccess(res.message || "Kegiatan berhasil ditambahkan ke Jurnal.");
         setShowCustomActivityModal(false);
         setActivityTitle("");
-        setActivityTime("");
+        setActivityJamMulai("07.45");
+        setActivityJamSelesai("09.00");
+        setActivityRencanaAksi(RENCANA_AKSI_OPTIONS[0]);
         setActivityDescription("");
+        setModalCustomError("");
         setActivityPhotos([
           { file: null, preview: null, caption: "" },
           { file: null, preview: null, caption: "" },
@@ -2516,6 +2534,13 @@ export default function JadwalClient({
               </button>
             </div>
 
+            {modalCustomError && (
+              <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{modalCustomError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleCustomActivitySubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -2546,17 +2571,52 @@ export default function JadwalClient({
                 </div>
               </div>
 
+              {/* JAM MULAI & JAM AKHIR */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Jam Mulai *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: 07.45 atau 08.00"
+                    value={activityJamMulai}
+                    onChange={(e) => setActivityJamMulai(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Jam Selesai / Akhir *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: 09.00 atau 09.30"
+                    value={activityJamSelesai}
+                    onChange={(e) => setActivityJamSelesai(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* RENCANA AKSI DROPDOWN */}
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Waktu (Tulis Manual)
+                  Rencana Aksi Kinerja *
                 </label>
-                <input
-                  type="text"
-                  placeholder="Contoh: 08:00 - 09:30 atau Jam 1-2"
-                  value={activityTime}
-                  onChange={(e) => setActivityTime(e.target.value)}
+                <select
+                  value={activityRencanaAksi}
+                  onChange={(e) => setActivityRencanaAksi(e.target.value)}
                   className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+                >
+                  {RENCANA_AKSI_OPTIONS.map((option, idx) => (
+                    <option key={idx} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

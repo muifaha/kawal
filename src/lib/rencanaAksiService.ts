@@ -1,5 +1,15 @@
 import { prisma } from "@/lib/prisma";
 
+export const RENCANA_AKSI_OPTIONS = [
+  "Melaksanakan pembelajaran/pembimbingan dalam mewujudkan pembelajaran yang bermutu",
+  "Melaksanakan pembimbingan dan pelatihan dalam mewujudkan pembelajaran yang bermutu untuk semua",
+  "Melaksanakan perencanaan pembelajaran/pembimbingan dalam mewujudkan pembelajaran yang bermutu untuk semua",
+  "Melaksanakan pengembangan kompetensi yang meningkatkan pembelajaran yang bermutu untuk semua",
+  "Melaksanakan praktik pembelajaran melalui observasi praktik kinerja yang disepakati bersama Kepala Sekolah yang berfokus pada Aktivitas Interaktif",
+  "Melaksanakan tugas tambahan dalam mendukung pembelajaran yang bermutu untuk semua",
+  "Melaksanakan penilaian pembelajaran atau evaluasi bimbingan dalam mewujudkan pembelajaran yang bermutu untuk semua",
+];
+
 export interface RencanaAksiItem {
   namaGuru: string;
   nip: string;
@@ -42,7 +52,7 @@ export function formatKegiatanMengajar(kelases: string[]): string {
   return `Mengajar di kelas ${rest} dan ${last}`;
 }
 
-const CONSTANT_RENCANA_AKSI = "Melaksanakan pembelajaran/pembimbingan dalam mewujudkan pembelajaran yang bermutu";
+const CONSTANT_RENCANA_AKSI = RENCANA_AKSI_OPTIONS[0];
 
 export async function getRencanaAksiSingleDate(
   targetDateStr: string,
@@ -122,6 +132,10 @@ export async function getRencanaAksiSingleDate(
     const totalJadwal = teacherSchedules.length;
     const totalJurnalTerisi = teacherJournals.length;
 
+    // Use teacher's selected rencanaAksi if stored in journal, or fallback default
+    const customRencanaAksi = teacherJournals.find((j) => j.rencanaAksi)?.rencanaAksi;
+    const activeRencanaAksi = customRencanaAksi || CONSTANT_RENCANA_AKSI;
+
     const isComplete = totalJadwal > 0 && totalJurnalTerisi >= totalJadwal;
     const statusJurnal = totalJadwal === 0 ? "TIDAK_ADA_JADWAL" : isComplete ? "LENGKAP" : "BELUM_LENGKAP";
 
@@ -137,7 +151,7 @@ export async function getRencanaAksiSingleDate(
       guruId: teacher.id,
       namaGuru: teacher.nama,
       nip: teacher.nip || "-",
-      rencanaAksi: CONSTANT_RENCANA_AKSI,
+      rencanaAksi: activeRencanaAksi,
       tanggal: targetDateStr,
       jamMulai: "07.45",
       jamSelesai: "15.00",
@@ -151,7 +165,7 @@ export async function getRencanaAksiSingleDate(
       // Duplicate casing for prompt exact keys
       "Nama Guru": teacher.nama,
       "NIP": teacher.nip || "-",
-      "Rencana Aksi": CONSTANT_RENCANA_AKSI,
+      "Rencana Aksi": activeRencanaAksi,
       "Tanggal": targetDateStr,
       "Jam": "07.45 - 15.00",
       "Kegiatan": kegiatanText,

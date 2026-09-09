@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { compressImageFile } from "@/lib/imageUtils";
+import { RENCANA_AKSI_OPTIONS } from "@/lib/rencanaAksiService";
 
 interface StudentItem {
   id: string;
@@ -53,6 +54,7 @@ interface IsiJurnalClientProps {
     id: string;
     namaJurnal: string;
     kegiatan: string;
+    rencanaAksi?: string | null;
     foto?: string | null;
     fotoKeterangan?: string | null;
     absensi: Array<{ siswaId: string; status: string }>;
@@ -78,6 +80,7 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
   // General fields
   const [namaJurnal, setNamaJurnal] = useState("");
   const [kegiatan, setKegiatan] = useState("");
+  const [rencanaAksi, setRencanaAksi] = useState(existingJurnal?.rencanaAksi || RENCANA_AKSI_OPTIONS[0]);
   interface PhotoDoc {
     file: File | null;
     preview: string | null;
@@ -327,6 +330,7 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
     formData.append("jamSelesai", String(jadwal.jamSelesai));
     formData.append("namaJurnal", namaJurnal);
     formData.append("kegiatan", kegiatan);
+    formData.append("rencanaAksi", rencanaAksi);
     photos.forEach((doc, idx) => {
       if (doc.file) {
         formData.append(`foto_${idx}`, doc.file);
@@ -441,6 +445,23 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
                 onChange={(e) => setNamaJurnal(e.target.value)}
                 className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Rencana Aksi Kinerja *
+              </label>
+              <select
+                value={rencanaAksi}
+                onChange={(e) => setRencanaAksi(e.target.value)}
+                className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                {RENCANA_AKSI_OPTIONS.map((option, idx) => (
+                  <option key={idx} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>

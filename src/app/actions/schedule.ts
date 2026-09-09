@@ -223,6 +223,7 @@ export async function saveJurnalAction(formData: FormData) {
   const jamSelesaiStr = formData.get("jamSelesai") as string;
   const namaJurnal = formData.get("namaJurnal") as string;
   const kegiatan = formData.get("kegiatan") as string;
+  const rencanaAksi = formData.get("rencanaAksi") as string | null;
   // JSON strings
   const absensiJson = formData.get("absensiJson") as string;
   const penilaianJson = formData.get("penilaianJson") as string;
@@ -237,14 +238,15 @@ export async function saveJurnalAction(formData: FormData) {
     const fotoKeterangans: string[] = [];
 
     for (let i = 0; i < 3; i++) {
-      const file = formData.get(`foto_${i}`) as File | null;
+      const file = formData.get(`foto_${i}`);
       const base64Data = formData.get(`fotoBase64_${i}`) as string | null;
       const ket = formData.get(`fotoKeterangan_${i}`) as string | null;
 
-      if (file && file.size > 0) {
-        const bytes = await file.arrayBuffer();
+      if (file && typeof file === "object" && "arrayBuffer" in file && (file as File).size > 0) {
+        const fileObj = file as File;
+        const bytes = await fileObj.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const filename = `jurnal_${Date.now()}_${i}_${file.name.replace(/\s+/g, "_")}`;
+        const filename = `jurnal_${Date.now()}_${i}_${fileObj.name.replace(/\s+/g, "_")}`;
 
         const uploadDir = path.join(process.cwd(), "public", "uploads", "jurnal");
         if (!fs.existsSync(uploadDir)) {
@@ -255,7 +257,7 @@ export async function saveJurnalAction(formData: FormData) {
         fs.writeFileSync(fullPath, buffer);
         fotoUrls.push(`/uploads/jurnal/${filename}`);
         fotoKeterangans.push(ket || "");
-      } else if (base64Data && base64Data.startsWith("data:image")) {
+      } else if (base64Data && typeof base64Data === "string" && base64Data.startsWith("data:image")) {
         const rawBase64 = base64Data.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(rawBase64, "base64");
         const ext = base64Data.includes("image/webp") ? ".webp" : ".png";
@@ -321,6 +323,7 @@ export async function saveJurnalAction(formData: FormData) {
           data: {
             namaJurnal,
             kegiatan,
+            rencanaAksi: rencanaAksi ? rencanaAksi.trim() : existingTarget.rencanaAksi,
             foto: finalFotoUrl,
             fotoKeterangan: finalFotoKet,
           },
@@ -342,6 +345,7 @@ export async function saveJurnalAction(formData: FormData) {
             tanggal: targetDate,
             namaJurnal,
             kegiatan,
+            rencanaAksi: rencanaAksi ? rencanaAksi.trim() : null,
             foto: fotoUrl,
             fotoKeterangan: fotoKeterangan || null,
           },
@@ -402,22 +406,41 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
 
   const namaJurnal = formData.get("namaJurnal") as string;
   const tanggalStr = formData.get("tanggal") as string;
-  const waktuStr = formData.get("waktu") as string;
+  const jamMulaiStr = (formData.get("jamMulai") as string) || "";
+  const jamSelesaiStr = (formData.get("jamSelesai") as string) || "";
+  const waktuStr = (formData.get("waktu") as string) || "";
+  const rencanaAksi = (formData.get("rencanaAksi") as string) || "";
   let targetKelasId = formData.get("kelasId") as string;
   let targetMapelId = formData.get("mapelId") as string;
   const kegiatan = formData.get("kegiatan") as string;
 
   if (!targetKelasId) {
     const firstKelas = await prisma.kelas.findFirst();
-    if (firstKelas) targetKelasId = firstKelas.id;
+    if (firstKelas) {
+      targetKelasId = firstKelas.id;
+    } else {
+      const firstTA = await prisma.tahunAjaran.findFirst();
+      let taId = firstTA?.id;
+      if (!taId) {
+        const newTA = await prisma.tahunAjaran.create({ data: { nama: "2025/2026", isActive: true } });
+        taId = newTA.id;
+      }
+      const newKelas = await prisma.kelas.create({ data: { nama: "KEGIATAN UMUM", tahunAjaranId: taId } });
+      targetKelasId = newKelas.id;
+    }
   }
 
   if (!targetMapelId) {
     const firstMapel = await prisma.mataPelajaran.findFirst();
-    if (firstMapel) targetMapelId = firstMapel.id;
+    if (firstMapel) {
+      targetMapelId = firstMapel.id;
+    } else {
+      const newMapel = await prisma.mataPelajaran.create({ data: { kode: "KEG-01", nama: "Kegiatan Pembelajaran" } });
+      targetMapelId = newMapel.id;
+    }
   }
 
-  if (!namaJurnal || !kegiatan || !targetKelasId || !targetMapelId) {
+  if (!namaJurnal || !kegiatan) {
     return { error: "Nama Kegiatan dan Deskripsi Kegiatan wajib diisi." };
   }
 
@@ -426,13 +449,30 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
     const fotoKeterangans: string[] = [];
 
     for (let i = 0; i < 3; i++) {
-      const file = formData.get(`foto_${i}`) as File | null;
+      const file = formData.get(`foto_${i}`);
+      const base64Data = formData.get(`fotoBase64_${i}`) as string | null;
       const ket = formData.get(`fotoKeterangan_${i}`) as string | null;
 
-      if (file && file.size > 0) {
-        const bytes = await file.arrayBuffer();
+      if (file && typeof file === "object" && "arrayBuffer" in file && (file as File).size > 0) {
+        const fileObj = file as File;
+        const bytes = await fileObj.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const filename = `jurnal_kegiatan_${Date.now()}_${i}_${file.name.replace(/\s+/g, "_")}`;
+        const filename = `jurnal_kegiatan_${Date.now()}_${i}_${fileObj.name.replace(/\s+/g, "_")}`;
+
+        const uploadDir = path.join(process.cwd(), "public", "uploads", "jurnal");
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        const fullPath = path.join(uploadDir, filename);
+        fs.writeFileSync(fullPath, buffer);
+        fotoUrls.push(`/uploads/jurnal/${filename}`);
+        fotoKeterangans.push(ket || "");
+      } else if (base64Data && typeof base64Data === "string" && base64Data.startsWith("data:image")) {
+        const rawBase64 = base64Data.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(rawBase64, "base64");
+        const ext = base64Data.includes("image/webp") ? ".webp" : ".png";
+        const filename = `jurnal_kegiatan_${Date.now()}_${i}${ext}`;
 
         const uploadDir = path.join(process.cwd(), "public", "uploads", "jurnal");
         if (!fs.existsSync(uploadDir)) {
@@ -449,9 +489,21 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
     const fotoUrl = fotoUrls.length > 0 ? JSON.stringify(fotoUrls) : null;
     const fotoKeterangan = fotoUrls.length > 0 ? JSON.stringify(fotoKeterangans) : null;
 
-    const tanggal = tanggalStr ? new Date(tanggalStr) : new Date();
+    let targetDate = new Date();
+    if (tanggalStr && /^\d{4}-\d{2}-\d{2}$/.test(tanggalStr)) {
+      targetDate = new Date(`${tanggalStr}T00:00:00.000Z`);
+    } else {
+      targetDate.setUTCHours(0, 0, 0, 0);
+    }
 
-    const titleWithTime = waktuStr ? `${namaJurnal.trim()} (${waktuStr.trim()})` : namaJurnal.trim();
+    let timeLabel = "";
+    if (jamMulaiStr && jamSelesaiStr) {
+      timeLabel = `${jamMulaiStr.trim()} - ${jamSelesaiStr.trim()}`;
+    } else if (waktuStr) {
+      timeLabel = waktuStr.trim();
+    }
+
+    const titleWithTime = timeLabel ? `${namaJurnal.trim()} (${timeLabel})` : namaJurnal.trim();
 
     const newJurnal = await prisma.jurnalMengajar.create({
       data: {
@@ -460,9 +512,10 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
         mapelId: targetMapelId,
         jamMulai: 1,
         jamSelesai: 1,
-        tanggal,
+        tanggal: targetDate,
         namaJurnal: titleWithTime,
         kegiatan: kegiatan.trim(),
+        rencanaAksi: rencanaAksi ? rencanaAksi.trim() : null,
         foto: fotoUrl,
         fotoKeterangan,
       },
