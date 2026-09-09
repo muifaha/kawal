@@ -204,6 +204,10 @@ export default function CetakJurnalView({
           ) : (
             <div className="space-y-6">
               {journals.map((jurnal, index) => {
+                const isCustomActivity =
+                  !jurnal.jadwalId ||
+                  jurnal.kelas?.nama === "KEGIATAN UMUM" ||
+                  jurnal.mapel?.nama === "Kegiatan Pembelajaran";
                 const photos: string[] = jurnal.foto ? JSON.parse(jurnal.foto) : [];
                 const photoCaptions: string[] = jurnal.fotoKeterangan ? JSON.parse(jurnal.fotoKeterangan) : [];
 
@@ -222,19 +226,39 @@ export default function CetakJurnalView({
                           {index + 1}
                         </span>
                         <div>
-                          <h4 style={{ color: "#0f172a" }} className="font-bold text-sm">
-                            {jurnal.mapel?.nama || "Mata Pelajaran / Kegiatan"}
-                          </h4>
-                          <p style={{ color: "#475569" }} className="text-[11px] font-semibold">
-                            Kelas {jurnal.kelas?.nama} • Jam Ke-{jurnal.jamMulai} s/d {jurnal.jamSelesai}
-                          </p>
+                          {isCustomActivity ? (
+                            <div className="flex items-center gap-2">
+                              <span
+                                style={{ backgroundColor: "#fef3c7", color: "#b45309", borderColor: "#fde68a" }}
+                                className="px-2 py-0.5 font-bold text-[10px] rounded border uppercase tracking-wider"
+                              >
+                                Kegiatan Tambahan
+                              </span>
+                              <h4 style={{ color: "#0f172a" }} className="font-bold text-sm">
+                                Agenda: {jurnal.namaJurnal}
+                              </h4>
+                            </div>
+                          ) : (
+                            <div>
+                              <h4 style={{ color: "#0f172a" }} className="font-bold text-sm">
+                                {jurnal.mapel?.nama || "Mata Pelajaran"} • {jurnal.namaJurnal}
+                              </h4>
+                              <p style={{ color: "#475569" }} className="text-[11px] font-semibold">
+                                Kelas {jurnal.kelas?.nama || "-"} • Jam Ke-{jurnal.jamMulai}{jurnal.jamMulai !== jurnal.jamSelesai ? ` s/d ${jurnal.jamSelesai}` : ""}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <span
-                        style={{ backgroundColor: "#ecfdf5", color: "#065f46", borderColor: "#a7f3d0" }}
+                        style={{
+                          backgroundColor: isCustomActivity ? "#fffbeb" : "#ecfdf5",
+                          color: isCustomActivity ? "#b45309" : "#065f46",
+                          borderColor: isCustomActivity ? "#fde68a" : "#a7f3d0",
+                        }}
                         className="px-3 py-1 font-bold text-[11px] rounded-lg border"
                       >
-                        {jurnal.namaJurnal}
+                        {isCustomActivity ? "Kegiatan Non-KBM" : jurnal.namaJurnal}
                       </span>
                     </div>
 
@@ -254,7 +278,7 @@ export default function CetakJurnalView({
 
                     <div className="mb-3 text-xs">
                       <span style={{ color: "#1e293b" }} className="font-bold block mb-1">
-                        Uraian / Ringkasan Materi Pembelajaran:
+                        {isCustomActivity ? "Deskripsi / Ringkasan Kegiatan:" : "Uraian / Ringkasan Materi Pembelajaran:"}
                       </span>
                       <p
                         style={{ backgroundColor: "#f8fafc", color: "#0f172a", borderColor: "#e2e8f0" }}
@@ -264,8 +288,8 @@ export default function CetakJurnalView({
                       </p>
                     </div>
 
-                    {/* Attendance Table Summary */}
-                    {jurnal.absensi && jurnal.absensi.length > 0 && (
+                    {/* Attendance Table Summary - ONLY FOR JURNAL MENGAJAR (REGULAR KBM) */}
+                    {!isCustomActivity && jurnal.absensi && jurnal.absensi.length > 0 && (
                       <div className="mb-3">
                         <span style={{ color: "#1e293b" }} className="font-bold block text-xs mb-1">
                           Rekapitulasi Kehadiran Siswa ({jurnal.absensi.length} Siswa):

@@ -598,12 +598,56 @@ export function generateSingleJurnalHtmlSection(jurnal: any, schoolSettings?: Re
         <div style="width: 70px;"></div>
        </div>`;
 
-  const isCustomActivity = !jurnal.jadwalId || jurnal.kelas?.nama === "KEGIATAN UMUM";
-  const docTitle = isCustomActivity ? "DOKUMENTASI KEGIATAN GURU" : "JURNAL MENGAJAR";
-  const displayKelas = isCustomActivity ? "Kegiatan Non-KBM" : `Kelas ${jurnal.kelas?.nama || "-"}`;
-  const displayMapel = isCustomActivity ? "Agenda / Kegiatan Sekolah" : (jurnal.mapel?.nama || "-");
-  const boxTitle = isCustomActivity ? "Deskripsi Kegiatan" : "Deskripsi Pembelajaran";
+  const isCustomActivity = !jurnal.jadwalId || jurnal.kelas?.nama === "KEGIATAN UMUM" || jurnal.mapel?.nama === "Kegiatan Pembelajaran";
+  const docTitle = isCustomActivity ? "DOKUMENTASI KEGIATAN TAMBAHAN GURU" : "JURNAL MENGAJAR";
+  const boxTitle = isCustomActivity ? "Deskripsi / Ringkasan Kegiatan" : "Deskripsi Pembelajaran";
   const ttdRole = isCustomActivity ? "Guru Pelaksana Kegiatan" : `Guru Mata Pelajaran ${jurnal.mapel?.nama || ""}`;
+
+  const infoRowsHtml = isCustomActivity
+    ? `
+      <tr>
+        <td class="label">Nama Guru</td>
+        <td class="colon">:</td>
+        <td><strong style="color: #0f172a;">${jurnal.guru?.nama || "-"}</strong></td>
+        <td class="label">Tanggal</td>
+        <td class="colon">:</td>
+        <td>${tanggalFormatted}</td>
+      </tr>
+      <tr>
+        <td class="label">Kategori</td>
+        <td class="colon">:</td>
+        <td><strong style="color: #d97706; background-color: #fef3c7; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde68a;">Kegiatan Tambahan</strong></td>
+        <td class="label">Agenda / Nama Kegiatan</td>
+        <td class="colon">:</td>
+        <td><strong style="color: #1e3a8a;">${jurnal.namaJurnal}</strong></td>
+      </tr>
+    `
+    : `
+      <tr>
+        <td class="label">Nama Guru</td>
+        <td class="colon">:</td>
+        <td><strong style="color: #0f172a;">${jurnal.guru?.nama || "-"}</strong></td>
+        <td class="label">Tanggal</td>
+        <td class="colon">:</td>
+        <td>${tanggalFormatted}</td>
+      </tr>
+      <tr>
+        <td class="label">Kelas</td>
+        <td class="colon">:</td>
+        <td>Kelas ${jurnal.kelas?.nama || "-"}</td>
+        <td class="label">Jam Ke</td>
+        <td class="colon">:</td>
+        <td>Jam ke-${jurnal.jamMulai}${jurnal.jamMulai !== jurnal.jamSelesai ? ` - ${jurnal.jamSelesai}` : ""}</td>
+      </tr>
+      <tr>
+        <td class="label">Mata Pelajaran</td>
+        <td class="colon">:</td>
+        <td>${jurnal.mapel?.nama || "-"}</td>
+        <td class="label">Nama Jurnal</td>
+        <td class="colon">:</td>
+        <td><strong style="color: #1e3a8a;">${jurnal.namaJurnal}</strong></td>
+      </tr>
+    `;
 
   return `
     <div class="session-page-wrapper">
@@ -615,30 +659,7 @@ export function generateSingleJurnalHtmlSection(jurnal: any, schoolSettings?: Re
 
       <div class="info-card">
         <table class="info-table">
-          <tr>
-            <td class="label">Nama Guru</td>
-            <td class="colon">:</td>
-            <td><strong style="color: #0f172a;">${jurnal.guru?.nama || "-"}</strong></td>
-            <td class="label">Tanggal</td>
-            <td class="colon">:</td>
-            <td>${tanggalFormatted}</td>
-          </tr>
-          <tr>
-            <td class="label">Kategori / Kelas</td>
-            <td class="colon">:</td>
-            <td>${displayKelas}</td>
-            <td class="label">Sesi / Jam</td>
-            <td class="colon">:</td>
-            <td>Jam ke-${jurnal.jamMulai}${jurnal.jamMulai !== jurnal.jamSelesai ? ` - ${jurnal.jamSelesai}` : ""}</td>
-          </tr>
-          <tr>
-            <td class="label">Mata Pelajaran / Agenda</td>
-            <td class="colon">:</td>
-            <td>${displayMapel}</td>
-            <td class="label">Nama Kegiatan</td>
-            <td class="colon">:</td>
-            <td><strong style="color: #1e3a8a;">${jurnal.namaJurnal}</strong></td>
-          </tr>
+          ${infoRowsHtml}
         </table>
       </div>
 
@@ -649,7 +670,7 @@ export function generateSingleJurnalHtmlSection(jurnal: any, schoolSettings?: Re
 
       ${photosHtml}
 
-      ${jurnal.absensi && jurnal.absensi.length > 0 ? `
+      ${!isCustomActivity && jurnal.absensi && jurnal.absensi.length > 0 ? `
         <div class="absensi-title">Daftar Kehadiran Siswa (Absensi Kelas):</div>
         <table class="data-table">
           <thead>
