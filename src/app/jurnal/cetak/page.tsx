@@ -112,6 +112,12 @@ export default async function CetakJurnalPage({
     timeZone: "Asia/Jakarta",
   }).format(targetDateObj);
 
+  const autoPrint =
+    params.autoprint === "true" ||
+    params.pdf === "true" ||
+    params.download === "pdf" ||
+    params.print === "true";
+
   return (
     <CetakJurnalView
       teacher={teacher}
@@ -119,6 +125,7 @@ export default async function CetakJurnalPage({
       tanggalStr={tanggal}
       dateLabel={dateLabel}
       schoolSettings={schoolSettings}
+      autoPrint={autoPrint}
     />
   );
 }
