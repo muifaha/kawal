@@ -42,65 +42,21 @@ export function formatKegiatanMengajar(kelases: string[]): string {
   return `Mengajar di kelas ${rest} dan ${last}`;
 }
 
-export async function getRencanaAksiData(options: {
-  tanggalStr?: string;
-  guruId?: string;
-  nip?: string;
-  search?: string;
-  baseUrl?: string;
-}): Promise<RencanaAksiItem[]> {
-  const { tanggalStr, guruId, nip, search, baseUrl = "" } = options;
+const CONSTANT_RENCANA_AKSI = "Melaksanakan pembelajaran/pembimbingan dalam mewujudkan pembelajaran yang bermutu";
 
-  // Default to today's date in Asia/Jakarta if not provided
-  let targetDateStr = tanggalStr;
-  if (!targetDateStr || !/^\d{4}-\d{2}-\d{2}$/.test(targetDateStr)) {
-    targetDateStr = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Jakarta",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date());
-  }
-
+export async function getRencanaAksiSingleDate(
+  targetDateStr: string,
+  teachers: Array<{ id: string; nama: string; nip: string | null; username: string }>,
+  baseUrl: string,
+  guruIdFilter?: string,
+  nipFilter?: string
+): Promise<RencanaAksiItem[]> {
   const dateObj = new Date(`${targetDateStr}T12:00:00.000Z`);
   const jsDay = dateObj.getUTCDay();
   const dayNumber = jsDay === 0 ? 7 : jsDay; // 1 = Senin, ... 7 = Minggu
 
   const startOfDay = new Date(`${targetDateStr}T00:00:00.000Z`);
   const endOfDay = new Date(`${targetDateStr}T23:59:59.999Z`);
-
-  // Build user filter
-  const userWhere: any = {
-    role: { in: ["GURU", "WALAS"] },
-  };
-
-  if (guruId) {
-    userWhere.id = guruId;
-  } else if (nip) {
-    userWhere.nip = nip;
-  } else if (search) {
-    userWhere.OR = [
-      { nama: { contains: search, mode: "insensitive" } },
-      { nip: { contains: search, mode: "insensitive" } },
-      { username: { contains: search, mode: "insensitive" } },
-    ];
-  }
-
-  // Fetch target teachers
-  const teachers = await prisma.user.findMany({
-    where: userWhere,
-    select: {
-      id: true,
-      nama: true,
-      nip: true,
-      username: true,
-    },
-    orderBy: { nama: "asc" },
-  });
-
-  if (teachers.length === 0) {
-    return [];
-  }
 
   const teacherIds = teachers.map((t) => t.id);
 
@@ -148,8 +104,6 @@ export async function getRencanaAksiData(options: {
   }
 
   const result: RencanaAksiItem[] = [];
-
-  const CONSTANT_RENCANA_AKSI = "Melaksanakan pembelajaran/pembimbingan dalam mewujudkan pembelajaran yang bermutu";
 
   for (const teacher of teachers) {
     const teacherSchedules = schedulesByGuru.get(teacher.id) || [];
@@ -204,10 +158,104 @@ export async function getRencanaAksiData(options: {
     };
 
     // Filter out teachers who have no schedules on this day unless specifically requested by guruId/nip
-    if (totalJadwal > 0 || guruId || nip) {
+    if (totalJadwal > 0 || guruIdFilter || nipFilter) {
       result.push(item);
     }
   }
 
   return result;
+}
+
+export async function getRencanaAksiData(options: {
+  tanggalStr?: string;
+  dariStr?: string;
+  sampaiStr?: string;
+  bulanStr?: string;
+  guruId?: string;
+  nip?: string;
+  search?: string;
+  baseUrl?: string;
+}): Promise<RencanaAksiItem[]> {
+  const { tanggalStr, dariStr, sampaiStr, bulanStr, guruId, nip, search, baseUrl = "" } = options;
+
+  // Build user filter
+  const userWhere: any = {
+    role: { in: ["GURU", "WALAS"] },
+  };
+
+  if (guruId) {
+    userWhere.id = guruId;
+  } else if (nip) {
+    userWhere.nip = nip;
+  } else if (search) {
+    userWhere.OR = [
+      { nama: { contains: search, mode: "insensitive" } },
+      { nip: { contains: search, mode: "insensitive" } },
+      { username: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  // Fetch target teachers
+  const teachers = await prisma.user.findMany({
+    where: userWhere,
+    select: {
+      id: true,
+      nama: true,
+      nip: true,
+      username: true,
+    },
+    orderBy: { nama: "asc" },
+  });
+
+  if (teachers.length === 0) {
+    return [];
+  }
+
+  // Determine list of dates to process
+  const datesToProcess: string[] = [];
+
+  if (bulanStr && /^\d{4}-\d{2}$/.test(bulanStr)) {
+    const [year, month] = bulanStr.split("-").map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayStr = String(day).padStart(2, "0");
+      const monthStr = String(month).padStart(2, "0");
+      datesToProcess.push(`${year}-${monthStr}-${dayStr}`);
+    }
+  } else if (dariStr && sampaiStr && /^\d{4}-\d{2}-\d{2}$/.test(dariStr) && /^\d{4}-\d{2}-\d{2}$/.test(sampaiStr)) {
+    let curr = new Date(`${dariStr}T12:00:00.000Z`);
+    const end = new Date(`${sampaiStr}T12:00:00.000Z`);
+    let count = 0;
+    while (curr <= end && count < 62) {
+      const dStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(curr);
+      datesToProcess.push(dStr);
+      curr.setDate(curr.getDate() + 1);
+      count++;
+    }
+  } else if (tanggalStr && /^\d{4}-\d{2}-\d{2}$/.test(tanggalStr)) {
+    datesToProcess.push(tanggalStr);
+  } else {
+    // Default to today
+    const todayStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    datesToProcess.push(todayStr);
+  }
+
+  const allResults: RencanaAksiItem[] = [];
+
+  for (const dateStr of datesToProcess) {
+    const items = await getRencanaAksiSingleDate(dateStr, teachers, baseUrl, guruId, nip);
+    allResults.push(...items);
+  }
+
+  return allResults;
 }

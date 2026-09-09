@@ -4,7 +4,27 @@ import { getRencanaAksiData } from "@/lib/rencanaAksiService";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const tanggalStr = searchParams.get("tanggal") || undefined;
+
+    // Support single date
+    const tanggalStr = searchParams.get("tanggal") || searchParams.get("date") || undefined;
+
+    // Support date range
+    const dariStr =
+      searchParams.get("dari") ||
+      searchParams.get("startDate") ||
+      searchParams.get("dariTanggal") ||
+      undefined;
+
+    const sampaiStr =
+      searchParams.get("sampai") ||
+      searchParams.get("endDate") ||
+      searchParams.get("sampaiTanggal") ||
+      undefined;
+
+    // Support month filter (e.g. 2026-09)
+    const bulanStr = searchParams.get("bulan") || searchParams.get("month") || undefined;
+
+    // Filters
     const guruId = searchParams.get("guruId") || undefined;
     const nip = searchParams.get("nip") || undefined;
     const search = searchParams.get("search") || undefined;
@@ -16,6 +36,9 @@ export async function GET(request: NextRequest) {
 
     const data = await getRencanaAksiData({
       tanggalStr,
+      dariStr,
+      sampaiStr,
+      bulanStr,
       guruId,
       nip,
       search,
@@ -25,8 +48,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        tanggal: tanggalStr || new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date()),
-        totalGuru: data.length,
+        filter: {
+          tanggal: tanggalStr || null,
+          dari: dariStr || null,
+          sampai: sampaiStr || null,
+          bulan: bulanStr || null,
+        },
+        totalData: data.length,
         data,
       },
       {
