@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { formatDateWib } from "@/lib/dateUtils";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
-import { checkAndApplyAutomaticRemissions } from "@/app/actions/remisi";
 import { calculateAttendanceRate } from "@/lib/attendanceUtils";
 import { getPrestasiListAction } from "@/app/actions/prestasi";
 
@@ -305,11 +304,6 @@ export default async function DashboardPage() {
       />
     );
   }
-
-  // Pemicu remisi otomatis di background tanpa membekukan halaman dashboard
-  checkAndApplyAutomaticRemissions().catch((err) =>
-    console.error("Automatic remission background check error:", err)
-  );
 
   const rangeMulai = activeTA
     ? (activeTA.semesterAktif === "GANJIL" ? activeTA.ganjilMulai : activeTA.genapMulai)

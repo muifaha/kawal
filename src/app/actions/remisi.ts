@@ -226,12 +226,17 @@ export async function checkAndApplyAutomaticRemissions() {
       return { success: true, message: "Pengecekan remisi otomatis sudah berjalan hari ini." };
     }
 
-    // 2. Cari siswa aktif yang memiliki pelanggaran disetujui
+    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // 2. Cari siswa aktif yang memiliki pelanggaran disetujui sekurang-kurangnya 30 hari lalu
     const activeStudents = await prisma.siswa.findMany({
       where: {
         status: "AKTIF",
         pelanggaran: {
-          some: { status: "APPROVED" },
+          some: {
+            status: "APPROVED",
+            approvedAt: { lte: thirtyDaysAgo },
+          },
         },
       },
       select: {
