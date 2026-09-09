@@ -10,6 +10,25 @@ export const RENCANA_AKSI_OPTIONS = [
   "Melaksanakan penilaian pembelajaran atau evaluasi bimbingan dalam mewujudkan pembelajaran yang bermutu untuk semua",
 ];
 
+export interface KegiatanTambahanDetail {
+  id: string;
+  namaJurnal: string;
+  kegiatan: string;
+  jamMulai: string;
+  jamSelesai: string;
+  jam: string;
+  waktu: string;
+  rencanaAksi: string | null;
+  foto: string | null;
+  // Duplicate keys with exact prompt casing for maximum API client compatibility
+  "Nama Jurnal"?: string;
+  "Kegiatan"?: string;
+  "Jam Mulai"?: string;
+  "Jam Selesai"?: string;
+  "Jam"?: string;
+  "Waktu"?: string;
+}
+
 export interface RencanaAksiItem {
   namaGuru: string;
   nip: string;
@@ -24,19 +43,15 @@ export interface RencanaAksiItem {
   statusJurnal: "LENGKAP" | "BELUM_LENGKAP" | "TIDAK_ADA_JADWAL";
   totalJadwal: number;
   totalJurnalTerisi: number;
-  kegiatanTambahan?: Array<{
-    id: string;
-    namaJurnal: string;
-    kegiatan: string;
-    rencanaAksi: string | null;
-    foto: string | null;
-  }>;
+  kegiatanTambahan?: KegiatanTambahanDetail[];
   guruId: string;
   // Duplicate keys with exact prompt casing for maximum API client compatibility
   "Nama Guru"?: string;
   "NIP"?: string;
   "Rencana Aksi"?: string;
   "Tanggal"?: string;
+  "Jam Mulai"?: string;
+  "Jam Selesai"?: string;
   "Jam"?: string;
   "Kegiatan"?: string;
   "Realisasi"?: number;
@@ -57,6 +72,40 @@ export function formatKegiatanMengajar(kelases: string[]): string {
   const last = uniqueKelases[uniqueKelases.length - 1];
   const rest = uniqueKelases.slice(0, uniqueKelases.length - 1).join(", ");
   return `Mengajar di kelas ${rest} dan ${last}`;
+}
+
+export function extractTimeInfo(namaJurnal: string): { jamMulai: string; jamSelesai: string; jam: string; cleanNamaJurnal: string } {
+  // Regex to match (HH:MM - HH:MM) or (HH.MM - HH.MM) or any time pattern inside trailing parentheses
+  const parenMatch = namaJurnal.match(/\s*\(([^)]+)\)\s*$/);
+  if (parenMatch) {
+    const inner = parenMatch[1].trim();
+    const timeParts = inner.split(/\s*[-–]\s*/);
+    if (timeParts.length === 2 && /^\d{1,2}[:.]\d{2}$/.test(timeParts[0]) && /^\d{1,2}[:.]\d{2}$/.test(timeParts[1])) {
+      const jamMulai = timeParts[0].replace(":", ".");
+      const jamSelesai = timeParts[1].replace(":", ".");
+      const cleanNamaJurnal = namaJurnal.replace(parenMatch[0], "").trim();
+      return {
+        jamMulai,
+        jamSelesai,
+        jam: `${jamMulai} - ${jamSelesai}`,
+        cleanNamaJurnal,
+      };
+    } else if (inner) {
+      const cleanNamaJurnal = namaJurnal.replace(parenMatch[0], "").trim();
+      return {
+        jamMulai: inner,
+        jamSelesai: inner,
+        jam: inner,
+        cleanNamaJurnal,
+      };
+    }
+  }
+  return {
+    jamMulai: "07.45",
+    jamSelesai: "15.00",
+    jam: "07.45 - 15.00",
+    cleanNamaJurnal: namaJurnal,
+  };
 }
 
 const CONSTANT_RENCANA_AKSI = RENCANA_AKSI_OPTIONS[0];
@@ -144,16 +193,48 @@ export async function getRencanaAksiSingleDate(
       (j) => !j.jadwalId || j.kelas?.nama === "KEGIATAN UMUM" || j.mapel?.nama === "Kegiatan Pembelajaran"
     );
 
+    const listKegiatanTambahan: KegiatanTambahanDetail[] = customActivityJournals.map((j) => {
+      const timeInfo = extractTimeInfo(j.namaJurnal);
+      return {
+        id: j.id,
+        namaJurnal: timeInfo.cleanNamaJurnal,
+        kegiatan: j.kegiatan,
+        jamMulai: timeInfo.jamMulai,
+        jamSelesai: timeInfo.jamSelesai,
+        jam: timeInfo.jam,
+        waktu: timeInfo.jam,
+        rencanaAksi: j.rencanaAksi || null,
+        foto: j.foto || null,
+        "Nama Jurnal": timeInfo.cleanNamaJurnal,
+        "Kegiatan": j.kegiatan,
+        "Jam Mulai": timeInfo.jamMulai,
+        "Jam Selesai": timeInfo.jamSelesai,
+        "Jam": timeInfo.jam,
+        "Waktu": timeInfo.jam,
+      };
+    });
+
     let combinedKegiatan = baseKegiatanText;
     if (customActivityJournals.length > 0) {
-      const customTitles = customActivityJournals
-        .map((j) => (j.kegiatan ? `${j.namaJurnal} (${j.kegiatan})` : j.namaJurnal))
+      const customTitles = listKegiatanTambahan
+        .map((k) => `${k.namaJurnal} (${k.jam}) - ${k.kegiatan}`)
         .join("; ");
       if (totalJadwal === 0 || baseKegiatanText === "Tidak ada jadwal mengajar pada tanggal ini") {
         combinedKegiatan = `Kegiatan Tambahan: ${customTitles}`;
       } else {
         combinedKegiatan = `${baseKegiatanText}; Kegiatan Tambahan: ${customTitles}`;
       }
+    }
+
+    // Determine top-level jam values
+    let topJamMulai = "07.45";
+    let topJamSelesai = "15.00";
+    let topJam = "07.45 - 15.00";
+
+    if (totalJadwal === 0 && listKegiatanTambahan.length > 0) {
+      topJamMulai = listKegiatanTambahan[0].jamMulai;
+      topJamSelesai = listKegiatanTambahan[0].jamSelesai;
+      topJam = listKegiatanTambahan[0].jam;
     }
 
     // Use teacher's selected rencanaAksi if stored in journal, or fallback default
@@ -171,23 +252,15 @@ export async function getRencanaAksiSingleDate(
       pdfLink = `${cleanBaseUrl}/jurnal/cetak?guruId=${teacher.id}&tanggal=${targetDateStr}${tokenQuery}`;
     }
 
-    const listKegiatanTambahan = customActivityJournals.map((j) => ({
-      id: j.id,
-      namaJurnal: j.namaJurnal,
-      kegiatan: j.kegiatan,
-      rencanaAksi: j.rencanaAksi || null,
-      foto: j.foto || null,
-    }));
-
     const item: RencanaAksiItem = {
       guruId: teacher.id,
       namaGuru: teacher.nama,
       nip: teacher.nip || "-",
       rencanaAksi: activeRencanaAksi,
       tanggal: targetDateStr,
-      jamMulai: "07.45",
-      jamSelesai: "15.00",
-      jam: "07.45 - 15.00",
+      jamMulai: topJamMulai,
+      jamSelesai: topJamSelesai,
+      jam: topJam,
       kegiatan: combinedKegiatan,
       realisasi: 1,
       buktiDukung: pdfLink,
@@ -200,7 +273,9 @@ export async function getRencanaAksiSingleDate(
       "NIP": teacher.nip || "-",
       "Rencana Aksi": activeRencanaAksi,
       "Tanggal": targetDateStr,
-      "Jam": "07.45 - 15.00",
+      "Jam Mulai": topJamMulai,
+      "Jam Selesai": topJamSelesai,
+      "Jam": topJam,
       "Kegiatan": combinedKegiatan,
       "Realisasi": 1,
       "Bukti Dukung": pdfLink,
