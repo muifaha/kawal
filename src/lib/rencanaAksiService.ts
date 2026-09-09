@@ -20,6 +20,10 @@ export interface KegiatanTambahanDetail {
   waktu: string;
   rencanaAksi: string | null;
   foto: string | null;
+  fotoKeterangan: string | null;
+  kelas: string;
+  mapel: string;
+  tipe: string;
   // Duplicate keys with exact prompt casing for maximum API client compatibility
   "Nama Jurnal"?: string;
   "Kegiatan"?: string;
@@ -27,6 +31,12 @@ export interface KegiatanTambahanDetail {
   "Jam Selesai"?: string;
   "Jam"?: string;
   "Waktu"?: string;
+  "Rencana Aksi"?: string | null;
+  "Foto"?: string | null;
+  "Foto Keterangan"?: string | null;
+  "Kelas"?: string;
+  "Mapel"?: string;
+  "Tipe"?: string;
 }
 
 export interface RencanaAksiItem {
@@ -195,6 +205,8 @@ export async function getRencanaAksiSingleDate(
 
     const listKegiatanTambahan: KegiatanTambahanDetail[] = customActivityJournals.map((j) => {
       const timeInfo = extractTimeInfo(j.namaJurnal);
+      const namaKelas = j.kelas?.nama || "KEGIATAN UMUM";
+      const namaMapel = j.mapel?.nama || "Kegiatan Pembelajaran";
       return {
         id: j.id,
         namaJurnal: timeInfo.cleanNamaJurnal,
@@ -205,12 +217,22 @@ export async function getRencanaAksiSingleDate(
         waktu: timeInfo.jam,
         rencanaAksi: j.rencanaAksi || null,
         foto: j.foto || null,
+        fotoKeterangan: j.fotoKeterangan || null,
+        kelas: namaKelas,
+        mapel: namaMapel,
+        tipe: "KEGIATAN_TAMBAHAN",
         "Nama Jurnal": timeInfo.cleanNamaJurnal,
         "Kegiatan": j.kegiatan,
         "Jam Mulai": timeInfo.jamMulai,
         "Jam Selesai": timeInfo.jamSelesai,
         "Jam": timeInfo.jam,
         "Waktu": timeInfo.jam,
+        "Rencana Aksi": j.rencanaAksi || null,
+        "Foto": j.foto || null,
+        "Foto Keterangan": j.fotoKeterangan || null,
+        "Kelas": namaKelas,
+        "Mapel": namaMapel,
+        "Tipe": "KEGIATAN_TAMBAHAN",
       };
     });
 
