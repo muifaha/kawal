@@ -2,18 +2,30 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Halaman publik yang tidak memerlukan login
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/alumni", "/ppid"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/api/auth/login",
+  "/alumni",
+  "/ppid",
+  "/api/rencana-aksi",
+  "/api/jurnal/rencana-aksi",
+  "/api/jurnal/cetak-pdf",
+  "/jurnal/cetak",
+];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Lewati file statis, aset, gambar, API alumni public, ppid, public api data, dan internal nextjs
+  // Lewati file statis, aset, gambar, API alumni public, ppid, rencana aksi, cetak jurnal, public api data, dan internal nextjs
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/pddikti/") ||
     pathname.startsWith("/api/get_public_data") ||
     pathname.startsWith("/api/public_data") ||
+    pathname.startsWith("/api/rencana-aksi") ||
+    pathname.startsWith("/api/jurnal/") ||
+    pathname.startsWith("/jurnal/cetak") ||
     pathname.startsWith("/alumni") ||
     pathname.startsWith("/ppid") ||
     pathname.includes(".") ||
