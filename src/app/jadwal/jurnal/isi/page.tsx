@@ -9,13 +9,14 @@ interface PageProps {
   searchParams: Promise<{
     jadwalId?: string;
     jurnalId?: string;
+    tanggal?: string;
   }>;
 }
 
 export const revalidate = 0;
 
 export default async function IsiJurnalPage({ searchParams }: PageProps) {
-  const { jadwalId, jurnalId } = await searchParams;
+  const { jadwalId, jurnalId, tanggal } = await searchParams;
 
   const user = await getSessionUser();
   if (!user) {
@@ -39,8 +40,12 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
     });
   }
 
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
+  let targetDate = new Date();
+  if (tanggal && /^\d{4}-\d{2}-\d{2}$/.test(tanggal)) {
+    targetDate = new Date(`${tanggal}T00:00:00.000Z`);
+  } else {
+    targetDate.setUTCHours(0, 0, 0, 0);
+  }
 
   const targetJadwalId = jadwalId || existingJurnal?.jadwalId;
   let jadwal: any = null;
@@ -60,7 +65,7 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
     existingJurnal = await prisma.jurnalMengajar.findFirst({
       where: {
         jadwalId: targetJadwalId,
-        tanggal: today,
+        tanggal: targetDate,
         guruId: user.id,
       },
       include: {
@@ -98,7 +103,7 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
   // 3. Ambil data absensi hari ini (jika ada di BK) untuk pre-fill
   const todayAttendance = await prisma.absensi.findMany({
     where: {
-      tanggal: today,
+      tanggal: targetDate,
       siswaId: { in: studentsList.map((s) => s.id) },
     },
     select: {

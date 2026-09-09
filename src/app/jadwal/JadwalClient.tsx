@@ -207,6 +207,84 @@ export default function JadwalClient({
     }).format(new Date());
   }, []);
 
+  // Selected Date for "Jadwal Mengajar" tab (Default: Today / todayWibStr)
+  const [selectedTeacherDate, setSelectedTeacherDate] = useState<string>(() => {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  });
+
+  const selectedTeacherDateObj = useMemo(() => {
+    if (!selectedTeacherDate) return new Date();
+    return new Date(`${selectedTeacherDate}T12:00:00.000Z`);
+  }, [selectedTeacherDate]);
+
+  const selectedTeacherDayNumber = useMemo(() => {
+    const day = selectedTeacherDateObj.getUTCDay();
+    return day === 0 ? 7 : day; // 1 = Senin, ..., 7 = Minggu
+  }, [selectedTeacherDateObj]);
+
+  const selectedTeacherDayName = useMemo(() => {
+    const dayNames: Record<number, string> = {
+      1: "Senin",
+      2: "Selasa",
+      3: "Rabu",
+      4: "Kamis",
+      5: "Jumat",
+      6: "Sabtu",
+      7: "Minggu",
+    };
+    return dayNames[selectedTeacherDayNumber] || "Senin";
+  }, [selectedTeacherDayNumber]);
+
+  const selectedTeacherDateLabel = useMemo(() => {
+    return new Intl.DateTimeFormat("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "Asia/Jakarta",
+    }).format(selectedTeacherDateObj);
+  }, [selectedTeacherDateObj]);
+
+  const teacherSchedulesForSelectedDate = useMemo(() => {
+    return schedules
+      .filter((sched) => {
+        const schedGuruId = sched.guruId;
+        if (user.role !== "WAKA" && schedGuruId !== user.id) return false;
+        if (selectedTeacherDayNumber === 7 || selectedTeacherDayNumber === 0) {
+          return sched.hari === 7 || sched.hari === 0;
+        }
+        return sched.hari === selectedTeacherDayNumber;
+      })
+      .sort((a, b) => a.jamMulai - b.jamMulai);
+  }, [schedules, user.id, user.role, selectedTeacherDayNumber]);
+
+  const journalsOnSelectedDate = useMemo(() => {
+    return journals.filter((j) => {
+      const jDateStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date(j.tanggal));
+      return jDateStr === selectedTeacherDate;
+    });
+  }, [journals, selectedTeacherDate]);
+
+  const getJournalForScheduleOnSelectedDate = (sched: ScheduleItem) => {
+    let match = journalsOnSelectedDate.find((j) => j.jadwalId === sched.id);
+    if (!match) {
+      match = journalsOnSelectedDate.find(
+        (j) => j.kelasId === sched.kelasId && (j.guruId === user.id || j.guruId === sched.guruId)
+      );
+    }
+    return match;
+  };
+
   // Compute journals submitted today
   const todayJournals = useMemo(() => {
     return journals.filter((j) => {
@@ -970,7 +1048,7 @@ export default function JadwalClient({
                   : "border-transparent text-slate-400 hover:text-slate-200"
               }`}
             >
-              Jadwal Hari Ini
+              Jadwal Mengajar
             </button>
             <button
               onClick={() => {
@@ -984,7 +1062,7 @@ export default function JadwalClient({
                   : "border-transparent text-slate-400 hover:text-slate-200"
               }`}
             >
-              Riwayat Jurnal Mengajar
+              Riwayat Jurnal
             </button>
           </>
         )}
@@ -992,41 +1070,64 @@ export default function JadwalClient({
 
       {/* Contents based on Active Tab */}
 
-      {/* -------------------- TAB: GURU TODAY AGENDA -------------------- */}
+      {/* -------------------- TAB: GURU JADWAL MENGAJAR -------------------- */}
       {activeTab === "today" && (
         <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-slate-950/80 border border-slate-800 rounded-2xl">
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <CalendarDays className="w-5 h-5 text-indigo-400" />
-                Agenda Jadwal Mengajar Hari Ini ({HARI_MAP[new Date().getDay()] || "Minggu"})
+                Jadwal Mengajar Hari {selectedTeacherDayName}
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Daftar kelas mengajar Anda hari ini. Segera isi jurnal mengajar setelah sesi kelas selesai.
+              <p className="text-xs text-slate-400">
+                {selectedTeacherDateLabel} • Menampilkan agenda mengajar sesuai tanggal yang dipilih.
               </p>
             </div>
 
-            <button
-              onClick={() => {
-                if (classes.length > 0) setActivityClassId(classes[0].id);
-                if (subjectList.length > 0) setActivityMapelId(subjectList[0].id);
-                setShowCustomActivityModal(true);
-              }}
-              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              Tambah Kegiatan
-            </button>
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl">
+                <Calendar className="w-4 h-4 text-slate-400" />
+                <span className="text-xs text-slate-400 font-medium">Tanggal:</span>
+                <input
+                  type="date"
+                  value={selectedTeacherDate}
+                  onChange={(e) => setSelectedTeacherDate(e.target.value)}
+                  className="bg-transparent text-xs text-white font-bold focus:outline-none cursor-pointer"
+                />
+              </div>
+
+              {selectedTeacherDate !== todayWibStr && (
+                <button
+                  onClick={() => setSelectedTeacherDate(todayWibStr)}
+                  className="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Hari Ini
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  if (classes.length > 0) setActivityClassId(classes[0].id);
+                  if (subjectList.length > 0) setActivityMapelId(subjectList[0].id);
+                  setShowCustomActivityModal(true);
+                }}
+                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Tambah Kegiatan</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {todaySchedules.length === 0 ? (
+            {teacherSchedulesForSelectedDate.length === 0 ? (
               <div className="col-span-full py-12 text-center text-slate-500 bg-slate-950/20 border border-slate-900 rounded-2xl">
-                Tidak ada agenda mengajar untuk Anda hari ini.
+                Tidak ada agenda jadwal mengajar untuk hari <span className="font-bold text-slate-400">{selectedTeacherDayName}</span> ({selectedTeacherDateLabel}).
               </div>
             ) : (
-              todaySchedules.map((sched) => {
-                const filled = hasJournalForToday(sched.id);
+              teacherSchedulesForSelectedDate.map((sched) => {
+                const existingJournal = getJournalForScheduleOnSelectedDate(sched);
+                const filled = !!existingJournal;
                 return (
                   <div
                     key={sched.id}
@@ -1068,17 +1169,26 @@ export default function JadwalClient({
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Jurnal Terisi
                           </div>
-                          <Link
-                            href={`/jadwal/jurnal/isi?jadwalId=${sched.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 text-xs font-bold rounded-xl transition-all cursor-pointer"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            Edit Jurnal
-                          </Link>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => setSelectedJournal(existingJournal)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              Lihat
+                            </button>
+                            <Link
+                              href={`/jadwal/jurnal/isi?jurnalId=${existingJournal.id}&tanggal=${selectedTeacherDate}`}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 text-xs font-bold transition cursor-pointer"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              Edit
+                            </Link>
+                          </div>
                         </div>
                       ) : (
                         <Link
-                          href={`/jadwal/jurnal/isi?jadwalId=${sched.id}`}
+                          href={`/jadwal/jurnal/isi?jadwalId=${sched.id}&tanggal=${selectedTeacherDate}`}
                           className="w-full inline-flex items-center justify-center gap-1.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white rounded-xl transition-all cursor-pointer"
                         >
                           <ClipboardList className="w-4 h-4" />
