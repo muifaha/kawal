@@ -305,6 +305,70 @@ export default async function DashboardPage() {
     );
   }
 
+  // FAST PATH UNTUK GURU MAPEL (Super Cepat & Ringan)
+  if (user.role === "GURU") {
+    const todayStr = formatDateWib(new Date());
+    const targetDate = new Date(`${todayStr}T00:00:00.000Z`);
+
+    const dateObj = new Date(`${todayStr}T12:00:00.000Z`);
+    const jsDay = dateObj.getUTCDay();
+    const dayNumber = jsDay === 0 ? 7 : jsDay;
+
+    const [teacherSchedules, teacherJournalsToday, teacherClasses] = await Promise.all([
+      prisma.jadwalPelajaran.findMany({
+        where: { guruId: user.id, hari: dayNumber },
+        include: { kelas: true, mapel: true },
+        orderBy: { jamMulai: "asc" },
+      }),
+      prisma.jurnalMengajar.findMany({
+        where: { guruId: user.id, tanggal: targetDate },
+        include: { kelas: true, mapel: true },
+        orderBy: { jamMulai: "asc" },
+      }),
+      prisma.kelas.findMany({
+        where: { tahunAjaran: { isActive: true } },
+        select: { id: true, nama: true },
+        orderBy: { nama: "asc" },
+      }),
+    ]);
+
+    const todaySchedules = teacherSchedules.map((s) => {
+      const filledJournal = teacherJournalsToday.find((j) => j.jadwalId === s.id);
+      return {
+        id: s.id,
+        kelasNama: s.kelas.nama,
+        mapelNama: s.mapel.nama,
+        hari: s.hari,
+        jamMulai: s.jamMulai,
+        jamSelesai: s.jamSelesai,
+        filled: !!filledJournal,
+        jurnalId: filledJournal?.id,
+      };
+    });
+
+    return (
+      <DashboardClient
+        user={user}
+        activeTA={activeTA}
+        classes={teacherClasses}
+        todaySchedules={todaySchedules}
+        teacherJournals={teacherJournalsToday as any[]}
+        stats={{ totalSiswa: 0, attendanceRate: 100, violationsMonthCount: 0, threatStudentsCount: 0 }}
+        studentRankings={[]}
+        attendanceRecap={[]}
+        violationRecap={[]}
+        dailyAttendance={[]}
+        holidays={[]}
+        topAbsentClasses={[]}
+        topAlphaStudents={[]}
+        topViolationClasses={[]}
+        summonsList={[]}
+        thresholds={{ threshold1: 10, threshold2: 25, threshold3: 50 }}
+        settings={settings}
+      />
+    );
+  }
+
   const rangeMulai = activeTA
     ? (activeTA.semesterAktif === "GANJIL" ? activeTA.ganjilMulai : activeTA.genapMulai)
     : null;
@@ -402,18 +466,7 @@ export default async function DashboardPage() {
     classesFilter.bkId = user.id;
   }
 
-  const classes = await prisma.kelas.findMany({
-    where: classesFilter,
-    orderBy: { nama: "asc" },
-  });
-  classes.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
-
-  // 4. Query Statistik Utama
-  const totalSiswa = await prisma.siswa.count({
-    where: studentFilter,
-  });
-
-  // Hitung jumlah absensi hari ini (tidak hadir) dengan timezone-safe Jakarta
+  // Hitung tanggal hari ini dengan timezone-safe Jakarta
   const getJakartaDateParts = () => {
     const options = { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" } as const;
     const formatter = new Intl.DateTimeFormat("en-US", options);
@@ -428,34 +481,141 @@ export default async function DashboardPage() {
   const todayJakartaStr = `${jkY}-${jkM}-${jkD}`;
   const today = new Date(`${todayJakartaStr}T00:00:00.000Z`);
 
-  // Check if today is a holiday
-  const todayHoliday = await prisma.hariLibur.findFirst({
-    where: {
-      tanggal: today,
-    },
-  });
-
   const dayOfWeek = today.getUTCDay(); // 0 = Minggu, 6 = Sabtu
   const isWeekendHoliday =
     (dayOfWeek === 6 && settings.libur_sabtu === "true") ||
     (dayOfWeek === 0 && settings.libur_minggu !== "false");
 
-  let attendanceRate: number | string = 100;
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  if (todayHoliday) {
-    attendanceRate = "Hari Libur";
-  } else if (isWeekendHoliday) {
-    attendanceRate = "Hari Libur";
-  } else {
-    const todayAbsensi = await prisma.absensi.groupBy({
+  // 4. Query Statistik Utama secara PARALEL (Promise.all)
+  const [
+    classes,
+    totalSiswa,
+    todayHoliday,
+    todayAbsensi,
+    violationsMonthCount,
+    allActiveStudents,
+    attendanceRecords,
+    reports,
+    remissions,
+    handlings,
+  ] = await Promise.all([
+    prisma.kelas.findMany({
+      where: classesFilter,
+      orderBy: { nama: "asc" },
+    }),
+    prisma.siswa.count({
+      where: studentFilter,
+    }),
+    prisma.hariLibur.findFirst({
+      where: { tanggal: today },
+    }),
+    prisma.absensi.groupBy({
       by: ["status"],
       where: {
         tanggal: today,
         siswa: studentFilter,
       },
       _count: { status: true },
-    });
+    }),
+    prisma.laporanPelanggaran.count({
+      where: {
+        status: "APPROVED",
+        tanggal: { gte: thirtyDaysAgo },
+        siswa: studentFilter,
+      },
+    }),
+    prisma.siswa.findMany({
+      where: studentFilter,
+      include: {
+        riwayatKelas: {
+          where: { tahunAjaran: { isActive: true } },
+          include: {
+            kelas: {
+              include: { bk: true },
+            },
+          },
+        },
+        pelanggaran: {
+          where: { status: "APPROVED" },
+          include: { detailPelanggaran: true },
+        },
+        remisi: true,
+        pemanggilan: true,
+        absensi: {
+          where: {
+            status: "A",
+            ...(rangeMulai && rangeSelesai ? {
+              tanggal: {
+                gte: rangeMulai,
+                lte: rangeSelesai,
+              },
+            } : {}),
+          },
+        },
+      },
+    }),
+    prisma.absensi.findMany({
+      where: attendanceFilter,
+    }),
+    prisma.laporanPelanggaran.findMany({
+      where: { siswa: studentFilter },
+      include: {
+        siswa: { 
+          include: { 
+            riwayatKelas: {
+              where: { tahunAjaran: { isActive: true } },
+              include: { kelas: true },
+            },
+          } 
+        },
+        detailPelanggaran: { include: { kategori: true } },
+        pelapor: true,
+      },
+      orderBy: { tanggal: "desc" },
+    }),
+    prisma.transaksiRemisi.findMany({
+      where: { siswa: studentFilter },
+      include: {
+        siswa: {
+          include: {
+            riwayatKelas: {
+              where: { tahunAjaran: { isActive: true } },
+              include: { kelas: true },
+            },
+          },
+        },
+        masterRemisi: true,
+        approver: true,
+      },
+      orderBy: { tanggal: "desc" },
+    }),
+    prisma.penangananSiswa.findMany({
+      where: { siswa: studentFilter },
+      include: {
+        siswa: {
+          include: {
+            riwayatKelas: {
+              where: { tahunAjaran: { isActive: true } },
+              include: { kelas: true },
+            },
+          },
+        },
+        petugas: true,
+      },
+      orderBy: { tanggal: "desc" },
+    }),
+  ]);
 
+  classes.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
+
+  let attendanceRate: number | string = 100;
+
+  if (todayHoliday || isWeekendHoliday) {
+    attendanceRate = "Hari Libur";
+  } else {
     const countsToday = { H: 0, S: 0, I: 0, A: 0, D: 0 };
     todayAbsensi.forEach((g) => {
       if (g.status in countsToday) {
@@ -470,52 +630,6 @@ export default async function DashboardPage() {
       attendanceRate = calculateAttendanceRate(countsToday);
     }
   }
-
-  // Laporan pelanggaran dalam 30 hari terakhir
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const violationsMonthCount = await prisma.laporanPelanggaran.count({
-    where: {
-      status: "APPROVED",
-      tanggal: { gte: thirtyDaysAgo },
-      siswa: studentFilter,
-    },
-  });
-
-  // 5. Query & Hitung akumulasi poin siswa (Top 5 Pelanggar & Siswa Terancam)
-  const allActiveStudents = await prisma.siswa.findMany({
-    where: studentFilter,
-    include: {
-      riwayatKelas: {
-        where: { tahunAjaran: { isActive: true } },
-        include: {
-          kelas: {
-            include: {
-              bk: true,
-            },
-          },
-        },
-      },
-      pelanggaran: {
-        where: { status: "APPROVED" },
-        include: { detailPelanggaran: true },
-      },
-      remisi: true,
-      pemanggilan: true,
-      absensi: {
-        where: {
-          status: "A",
-          ...(rangeMulai && rangeSelesai ? {
-            tanggal: {
-              gte: rangeMulai,
-              lte: rangeSelesai,
-            },
-          } : {}),
-        },
-      },
-    },
-  });
-
 
   const studentRankings = allActiveStudents
     .map((student) => {
@@ -539,21 +653,8 @@ export default async function DashboardPage() {
   const topRankings = studentRankings.slice(0, 5);
   const threatStudentsCount = studentRankings.filter((s) => s.points >= 50).length;
 
-  // 6. Data Rekap Absensi Siswa
-  const studentsWithClass = await prisma.siswa.findMany({
-    where: studentFilter,
-    include: {
-      riwayatKelas: {
-        where: { tahunAjaran: { isActive: true } },
-        include: { kelas: true },
-      },
-    },
-    orderBy: { nama: "asc" },
-  });
-
-  const attendanceRecords = await prisma.absensi.findMany({
-    where: attendanceFilter,
-  });
+  // Re-use allActiveStudents (menghapus query ganda studentsWithClass)
+  const studentsWithClass = allActiveStudents;
 
   const attendanceMap: Record<string, { H: number; S: number; I: number; A: number; D: number }> = {};
   studentsWithClass.forEach((s) => {
@@ -574,78 +675,23 @@ export default async function DashboardPage() {
 
   const attendanceRecap = studentsWithClass.map((s) => {
     const counts = attendanceMap[s.id];
-    const totalHari = counts.H + counts.S + counts.I + counts.A + counts.D;
+    const totalHari = counts ? counts.H + counts.S + counts.I + counts.A + counts.D : 0;
     return {
       studentId: s.id,
       nama: s.nama,
       nis: s.nis,
       kelasNama: s.riwayatKelas[0]?.kelas.nama || "-",
-      H: counts.H,
-      S: counts.S,
-      I: counts.I,
-      A: counts.A,
-      D: counts.D,
+      H: counts ? counts.H : 0,
+      S: counts ? counts.S : 0,
+      I: counts ? counts.I : 0,
+      A: counts ? counts.A : 0,
+      D: counts ? counts.D : 0,
       totalHari,
       netPoints: studentPointsMap[s.id] || 0,
     };
   });
 
   // 7. Data Rekap Pelanggaran Siswa & Remisi (Ledger Gabungan)
-  const reports = await prisma.laporanPelanggaran.findMany({
-    where: {
-      siswa: studentFilter,
-    },
-    include: {
-      siswa: { 
-        include: { 
-          riwayatKelas: {
-            where: { tahunAjaran: { isActive: true } },
-            include: { kelas: true },
-          },
-        } 
-      },
-      detailPelanggaran: { include: { kategori: true } },
-      pelapor: true,
-    },
-    orderBy: { tanggal: "desc" },
-  });
-
-  const remissions = await prisma.transaksiRemisi.findMany({
-    where: {
-      siswa: studentFilter,
-    },
-    include: {
-      siswa: {
-        include: {
-          riwayatKelas: {
-            where: { tahunAjaran: { isActive: true } },
-            include: { kelas: true },
-          },
-        },
-      },
-      masterRemisi: true,
-      approver: true,
-    },
-    orderBy: { tanggal: "desc" },
-  });
-
-  const handlings = await prisma.penangananSiswa.findMany({
-    where: {
-      siswa: studentFilter,
-    },
-    include: {
-      siswa: {
-        include: {
-          riwayatKelas: {
-            where: { tahunAjaran: { isActive: true } },
-            include: { kelas: true },
-          },
-        },
-      },
-      petugas: true,
-    },
-    orderBy: { tanggal: "desc" },
-  });
 
   const violationRecapPart = reports.map((r) => ({
     id: r.id,
@@ -1010,7 +1056,7 @@ export default async function DashboardPage() {
   const targetDays = todayDayOfWeekForSched === 0 ? [0, 7] : [todayDayOfWeekForSched];
   
   let teacherJournals: any[] = [];
-  if (user.role === "GURU" || user.role === "WALAS") {
+  if (user.role === "WALAS") {
     const todayDate = new Date();
     todayDate.setUTCHours(0, 0, 0, 0);
 
