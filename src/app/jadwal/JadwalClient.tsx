@@ -14,6 +14,7 @@ import {
   createCustomActivityJurnalAction,
   getJurnalFullDetailAction,
   getDailyAttendanceMatrixAction,
+  deleteCustomActivityJurnalAction,
 } from "@/app/actions/schedule";
 import {
   printJurnalMengajarPDF,
@@ -641,6 +642,27 @@ export default function JadwalClient({
 
   const [downloadingPdfId, setDownloadingPdfId] = useState<string | null>(null);
   const [downloadingDailyDate, setDownloadingDailyDate] = useState<string | null>(null);
+  const [deletingJournalId, setDeletingJournalId] = useState<string | null>(null);
+
+  const handleDeleteCustomActivity = async (jurnalId: string, namaJurnal: string) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus kegiatan tambahan "${namaJurnal}"?`)) {
+      return;
+    }
+    setDeletingJournalId(jurnalId);
+    try {
+      const res = await deleteCustomActivityJurnalAction(jurnalId);
+      if (res.success) {
+        alert(res.message || "Kegiatan tambahan berhasil dihapus.");
+        window.location.reload();
+      } else {
+        alert(res.error || "Gagal menghapus kegiatan tambahan.");
+      }
+    } catch (e) {
+      alert("Terjadi kesalahan saat menghapus.");
+    } finally {
+      setDeletingJournalId(null);
+    }
+  };
 
   const handleDownloadJournalPDF = async (jurnalId: string) => {
     setDownloadingPdfId(jurnalId);
@@ -1367,6 +1389,20 @@ export default function JadwalClient({
                               <Edit3 className="w-3.5 h-3.5" />
                               Edit
                             </Link>
+                            {(!item.jadwalId || item.kelas?.nama === "KEGIATAN UMUM" || item.mapel?.nama === "Kegiatan Pembelajaran") && (
+                              <button
+                                onClick={() => handleDeleteCustomActivity(item.id, item.namaJurnal)}
+                                disabled={deletingJournalId === item.id}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:bg-rose-800 text-white text-[11px] font-bold transition cursor-pointer"
+                              >
+                                {deletingJournalId === item.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                )}
+                                Hapus
+                              </button>
+                            )}
                             <button
                               onClick={() => handleDownloadJournalPDF(item.id)}
                               disabled={downloadingPdfId === item.id}
@@ -2470,6 +2506,25 @@ export default function JadwalClient({
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              {(!selectedJournal.jadwalId || selectedJournal.kelas?.nama === "KEGIATAN UMUM" || selectedJournal.mapel?.nama === "Kegiatan Pembelajaran") && (
+                <button
+                  onClick={() => {
+                    const id = selectedJournal.id;
+                    const nama = selectedJournal.namaJurnal;
+                    setSelectedJournal(null);
+                    handleDeleteCustomActivity(id, nama);
+                  }}
+                  disabled={deletingJournalId === selectedJournal.id}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:bg-rose-800 text-xs font-bold text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  {deletingJournalId === selectedJournal.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5" />
+                  )}
+                  Hapus Kegiatan
+                </button>
+              )}
               <button
                 onClick={() => handleDownloadJournalPDF(selectedJournal.id)}
                 disabled={downloadingPdfId === selectedJournal.id}

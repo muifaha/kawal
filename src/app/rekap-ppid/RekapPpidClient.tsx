@@ -5,56 +5,57 @@ import {
   FileText,
   AlertCircle,
   Search,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  Eye,
-  Trash2,
-  ExternalLink,
-  Download,
   Filter,
-  RefreshCw,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Trash2,
+  Download,
   Send,
-  UserCheck,
-  ShieldCheck,
-  Building,
-  Mail,
+  User,
   Phone,
+  Mail,
+  ShieldCheck,
+  Calendar,
+  X,
   FileCheck,
+  Building2,
+  Paperclip,
 } from "lucide-react";
-import { updatePpidStatusAction, deletePpidRecordAction, getPpidDataAction } from "@/app/actions/ppid";
+import { updatePpidStatusAction, deletePpidRecordAction } from "@/app/actions/ppid";
 
-interface PermohonanRecord {
+interface PermohonanItem {
   id: string;
-  nomorRegistrasi: string;
-  namaLengkap: string;
+  nomorPendaftaran: string;
+  nama: string;
   nik: string;
-  kategoriPemohon: string;
+  kategori: string;
   alamat: string;
-  nomorHp: string;
+  noHp: string;
   email: string;
-  fileIdentitas?: string | null;
+  fileIdentitas: string;
   rincianInformasi: string;
   tujuanPenggunaan: string;
   caraMemperoleh: string;
   caraPengiriman: string;
   status: string;
-  tanggapan?: string | null;
+  tanggapanAdmin?: string | null;
   createdAt: string | Date;
 }
 
-interface KeberatanRecord {
+interface KeberatanItem {
   id: string;
-  nomorRegistrasi: string;
-  nomorPermohonan: string;
-  namaLengkap: string;
-  nomorHp: string;
+  nomorPendaftaran: string;
+  nomorPermohonanRef: string;
+  nama: string;
+  noHp: string;
   email: string;
-  alasanKeberatan: string[];
-  penjelasanKeberatan: string;
-  fileBuktiAwal?: string | null;
+  alasanKeberatan: string; // JSON array or string
+  penjelasanRinci: string;
+  fileBukti?: string | null;
   status: string;
-  tanggapan?: string | null;
+  tanggapanAdmin?: string | null;
   createdAt: string | Date;
 }
 
@@ -65,689 +66,726 @@ interface RekapPpidClientProps {
     role: string;
     nama: string;
   };
-  initialPermohonanList: PermohonanRecord[];
-  initialKeberatanList: KeberatanRecord[];
+  initialPermohonan: PermohonanItem[];
+  initialKeberatan: KeberatanItem[];
 }
 
 export default function RekapPpidClient({
   user,
-  initialPermohonanList,
-  initialKeberatanList,
+  initialPermohonan,
+  initialKeberatan,
 }: RekapPpidClientProps) {
   const [activeTab, setActiveTab] = useState<"permohonan" | "keberatan">("permohonan");
-  const [permohonanList, setPermohonanList] = useState<PermohonanRecord[]>(initialPermohonanList);
-  const [keberatanList, setKeberatanList] = useState<KeberatanRecord[]>(initialKeberatanList);
+  const [permohonanList, setPermohonanList] = useState<PermohonanItem[]>(initialPermohonan);
+  const [keberatanList, setKeberatanList] = useState<KeberatanItem[]>(initialKeberatan);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Modal State
-  const [selectedPermohonan, setSelectedPermohonan] = useState<PermohonanRecord | null>(null);
-  const [selectedKeberatan, setSelectedKeberatan] = useState<KeberatanRecord | null>(null);
-  const [statusForm, setStatusForm] = useState<string>("PENDING");
-  const [tanggapanForm, setTanggapanForm] = useState<string>("");
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
-  const [modalSuccess, setModalSuccess] = useState<string | null>(null);
+  // Detail / Edit Modal State
+  const [selectedItem, setSelectedItem] = useState<{
+    type: "permohonan" | "keberatan";
+    data: PermohonanItem | KeberatanItem;
+  } | null>(null);
+  const [editStatus, setEditStatus] = useState("");
+  const [editTanggapan, setEditTanggapan] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // File Preview Modal State
-  const [previewFile, setPreviewFile] = useState<{ title: string; src: string } | null>(null);
+  // Delete State
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    type: "permohonan" | "keberatan";
+    id: string;
+    nomor: string;
+  } | null>(null);
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    const res = await getPpidDataAction();
-    if (res.success) {
-      if (res.permohonanList) setPermohonanList(res.permohonanList as any);
-      if (res.keberatanList) setKeberatanList(res.keberatanList as any);
-    }
-    setIsRefreshing(false);
+  const showToast = (type: "success" | "error", text: string) => {
+    setToastMessage({ type, text });
+    setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const handleOpenPermohonanModal = (item: PermohonanRecord) => {
-    setSelectedPermohonan(item);
-    setSelectedKeberatan(null);
-    setStatusForm(item.status || "PENDING");
-    setTanggapanForm(item.tanggapan || "");
-    setModalError(null);
-    setModalSuccess(null);
+  const handleOpenDetail = (type: "permohonan" | "keberatan", data: PermohonanItem | KeberatanItem) => {
+    setSelectedItem({ type, data });
+    setEditStatus(data.status);
+    setEditTanggapan(data.tanggapanAdmin || "");
   };
 
-  const handleOpenKeberatanModal = (item: KeberatanRecord) => {
-    setSelectedKeberatan(item);
-    setSelectedPermohonan(null);
-    setStatusForm(item.status || "PENDING");
-    setTanggapanForm(item.tanggapan || "");
-    setModalError(null);
-    setModalSuccess(null);
-  };
+  const handleUpdateStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedItem) return;
 
-  const handleSaveStatus = async () => {
-    if (!selectedPermohonan && !selectedKeberatan) return;
-    setIsUpdating(true);
-    setModalError(null);
-    setModalSuccess(null);
+    setIsSubmitting(true);
+    try {
+      const res = await updatePpidStatusAction({
+        id: selectedItem.data.id,
+        type: selectedItem.type,
+        status: editStatus,
+        tanggapan: editTanggapan,
+      });
 
-    const type = selectedPermohonan ? "permohonan" : "keberatan";
-    const id = selectedPermohonan ? selectedPermohonan.id : selectedKeberatan!.id;
-
-    const res = await updatePpidStatusAction({
-      id,
-      type,
-      status: statusForm,
-      tanggapan: tanggapanForm,
-    });
-
-    if (res.error) {
-      setModalError(res.error);
-    } else {
-      setModalSuccess("Status dan tanggapan berhasil diperbarui.");
-      await handleRefresh();
-      setTimeout(() => {
-        setSelectedPermohonan(null);
-        setSelectedKeberatan(null);
-      }, 1200);
-    }
-    setIsUpdating(false);
-  };
-
-  const handleDeleteRecord = async (id: string, type: "permohonan" | "keberatan") => {
-    if (!confirm("Apakah Anda yakin ingin menghapus data permohonan PPID ini?")) return;
-    const res = await deletePpidRecordAction({ id, type });
-    if (res.error) {
-      alert(res.error);
-    } else {
-      await handleRefresh();
+      if (res.success) {
+        showToast("success", "Status & tanggapan PPID berhasil diperbarui!");
+        if (selectedItem.type === "permohonan") {
+          setPermohonanList((prev) =>
+            prev.map((item) =>
+              item.id === selectedItem.data.id
+                ? { ...item, status: editStatus, tanggapanAdmin: editTanggapan }
+                : item
+            )
+          );
+        } else {
+          setKeberatanList((prev) =>
+            prev.map((item) =>
+              item.id === selectedItem.data.id
+                ? { ...item, status: editStatus, tanggapanAdmin: editTanggapan }
+                : item
+            )
+          );
+        }
+        setSelectedItem(null);
+      } else {
+        showToast("error", res.error || "Gagal memperbarui status");
+      }
+    } catch (err: any) {
+      showToast("error", err.message || "Terjadi kesalahan sistem");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Filtering
+  const handleDeleteRecord = async () => {
+    if (!deleteConfirm) return;
+    setIsSubmitting(true);
+    try {
+      const res = await deletePpidRecordAction({
+        id: deleteConfirm.id,
+        type: deleteConfirm.type,
+      });
+
+      if (res.success) {
+        showToast("success", `Data PPID ${deleteConfirm.nomor} berhasil dihapus.`);
+        if (deleteConfirm.type === "permohonan") {
+          setPermohonanList((prev) => prev.filter((item) => item.id !== deleteConfirm.id));
+        } else {
+          setKeberatanList((prev) => prev.filter((item) => item.id !== deleteConfirm.id));
+        }
+        setDeleteConfirm(null);
+      } else {
+        showToast("error", res.error || "Gagal menghapus data.");
+      }
+    } catch (err: any) {
+      showToast("error", err.message || "Terjadi kesalahan sistem");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Filtered lists
   const filteredPermohonan = permohonanList.filter((item) => {
     const matchesSearch =
-      item.nomorRegistrasi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.namaLengkap.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.nik.includes(searchQuery) ||
-      item.email.toLowerCase().includes(searchQuery.toLowerCase());
+      item.nomorPendaftaran.toLowerCase().includes(search.toLowerCase()) ||
+      item.nama.toLowerCase().includes(search.toLowerCase()) ||
+      item.nik.includes(search) ||
+      item.email.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "ALL" || item.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const filteredKeberatan = keberatanList.filter((item) => {
     const matchesSearch =
-      item.nomorRegistrasi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.nomorPermohonan.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.namaLengkap.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.email.toLowerCase().includes(searchQuery.toLowerCase());
+      item.nomorPendaftaran.toLowerCase().includes(search.toLowerCase()) ||
+      item.nomorPermohonanRef.toLowerCase().includes(search.toLowerCase()) ||
+      item.nama.toLowerCase().includes(search.toLowerCase()) ||
+      item.email.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "ALL" || item.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const renderStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "PENDING":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            <Clock className="w-3.5 h-3.5" />
-            Menunggu Verifikasi
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
+            <Clock className="w-3.5 h-3.5" /> Menunggu Review
           </span>
         );
       case "DIPROSES":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            Sedang Diproses
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20">
+            <Clock className="w-3.5 h-3.5" /> Sedang Diproses
           </span>
         );
       case "DISETUJUI":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Disetujui
+          </span>
+        );
       case "SELESAI":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Selesai / Disetujui
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <ShieldCheck className="w-3.5 h-3.5" /> Selesai
           </span>
         );
       case "DITOLAK":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-            <XCircle className="w-3.5 h-3.5" />
-            Ditolak
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-500 border border-rose-500/20">
+            <XCircle className="w-3.5 h-3.5" /> Ditolak
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400 border border-slate-500/20">
             {status}
           </span>
         );
     }
   };
 
+  const parseReasons = (jsonStr: string) => {
+    try {
+      const parsed = JSON.parse(jsonStr);
+      if (Array.isArray(parsed)) return parsed.join(", ");
+      return jsonStr;
+    } catch {
+      return jsonStr;
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Toast Alert */}
+      {toastMessage && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl border shadow-lg flex items-center gap-3 transition-all animate-in fade-in slide-in-from-bottom-5 ${
+            toastMessage.type === "success"
+              ? "bg-emerald-950/90 text-emerald-200 border-emerald-800"
+              : "bg-rose-950/90 text-rose-200 border-rose-800"
+          }`}
+        >
+          {toastMessage.type === "success" ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+          )}
+          <span className="text-sm font-medium">{toastMessage.text}</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3 mb-1.5">
-            <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-400">
-              <FileText className="w-6 h-6" />
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-400 border border-emerald-500/20">
+              <Building2 className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white tracking-tight">Layanan PPID SMAN 6 Tangerang</h1>
-              <p className="text-xs text-slate-400">
-                Manajemen Rekap Permohonan Informasi Publik & Pengajuan Keberatan
+              <h1 className="text-2xl font-bold text-white tracking-tight">
+                Rekap & Layanan PPID
+              </h1>
+              <p className="text-sm text-slate-400">
+                Kelola permohonan informasi publik dan pengajuan keberatan warga sekolah & umum.
               </p>
             </div>
           </div>
         </div>
 
+        {/* Public link info */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-2 border border-slate-700 cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-            Refresh Data
-          </button>
           <a
             href="/ppid"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition flex items-center gap-2 border border-emerald-500 cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Buka Form Publik
+            <FileCheck className="w-4 h-4" /> Buka Form Publik PPID (/ppid)
           </a>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-800 gap-2">
+      <div className="flex items-center gap-3 border-b border-slate-800 pb-2">
         <button
           onClick={() => setActiveTab("permohonan")}
-          className={`px-5 py-3 text-xs font-bold transition flex items-center gap-2 border-b-2 cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
             activeTab === "permohonan"
-              ? "border-blue-500 text-blue-400 bg-blue-500/5"
-              : "border-transparent text-slate-400 hover:text-slate-200"
+              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
           }`}
         >
-          <FileText className="w-4 h-4" />
-          Permohonan Informasi Publik ({permohonanList.length})
+          <FileText className="w-4 h-4" /> Permohonan Informasi
+          <span className="ml-1.5 px-2 py-0.5 text-xs rounded-full bg-slate-800 text-slate-300">
+            {permohonanList.length}
+          </span>
         </button>
 
         <button
           onClick={() => setActiveTab("keberatan")}
-          className={`px-5 py-3 text-xs font-bold transition flex items-center gap-2 border-b-2 cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
             activeTab === "keberatan"
-              ? "border-amber-500 text-amber-400 bg-amber-500/5"
-              : "border-transparent text-slate-400 hover:text-slate-200"
+              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
           }`}
         >
-          <AlertCircle className="w-4 h-4" />
-          Pengajuan Keberatan ({keberatanList.length})
+          <AlertCircle className="w-4 h-4" /> Pengajuan Keberatan
+          <span className="ml-1.5 px-2 py-0.5 text-xs rounded-full bg-slate-800 text-slate-300">
+            {keberatanList.length}
+          </span>
         </button>
       </div>
 
-      {/* Filter and Search Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+      {/* Search & Filter Controls */}
+      <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Cari nomor reg, nama, NIK..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            placeholder={
+              activeTab === "permohonan"
+                ? "Cari no pendaftaran, nama, NIK..."
+                : "Cari no keberatan, no ref, nama..."
+            }
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <span className="text-xs text-slate-400 font-medium">Status:</span>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <Filter className="w-3.5 h-3.5" /> Filter Status:
+          </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-blue-500"
+            className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500/50"
           >
             <option value="ALL">Semua Status</option>
-            <option value="PENDING">Menunggu Verifikasi</option>
-            <option value="DIPROSES">Sedang Diproses</option>
-            <option value="DISETUJUI">Disetujui / Selesai</option>
-            <option value="DITOLAK">Ditolak</option>
+            <option value="PENDING">Menunggu Review (PENDING)</option>
+            <option value="DIPROSES">Sedang Diproses (DIPROSES)</option>
+            <option value="DISETUJUI">Disetujui (DISETUJUI)</option>
+            <option value="SELESAI">Selesai (SELESAI)</option>
+            <option value="DITOLAK">Ditolak (DITOLAK)</option>
           </select>
         </div>
       </div>
 
-      {/* Tab 1: Permohonan Informasi Table */}
-      {activeTab === "permohonan" && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+      {/* Table Content */}
+      <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden">
+        {activeTab === "permohonan" ? (
+          /* Permohonan Table */
+          filteredPermohonan.length === 0 ? (
+            <div className="p-12 text-center text-slate-400">
+              <FileText className="w-12 h-12 mx-auto text-slate-600 mb-3" />
+              <p className="font-medium text-base text-slate-300">Belum ada permohonan informasi</p>
+              <p className="text-sm text-slate-500 mt-1">Data permohonan publik akan muncul di sini.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead className="bg-slate-950/80 text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th className="px-6 py-4">No. Pendaftaran / Tgl</th>
+                    <th className="px-6 py-4">Pemohon</th>
+                    <th className="px-6 py-4">Kategori</th>
+                    <th className="px-6 py-4">Kontak</th>
+                    <th className="px-6 py-4">Rincian Informasi</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {filteredPermohonan.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="font-semibold text-emerald-400">{item.nomorPendaftaran}</div>
+                        <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(item.createdAt).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-white">{item.nama}</div>
+                        <div className="text-xs text-slate-400">NIK: {item.nik}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                          {item.kategori}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-xs text-slate-300 flex items-center gap-1.5">
+                          <Phone className="w-3 h-3 text-slate-500" /> {item.noHp}
+                        </div>
+                        <div className="text-xs text-slate-400 flex items-center gap-1.5 mt-1">
+                          <Mail className="w-3 h-3 text-slate-500" /> {item.email}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 max-w-xs">
+                        <p className="line-clamp-2 text-xs text-slate-300">{item.rincianInformasi}</p>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(item.status)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right space-x-2">
+                        <button
+                          onClick={() => handleOpenDetail("permohonan", item)}
+                          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all inline-flex items-center gap-1.5"
+                        >
+                          <Eye className="w-3.5 h-3.5" /> Detail & Respon
+                        </button>
+                        <button
+                          onClick={() =>
+                            setDeleteConfirm({
+                              type: "permohonan",
+                              id: item.id,
+                              nomor: item.nomorPendaftaran,
+                            })
+                          }
+                          className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-all inline-flex items-center"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : /* Keberatan Table */
+        filteredKeberatan.length === 0 ? (
+          <div className="p-12 text-center text-slate-400">
+            <AlertCircle className="w-12 h-12 mx-auto text-slate-600 mb-3" />
+            <p className="font-medium text-base text-slate-300">Belum ada pengajuan keberatan</p>
+            <p className="text-sm text-slate-500 mt-1">
+              Data keberatan permohonan informasi akan muncul di sini.
+            </p>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-950 border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+            <table className="w-full text-left text-sm text-slate-300">
+              <thead className="bg-slate-950/80 text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-800">
                 <tr>
-                  <th className="py-3.5 px-4">No. Registrasi</th>
-                  <th className="py-3.5 px-4">Tanggal</th>
-                  <th className="py-3.5 px-4">Pemohon</th>
-                  <th className="py-3.5 px-4">Kategori</th>
-                  <th className="py-3.5 px-4">Rincian Informasi</th>
-                  <th className="py-3.5 px-4 text-center">Status</th>
-                  <th className="py-3.5 px-4 text-right">Aksi</th>
+                  <th className="px-6 py-4">No. Keberatan / Tgl</th>
+                  <th className="px-6 py-4">No. Ref Permohonan</th>
+                  <th className="px-6 py-4">Pemohon</th>
+                  <th className="px-6 py-4">Kontak</th>
+                  <th className="px-6 py-4">Alasan Keberatan</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {filteredPermohonan.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-500">
-                      Belum ada permohonan informasi publik.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredPermohonan.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-800/40 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-blue-400">{item.nomorRegistrasi}</td>
-                      <td className="py-3.5 px-4 text-slate-400">
+                {filteredKeberatan.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="font-semibold text-amber-400">{item.nomorPendaftaran}</div>
+                      <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                        <Calendar className="w-3 h-3" />
                         {new Date(item.createdAt).toLocaleDateString("id-ID", {
-                          day: "2-digit",
+                          day: "numeric",
                           month: "short",
                           year: "numeric",
                         })}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-white">{item.namaLengkap}</div>
-                        <div className="text-[11px] text-slate-400">NIK: {item.nik}</div>
-                        <div className="text-[11px] text-slate-500">{item.nomorHp}</div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[11px]">
-                          {item.kategoriPemohon}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 max-w-xs">
-                        <p className="line-clamp-2 text-slate-300">{item.rincianInformasi}</p>
-                      </td>
-                      <td className="py-3.5 px-4 text-center">{renderStatusBadge(item.status)}</td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenPermohonanModal(item)}
-                            className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg font-semibold text-xs border border-blue-500/30 transition flex items-center gap-1 cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            Detail & Tanggapan
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRecord(item.id, "permohonan")}
-                            className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition cursor-pointer"
-                            title="Hapus Data"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Tab 2: Pengajuan Keberatan Table */}
-      {activeTab === "keberatan" && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-950 border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
-                <tr>
-                  <th className="py-3.5 px-4">No. Registrasi</th>
-                  <th className="py-3.5 px-4">Ref. Permohonan</th>
-                  <th className="py-3.5 px-4">Pemohon</th>
-                  <th className="py-3.5 px-4">Alasan Keberatan</th>
-                  <th className="py-3.5 px-4">Penjelasan Rinci</th>
-                  <th className="py-3.5 px-4 text-center">Status</th>
-                  <th className="py-3.5 px-4 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {filteredKeberatan.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-500">
-                      Belum ada pengajuan keberatan.
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                        {item.nomorPermohonanRef}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-white">{item.nama}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-xs text-slate-300 flex items-center gap-1.5">
+                        <Phone className="w-3 h-3 text-slate-500" /> {item.noHp}
+                      </div>
+                      <div className="text-xs text-slate-400 flex items-center gap-1.5 mt-1">
+                        <Mail className="w-3 h-3 text-slate-500" /> {item.email}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 max-w-xs">
+                      <p className="line-clamp-2 text-xs text-amber-200/80 font-medium">
+                        {parseReasons(item.alasanKeberatan)}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(item.status)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right space-x-2">
+                      <button
+                        onClick={() => handleOpenDetail("keberatan", item)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all inline-flex items-center gap-1.5"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> Detail & Respon
+                      </button>
+                      <button
+                        onClick={() =>
+                          setDeleteConfirm({
+                            type: "keberatan",
+                            id: item.id,
+                            nomor: item.nomorPendaftaran,
+                          })
+                        }
+                        className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-all inline-flex items-center"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </td>
                   </tr>
-                ) : (
-                  filteredKeberatan.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-800/40 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-amber-400">{item.nomorRegistrasi}</td>
-                      <td className="py-3.5 px-4 font-mono text-slate-400">{item.nomorPermohonan}</td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-white">{item.namaLengkap}</div>
-                        <div className="text-[11px] text-slate-400">{item.email}</div>
-                        <div className="text-[11px] text-slate-500">{item.nomorHp}</div>
-                      </td>
-                      <td className="py-3.5 px-4 max-w-xs">
-                        <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-slate-300">
-                          {item.alasanKeberatan.map((alasan, idx) => (
-                            <li key={idx}>{alasan}</li>
-                          ))}
-                        </ul>
-                      </td>
-                      <td className="py-3.5 px-4 max-w-xs">
-                        <p className="line-clamp-2 text-slate-300">{item.penjelasanKeberatan}</p>
-                      </td>
-                      <td className="py-3.5 px-4 text-center">{renderStatusBadge(item.status)}</td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenKeberatanModal(item)}
-                            className="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 rounded-lg font-semibold text-xs border border-amber-500/30 transition flex items-center gap-1 cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            Detail & Tanggapan
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRecord(item.id, "keberatan")}
-                            className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition cursor-pointer"
-                            title="Hapus Data"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Modal Detail Permohonan / Keberatan */}
-      {(selectedPermohonan || selectedKeberatan) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full overflow-hidden shadow-none my-8 animate-in fade-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="p-5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
-                  <FileCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    {selectedPermohonan ? "Detail Permohonan Informasi" : "Detail Pengajuan Keberatan"}
-                  </h3>
-                  <p className="text-xs font-mono text-blue-400">
-                    {selectedPermohonan?.nomorRegistrasi || selectedKeberatan?.nomorRegistrasi}
-                  </p>
-                </div>
+      {/* Detail & Update Status Modal */}
+      {selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                  {selectedItem.type === "permohonan" ? "Permohonan Informasi" : "Pengajuan Keberatan"}
+                </span>
+                <h3 className="text-xl font-bold text-white mt-1">
+                  {selectedItem.data.nomorPendaftaran}
+                </h3>
               </div>
-
               <button
-                onClick={() => {
-                  setSelectedPermohonan(null);
-                  setSelectedKeberatan(null);
-                }}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
+                onClick={() => setSelectedItem(null)}
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
               >
-                <XCircle className="w-5 h-5" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-              {modalError && (
-                <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-400 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{modalError}</span>
-                </div>
-              )}
-
-              {modalSuccess && (
-                <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-400 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>{modalSuccess}</span>
-                </div>
-              )}
-
-              {/* Pemohon Identity Card */}
-              <div className="p-4 bg-slate-950 rounded-xl border border-slate-800/80 space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-blue-400" /> Data Pemohon
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            {/* Content view */}
+            {selectedItem.type === "permohonan" ? (
+              <div className="space-y-4 text-sm text-slate-300">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
                   <div>
-                    <span className="text-slate-500 block">Nama Lengkap</span>
+                    <span className="text-xs text-slate-500 block">Nama Pemohon:</span>
+                    <span className="font-semibold text-white">{(selectedItem.data as PermohonanItem).nama}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-500 block">NIK Pemohon:</span>
+                    <span className="font-semibold text-white">{(selectedItem.data as PermohonanItem).nik}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-500 block">Kategori Pemohon:</span>
+                    <span className="font-semibold text-white">{(selectedItem.data as PermohonanItem).kategori}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-500 block">Kontak HP / Email:</span>
                     <span className="font-semibold text-white">
-                      {selectedPermohonan?.namaLengkap || selectedKeberatan?.namaLengkap}
+                      {(selectedItem.data as PermohonanItem).noHp} / {(selectedItem.data as PermohonanItem).email}
                     </span>
                   </div>
-                  {selectedPermohonan && (
+                  <div className="md:col-span-2">
+                    <span className="text-xs text-slate-500 block">Alamat Lengkap:</span>
+                    <span className="text-slate-200">{(selectedItem.data as PermohonanItem).alamat}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                  <div>
+                    <span className="text-xs font-semibold text-slate-400 block mb-1">Rincian Informasi Yang Dibutuhkan:</span>
+                    <p className="text-slate-200 bg-slate-900 p-3 rounded-lg border border-slate-800/80">
+                      {(selectedItem.data as PermohonanItem).rincianInformasi}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-slate-400 block mb-1">Tujuan Penggunaan Informasi:</span>
+                    <p className="text-slate-200 bg-slate-900 p-3 rounded-lg border border-slate-800/80">
+                      {(selectedItem.data as PermohonanItem).tujuanPenggunaan}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <span className="text-slate-500 block">NIK</span>
-                      <span className="font-mono text-slate-200">{selectedPermohonan.nik}</span>
+                      <span className="text-slate-500 block">Cara Memperoleh:</span>
+                      <span className="font-medium text-slate-300">{(selectedItem.data as PermohonanItem).caraMemperoleh}</span>
                     </div>
-                  )}
-                  <div>
-                    <span className="text-slate-500 block">Nomor HP / WA</span>
-                    <span className="text-slate-200">{selectedPermohonan?.nomorHp || selectedKeberatan?.nomorHp}</span>
+                    <div>
+                      <span className="text-slate-500 block">Cara Pengiriman:</span>
+                      <span className="font-medium text-slate-300">{(selectedItem.data as PermohonanItem).caraPengiriman}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block">Email</span>
-                    <span className="text-slate-200">{selectedPermohonan?.email || selectedKeberatan?.email}</span>
-                  </div>
-                  {selectedPermohonan && (
-                    <>
-                      <div>
-                        <span className="text-slate-500 block">Kategori</span>
-                        <span className="text-slate-200">{selectedPermohonan.kategoriPemohon}</span>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <span className="text-slate-500 block">Alamat</span>
-                        <span className="text-slate-200">{selectedPermohonan.alamat}</span>
-                      </div>
-                    </>
-                  )}
                 </div>
+
+                {/* Uploaded Identity */}
+                {(selectedItem.data as PermohonanItem).fileIdentitas && (
+                  <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                    <span className="text-xs text-slate-500 block mb-2">Berkas Identitas Pemohon (KTP/KTM/SIM):</span>
+                    {(selectedItem.data as PermohonanItem).fileIdentitas.startsWith("data:image") ? (
+                      <div className="space-y-2">
+                        <img
+                          src={(selectedItem.data as PermohonanItem).fileIdentitas}
+                          alt="Identitas Pemohon"
+                          className="max-h-48 rounded-lg border border-slate-700 object-contain"
+                        />
+                        <a
+                          href={(selectedItem.data as PermohonanItem).fileIdentitas}
+                          download={`Identitas_${(selectedItem.data as PermohonanItem).nama}.png`}
+                          className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:underline"
+                        >
+                          <Download className="w-3.5 h-3.5" /> Unduh Berkas Identitas
+                        </a>
+                      </div>
+                    ) : (
+                      <a
+                        href={(selectedItem.data as PermohonanItem).fileIdentitas}
+                        download={`Identitas_${(selectedItem.data as PermohonanItem).nama}`}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
+                      >
+                        <Paperclip className="w-4 h-4" /> Unduh Dokumen Identitas (PDF/File)
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
-
-              {/* Details Content */}
-              {selectedPermohonan && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                      Rincian Informasi Yang Dibutuhkan
-                    </span>
-                    <p className="text-xs text-slate-200 whitespace-pre-wrap">{selectedPermohonan.rincianInformasi}</p>
-                  </div>
-
-                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                      Tujuan Penggunaan Informasi
-                    </span>
-                    <p className="text-xs text-slate-200 whitespace-pre-wrap">{selectedPermohonan.tujuanPenggunaan}</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <span className="text-slate-500 block mb-1">Cara Memperoleh Informasi</span>
-                      <span className="font-semibold text-slate-200">{selectedPermohonan.caraMemperoleh}</span>
-                    </div>
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <span className="text-slate-500 block mb-1">Cara Pengiriman Informasi</span>
-                      <span className="font-semibold text-slate-200">{selectedPermohonan.caraPengiriman}</span>
-                    </div>
-                  </div>
-
-                  {selectedPermohonan.fileIdentitas && (
-                    <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
-                      <div>
-                        <span className="text-xs font-semibold text-slate-300 block">Dokumen Identitas (KTP/KTM/SIM)</span>
-                        <span className="text-[11px] text-slate-500">File lampiran identitas pemohon</span>
-                      </div>
-                      <button
-                        onClick={() =>
-                          setPreviewFile({
-                            title: `Identitas - ${selectedPermohonan.namaLengkap}`,
-                            src: selectedPermohonan.fileIdentitas!,
-                          })
-                        }
-                        className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-semibold rounded-lg border border-blue-500/30 transition flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        Pratinjau File
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {selectedKeberatan && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                      Nomor Permohonan Sebelumnya
-                    </span>
-                    <p className="text-xs font-mono font-bold text-amber-400">{selectedKeberatan.nomorPermohonan}</p>
-                  </div>
-
-                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                      Alasan Keberatan
-                    </span>
-                    <ul className="list-disc pl-4 text-xs text-slate-200 space-y-1">
-                      {selectedKeberatan.alasanKeberatan.map((alasan, i) => (
-                        <li key={i}>{alasan}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                      Penjelasan Rinci Keberatan
-                    </span>
-                    <p className="text-xs text-slate-200 whitespace-pre-wrap">{selectedKeberatan.penjelasanKeberatan}</p>
-                  </div>
-
-                  {selectedKeberatan.fileBuktiAwal && (
-                    <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
-                      <div>
-                        <span className="text-xs font-semibold text-slate-300 block">Bukti Permohonan Awal</span>
-                        <span className="text-[11px] text-slate-500">File lampiran bukti permohonan</span>
-                      </div>
-                      <button
-                        onClick={() =>
-                          setPreviewFile({
-                            title: `Bukti Permohonan Awal - ${selectedKeberatan.namaLengkap}`,
-                            src: selectedKeberatan.fileBuktiAwal!,
-                          })
-                        }
-                        className="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 text-xs font-semibold rounded-lg border border-amber-500/30 transition flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        Pratinjau File
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Status Update Form */}
-              <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" /> Update Status & Tanggapan Resmi Waka PPID
-                </h4>
-
-                <div className="space-y-3">
+            ) : (
+              /* Keberatan details */
+              <div className="space-y-4 text-sm text-slate-300">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">Status Tindak Lanjut</label>
-                    <select
-                      value={statusForm}
-                      onChange={(e) => setStatusForm(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                    <span className="text-xs text-slate-500 block">Nama Pemohon:</span>
+                    <span className="font-semibold text-white">{(selectedItem.data as KeberatanItem).nama}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-500 block">No. Ref Permohonan Awal:</span>
+                    <span className="font-semibold text-amber-400">{(selectedItem.data as KeberatanItem).nomorPermohonanRef}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-500 block">Kontak HP / Email:</span>
+                    <span className="font-semibold text-white">
+                      {(selectedItem.data as KeberatanItem).noHp} / {(selectedItem.data as KeberatanItem).email}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                  <div>
+                    <span className="text-xs font-semibold text-slate-400 block mb-1">Alasan Keberatan:</span>
+                    <p className="text-amber-200 bg-slate-900 p-3 rounded-lg border border-slate-800/80 font-medium">
+                      {parseReasons((selectedItem.data as KeberatanItem).alasanKeberatan)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-slate-400 block mb-1">Penjelasan Rinci:</span>
+                    <p className="text-slate-200 bg-slate-900 p-3 rounded-lg border border-slate-800/80">
+                      {(selectedItem.data as KeberatanItem).penjelasanRinci}
+                    </p>
+                  </div>
+                </div>
+
+                {(selectedItem.data as KeberatanItem).fileBukti && (
+                  <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                    <span className="text-xs text-slate-500 block mb-2">Berkas Bukti Permohonan Awal:</span>
+                    <a
+                      href={(selectedItem.data as KeberatanItem).fileBukti!}
+                      download={`Bukti_Keberatan_${(selectedItem.data as KeberatanItem).nomorPendaftaran}`}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
                     >
-                      <option value="PENDING">PENDING - Menunggu Verifikasi</option>
-                      <option value="DIPROSES">DIPROSES - Sedang Ditindaklanjuti</option>
-                      <option value="DISETUJUI">DISETUJUI - Permohonan / Keberatan Diterima</option>
-                      <option value="DITOLAK">DITOLAK - Permohonan / Keberatan Ditolak</option>
-                      <option value="SELESAI">SELESAI - Informasi Telah Disampaikan</option>
-                    </select>
+                      <Paperclip className="w-4 h-4" /> Unduh Berkas Bukti
+                    </a>
                   </div>
+                )}
+              </div>
+            )}
 
-                  <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">Catatan Tanggapan PPID</label>
-                    <textarea
-                      rows={3}
-                      placeholder="Masukkan catatan tanggapan atau nomor surat balasan resmi..."
-                      value={tanggapanForm}
-                      onChange={(e) => setTanggapanForm(e.target.value)}
-                      className="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
-                    ></textarea>
-                  </div>
+            {/* Admin Response Form */}
+            <form onSubmit={handleUpdateStatus} className="border-t border-slate-800 pt-5 space-y-4">
+              <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Send className="w-4 h-4 text-emerald-400" /> Form Update Status & Respon Admin
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                    Status Layanan PPID:
+                  </label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500/50"
+                  >
+                    <option value="PENDING">Menunggu Review (PENDING)</option>
+                    <option value="DIPROSES">Sedang Diproses (DIPROSES)</option>
+                    <option value="DISETUJUI">Disetujui (DISETUJUI)</option>
+                    <option value="SELESAI">Selesai (SELESAI)</option>
+                    <option value="DITOLAK">Ditolak (DITOLAK)</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                    Catatan / Tanggapan Respon Admin (Akan Terlihat oleh Pemohon jika dicek):
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editTanggapan}
+                    onChange={(e) => setEditTanggapan(e.target.value)}
+                    placeholder="Tuliskan catatan tindak lanjut, instruksi pengambilan dokumen, atau alasan penolakan..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50"
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* Modal Footer */}
-            <div className="p-5 bg-slate-950/80 border-t border-slate-800 flex items-center justify-end gap-3">
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedItem(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-emerald-500 text-slate-950 hover:bg-emerald-400 disabled:opacity-50 transition-all"
+                >
+                  {isSubmitting ? "Menyimpan..." : "Simpan Perubahan Status"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center gap-3 text-rose-400">
+              <div className="p-2.5 bg-rose-500/10 rounded-xl border border-rose-500/20">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Hapus Record PPID?</h3>
+            </div>
+            <p className="text-sm text-slate-300">
+              Apakah Anda yakin ingin menghapus data dengan nomor pendaftaran{" "}
+              <strong className="text-white">{deleteConfirm.nomor}</strong>? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
-                onClick={() => {
-                  setSelectedPermohonan(null);
-                  setSelectedKeberatan(null);
-                }}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition cursor-pointer"
+                type="button"
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
               >
                 Batal
               </button>
-
               <button
-                onClick={handleSaveStatus}
-                disabled={isUpdating}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-semibold rounded-xl transition flex items-center gap-2 border border-blue-500 cursor-pointer"
+                type="button"
+                onClick={handleDeleteRecord}
+                disabled={isSubmitting}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 transition-all"
               >
-                {isUpdating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                Simpan Tanggapan
+                {isSubmitting ? "Mengepus..." : "Ya, Hapus Record"}
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* File Preview Modal */}
-      {previewFile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden flex flex-col">
-            <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-              <h4 className="text-sm font-bold text-white">{previewFile.title}</h4>
-              <button
-                onClick={() => setPreviewFile(null)}
-                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-4 flex-1 overflow-y-auto flex items-center justify-center bg-slate-950/50">
-              {previewFile.src.startsWith("data:image/") || previewFile.src.startsWith("http") ? (
-                <img
-                  src={previewFile.src}
-                  alt={previewFile.title}
-                  className="max-w-full max-h-[65vh] object-contain rounded-lg border border-slate-800"
-                />
-              ) : (
-                <div className="text-center py-12">
-                  <FileText className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-                  <p className="text-xs text-slate-400 mb-3">Dokumen PDF atau Format Lain</p>
-                  <a
-                    href={previewFile.src}
-                    download="dokumen-ppid"
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition inline-flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    Unduh Dokumen
-                  </a>
-                </div>
-              )}
             </div>
           </div>
         </div>

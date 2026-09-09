@@ -19,15 +19,15 @@ export default async function RekapPpidPage() {
   }
 
   const resData = await getPpidDataAction();
-  const permohonanList = resData.success && resData.permohonanList ? resData.permohonanList : [];
-  const keberatanList = resData.success && resData.keberatanList ? resData.keberatanList : [];
+  const initialPermohonan = resData.success && resData.permohonanList ? resData.permohonanList : [];
+  const initialKeberatan = resData.success && resData.keberatanList ? resData.keberatanList : [];
 
   return (
     <SidebarLayout user={user}>
       <RekapPpidClient
         user={user}
-        initialPermohonanList={permohonanList as any}
-        initialKeberatanList={keberatanList as any}
+        initialPermohonan={initialPermohonan as any}
+        initialKeberatan={initialKeberatan as any}
       />
     </SidebarLayout>
   );
