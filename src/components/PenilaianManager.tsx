@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useTransition } from "react";
+import { getTodayWibStr } from "@/lib/dateUtils";
 import {
   getTeacherClassesAndSubjectsAction,
   getPenilaianKelasListAction,
@@ -81,7 +82,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
   // Form State - Add New Penilaian Header
   const [showAddModal, setShowAddModal] = useState(false);
   const [namaPenilaian, setNamaPenilaian] = useState("");
-  const [tanggalPenilaian, setTanggalPenilaian] = useState(new Date().toISOString().split("T")[0]);
+  const [tanggalPenilaian, setTanggalPenilaian] = useState(() => getTodayWibStr());
   const [deskripsiPenilaian, setDeskripsiPenilaian] = useState("");
 
   // Grade Entry State - Selected Penilaian Header

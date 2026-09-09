@@ -1,6 +1,7 @@
 import React from "react";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDateWib } from "@/lib/dateUtils";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
 import { checkAndApplyAutomaticRemissions } from "@/app/actions/remisi";
@@ -1184,7 +1185,7 @@ export default async function DashboardPage() {
   const nowWib = new Date();
 
   const dbHolidaysAll = await prisma.hariLibur.findMany({ select: { tanggal: true } });
-  const holidayDateSet = new Set(dbHolidaysAll.map((h) => h.tanggal.toISOString().split("T")[0]));
+  const holidayDateSet = new Set(dbHolidaysAll.map((h) => formatDateWib(h.tanggal)));
 
   const isSabtuLibur = settings["libur_sabtu"] === "true";
   const isMingguLibur = settings["libur_minggu"] !== "false";
@@ -1255,7 +1256,7 @@ export default async function DashboardPage() {
 
     const dateToClassMap = new Map<string, Set<string>>();
     allRecordedAbsensiBatch.forEach((a) => {
-      const dStr = a.tanggal.toISOString().split("T")[0];
+      const dStr = formatDateWib(a.tanggal);
       if (!dateToClassMap.has(dStr)) dateToClassMap.set(dStr, new Set());
       const set = dateToClassMap.get(dStr)!;
       a.siswa.riwayatKelas.forEach((rk) => {

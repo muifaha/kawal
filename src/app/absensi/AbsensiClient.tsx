@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { getTodayWibStr } from "@/lib/dateUtils";
 import { saveAttendanceAction, getAttendanceAction } from "@/app/actions/attendance";
 import { AlertCircle, CalendarCheck, CheckCircle, Keyboard, Lock, Pencil, Save, Search, X } from "lucide-react";
 import { useToast } from "@/components/Toast";
@@ -57,10 +58,7 @@ export default function AbsensiClient({
 
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     if (initialDate && userRole !== "SEKRETARIS") return initialDate;
-    const today = new Date();
-    const offset = today.getTimezoneOffset();
-    const localDate = new Date(today.getTime() - offset * 60 * 1000);
-    return localDate.toISOString().split("T")[0];
+    return getTodayWibStr();
   });
 
   const [attendanceMap, setAttendanceMap] = useState<Record<string, StatusType>>({});

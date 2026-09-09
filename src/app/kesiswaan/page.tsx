@@ -1,6 +1,7 @@
 import React from "react";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDateWib } from "@/lib/dateUtils";
 import SidebarLayout from "@/components/SidebarLayout";
 import { redirect } from "next/navigation";
 import KesiswaanClient from "./KesiswaanClient";
@@ -59,7 +60,7 @@ export default async function KesiswaanPage() {
     nisn: s.nisn || "",
     nama: s.nama,
     status: s.status,
-    tanggalLahir: s.tanggalLahir ? s.tanggalLahir.toISOString().split("T")[0] : null,
+    tanggalLahir: s.tanggalLahir ? formatDateWib(s.tanggalLahir) : null,
     kelasId: s.riwayatKelas[0]?.kelas.id || "",
     kelas: s.riwayatKelas[0]?.kelas
       ? { id: s.riwayatKelas[0].kelas.id, nama: s.riwayatKelas[0].kelas.nama }

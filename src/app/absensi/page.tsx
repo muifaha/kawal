@@ -1,6 +1,7 @@
 import React from "react";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDateWib } from "@/lib/dateUtils";
 import SidebarLayout from "@/components/SidebarLayout";
 import { redirect } from "next/navigation";
 import AbsensiClient from "./AbsensiClient";
@@ -77,7 +78,7 @@ export default async function AbsensiPage({
   // Ambil daftar hari libur nasional
   const dbHolidays = await prisma.hariLibur.findMany();
   const holidays = dbHolidays.map((h) => ({
-    date: h.tanggal.toISOString().split("T")[0],
+    date: formatDateWib(h.tanggal),
     keterangan: h.keterangan,
   }));
 

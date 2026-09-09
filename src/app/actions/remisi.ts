@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { getTodayWibStr } from "@/lib/dateUtils";
 import { revalidatePath } from "next/cache";
 import fs from "fs";
 import path from "path";
@@ -213,7 +214,7 @@ export async function runAutomaticRemissionAction() {
 export async function checkAndApplyAutomaticRemissions() {
   try {
     const today = new Date();
-    const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
+    const todayStr = getTodayWibStr(); // YYYY-MM-DD in Asia/Jakarta
 
     // 1. Cek apakah pengecekan otomatis sudah pernah dilakukan hari ini
     const lastCheck = await prisma.appSetting.findUnique({

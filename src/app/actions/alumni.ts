@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { formatDateWib } from "@/lib/dateUtils";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -45,8 +46,8 @@ export async function verifyAlumniAction(payload: {
 
     // Verifikasi Tanggal Lahir jika diisi & siswa memiliki record tanggalLahir
     if (tanggalLahir && siswa.tanggalLahir) {
-      const inputDate = new Date(tanggalLahir).toISOString().split("T")[0];
-      const dbDate = new Date(siswa.tanggalLahir).toISOString().split("T")[0];
+      const inputDate = formatDateWib(tanggalLahir);
+      const dbDate = formatDateWib(siswa.tanggalLahir);
       if (inputDate !== dbDate) {
         return {
           error:
@@ -67,7 +68,7 @@ export async function verifyAlumniAction(payload: {
         status: siswa.status,
         kelasTerakhir: lastClass,
         tanggalLahir: siswa.tanggalLahir
-          ? new Date(siswa.tanggalLahir).toISOString().split("T")[0]
+          ? formatDateWib(siswa.tanggalLahir)
           : null,
       },
       existingTracer: siswa.tracerStudy ? siswa.tracerStudy : null,

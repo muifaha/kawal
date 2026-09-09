@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { getTodayWibStr } from "@/lib/dateUtils";
 import { revalidatePath } from "next/cache";
 import path from "path";
 import fs from "fs";
@@ -515,11 +516,12 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
     const fotoUrl = fotoUrls.length > 0 ? JSON.stringify(fotoUrls) : null;
     const fotoKeterangan = fotoUrls.length > 0 ? JSON.stringify(fotoKeterangans) : null;
 
-    let targetDate = new Date();
+    let targetDate: Date;
     if (tanggalStr && /^\d{4}-\d{2}-\d{2}$/.test(tanggalStr)) {
       targetDate = new Date(`${tanggalStr}T00:00:00.000Z`);
     } else {
-      targetDate.setUTCHours(0, 0, 0, 0);
+      const todayStr = getTodayWibStr();
+      targetDate = new Date(`${todayStr}T00:00:00.000Z`);
     }
 
     let timeLabel = "";

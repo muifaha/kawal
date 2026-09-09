@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useTransition, useMemo, useEffect } from "react";
+import { getTodayWibStr, formatDateWib } from "@/lib/dateUtils";
 import {
   saveJamPelajaranAction,
   deleteJamPelajaranAction,
@@ -505,7 +506,7 @@ export default function JadwalClient({
   const [editingCustomActivityId, setEditingCustomActivityId] = useState<string | null>(null);
   const [showCustomActivityModal, setShowCustomActivityModal] = useState(false);
   const [activityTitle, setActivityTitle] = useState("");
-  const [activityDate, setActivityDate] = useState(new Date().toISOString().split("T")[0]);
+  const [activityDate, setActivityDate] = useState(() => getTodayWibStr());
   const [activityJamMulai, setActivityJamMulai] = useState("07.00");
   const [activityJamSelesai, setActivityJamSelesai] = useState("16.00");
   const [activityRencanaAksi, setActivityRencanaAksi] = useState(RENCANA_AKSI_OPTIONS[0]);
@@ -1078,10 +1079,9 @@ export default function JadwalClient({
 
   // Helper: check if journal is already filled for a schedule today
   const hasJournalForToday = (schedId: string) => {
-    const today = new Date().toISOString().split("T")[0];
     return journals.some((j) => {
-      const journalDate = new Date(j.tanggal).toISOString().split("T")[0];
-      return j.jadwalId === schedId && journalDate === today;
+      const journalDate = formatDateWib(j.tanggal);
+      return j.jadwalId === schedId && journalDate === todayWibStr;
     });
   };
 
@@ -1107,7 +1107,7 @@ export default function JadwalClient({
     const map = new Map<string, typeof filteredJournals>();
 
     filteredJournals.forEach((item) => {
-      const dKey = new Date(item.tanggal).toISOString().split("T")[0];
+      const dKey = formatDateWib(item.tanggal);
       if (!map.has(dKey)) {
         map.set(dKey, []);
       }

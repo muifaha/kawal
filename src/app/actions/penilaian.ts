@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { formatDateWib } from "@/lib/dateUtils";
 import { revalidatePath } from "next/cache";
 
 export async function getTeacherClassesAndSubjectsAction() {
@@ -92,7 +93,7 @@ export async function getPenilaianKelasListAction(kelasId: string, mapelId: stri
       data: list.map((item) => ({
         id: item.id,
         namaPenilaian: item.namaPenilaian,
-        tanggal: item.tanggal.toISOString().split("T")[0],
+        tanggal: formatDateWib(item.tanggal),
         deskripsi: item.deskripsi || "",
         totalTerisi: item._count.nilaiSiswa,
       })),
@@ -222,7 +223,7 @@ export async function getPenilaianDetailAndStudentsAction(penilaianKelasId: stri
         mapelNama: header.mapel.nama,
         guruNama: header.guru.nama,
         namaPenilaian: header.namaPenilaian,
-        tanggal: header.tanggal.toISOString().split("T")[0],
+        tanggal: formatDateWib(header.tanggal),
         deskripsi: header.deskripsi || "",
       },
       students,

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import { getTodayWibStr } from "@/lib/dateUtils";
 import {
   Trophy,
   PlusCircle,
@@ -122,7 +123,7 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
   const [classFilterId, setClassFilterId] = useState("");
 
   const [namaPrestasi, setNamaPrestasi] = useState("");
-  const [waktuPelaksanaan, setWaktuPelaksanaan] = useState(() => new Date().toISOString().split("T")[0]);
+  const [waktuPelaksanaan, setWaktuPelaksanaan] = useState(() => getTodayWibStr());
   const [penyelenggara, setPenyelenggara] = useState("");
   const [kategori, setKategori] = useState<"BERJENJANG" | "TIDAK_BERJENJANG">("BERJENJANG");
   const [tingkat, setTingkat] = useState<"KECAMATAN" | "KOTA" | "PROVINSI" | "NASIONAL" | "INTERNASIONAL">("KOTA");

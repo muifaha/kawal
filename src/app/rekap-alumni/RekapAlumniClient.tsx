@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { getTodayWibStr } from "@/lib/dateUtils";
 import {
   GraduationCap,
   Briefcase,
@@ -168,7 +169,7 @@ export default function RekapAlumniClient({ user, initialAlumniList }: RekapAlum
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Tracer Study Alumni");
-    XLSX.writeFile(workbook, `Rekap_Tracer_Study_Alumni_${new Date().toISOString().split("T")[0]}.xlsx`);
+    XLSX.writeFile(workbook, `Rekap_Tracer_Study_Alumni_${getTodayWibStr()}.xlsx`);
   };
 
   const statusBadgeStyle: Record<string, { label: string; style: string }> = {

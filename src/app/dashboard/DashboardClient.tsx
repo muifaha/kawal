@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useTransition, useEffect } from "react";
+import { formatDateWib } from "@/lib/dateUtils";
 import { useSearchParams, useRouter } from "next/navigation";
 import SidebarLayout from "@/components/SidebarLayout";
 import Link from "next/link";
@@ -572,7 +573,7 @@ export default function DashboardClient({
     const map = new Map<string, typeof filteredTeacherJournals>();
 
     filteredTeacherJournals.forEach((item) => {
-      const dKey = new Date(item.tanggal).toISOString().split("T")[0];
+      const dKey = formatDateWib(item.tanggal);
       if (!map.has(dKey)) {
         map.set(dKey, []);
       }

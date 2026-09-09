@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { formatDateWib } from "@/lib/dateUtils";
 
 export const revalidate = 0;
 
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
           nama_tim: p.namaTim || "",
           daftar_siswa: daftarSiswa || "-",
           waktu_pelaksanaan: p.waktuPelaksanaan
-            ? p.waktuPelaksanaan.toISOString().split("T")[0]
+            ? formatDateWib(p.waktuPelaksanaan)
             : "",
           penyelenggara: p.penyelenggara,
           tingkat: p.tingkat,

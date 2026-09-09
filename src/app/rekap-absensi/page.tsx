@@ -1,6 +1,7 @@
 import React from "react";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDateWib } from "@/lib/dateUtils";
 import SidebarLayout from "@/components/SidebarLayout";
 import { redirect } from "next/navigation";
 import RekapAbsensiClient from "./RekapAbsensiClient";
@@ -56,7 +57,7 @@ export default async function RekapAbsensiPage() {
 
   const dbHolidays = await prisma.hariLibur.findMany();
   const holidays = dbHolidays.map((h) => ({
-    date: h.tanggal.toISOString().split("T")[0],
+    date: formatDateWib(h.tanggal),
     keterangan: h.keterangan,
   }));
 
