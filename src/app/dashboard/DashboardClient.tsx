@@ -334,6 +334,15 @@ export default function DashboardClient({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"summary" | "absen_rekap" | "pelanggaran_rekap">("summary");
 
+  const todayWibStr = useMemo(() => {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  }, []);
+
   useEffect(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam === "pelanggaran_rekap") {
