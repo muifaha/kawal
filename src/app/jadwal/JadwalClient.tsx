@@ -2658,13 +2658,14 @@ export default function JadwalClient({
                     disabled={deletingJournalId === selectedJournal.id}
                     className="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:bg-rose-800 text-xs font-bold text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
                   >
-                  {deletingJournalId === selectedJournal.id ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-3.5 h-3.5" />
-                  )}
-                  Hapus Kegiatan
-                </button>
+                    {deletingJournalId === selectedJournal.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                    Hapus Kegiatan
+                  </button>
+                </>
               )}
               <button
                 onClick={() => handleDownloadJournalPDF(selectedJournal.id)}
