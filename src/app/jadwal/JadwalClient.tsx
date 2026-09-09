@@ -2513,9 +2513,9 @@ export default function JadwalClient({
 
       {/* MODAL: TAMBAH KEGIATAN BARU */}
       {showCustomActivityModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-6 space-y-5 my-8">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl sm:max-w-4xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-4 sm:p-6 space-y-4 my-auto max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <Plus className="w-5 h-5 text-indigo-400" />
@@ -2535,16 +2535,16 @@ export default function JadwalClient({
             </div>
 
             {modalCustomError && (
-              <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl flex items-start gap-2">
+              <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl flex items-start gap-2 shrink-0">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{modalCustomError}</span>
               </div>
             )}
 
-            <form onSubmit={handleCustomActivitySubmit} className="space-y-4">
+            <form onSubmit={handleCustomActivitySubmit} className="space-y-4 overflow-y-auto pr-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                     Nama Kegiatan *
                   </label>
                   <input
@@ -2558,7 +2558,7 @@ export default function JadwalClient({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                     Tanggal (Otomatis Hari Ini) *
                   </label>
                   <input
@@ -2572,60 +2572,61 @@ export default function JadwalClient({
               </div>
 
               {/* JAM MULAI & JAM AKHIR */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Jam Mulai *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: 07.45 atau 08.00"
-                    value={activityJamMulai}
-                    onChange={(e) => setActivityJamMulai(e.target.value)}
-                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                      Jam Mulai *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="07.45"
+                      value={activityJamMulai}
+                      onChange={(e) => setActivityJamMulai(e.target.value)}
+                      className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                      Jam Akhir *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="09.00"
+                      value={activityJamSelesai}
+                      onChange={(e) => setActivityJamSelesai(e.target.value)}
+                      className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
                 </div>
+
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Jam Selesai / Akhir *
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Rencana Aksi Kinerja *
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: 09.00 atau 09.30"
-                    value={activityJamSelesai}
-                    onChange={(e) => setActivityJamSelesai(e.target.value)}
+                  <select
+                    value={activityRencanaAksi}
+                    onChange={(e) => setActivityRencanaAksi(e.target.value)}
                     className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+                  >
+                    {RENCANA_AKSI_OPTIONS.map((option, idx) => (
+                      <option key={idx} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              {/* RENCANA AKSI DROPDOWN */}
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Rencana Aksi Kinerja *
-                </label>
-                <select
-                  value={activityRencanaAksi}
-                  onChange={(e) => setActivityRencanaAksi(e.target.value)}
-                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  {RENCANA_AKSI_OPTIONS.map((option, idx) => (
-                    <option key={idx} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Deskripsi Kegiatan Pembelajaran *
                 </label>
                 <textarea
                   required
-                  rows={3}
+                  rows={2}
                   placeholder="Uraikan jalannya kegiatan atau materi yang disampaikan..."
                   value={activityDescription}
                   onChange={(e) => setActivityDescription(e.target.value)}
@@ -2634,19 +2635,19 @@ export default function JadwalClient({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Foto Kegiatan & Dokumentasi (Maksimal 3 Foto)
                 </label>
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {activityPhotos.map((doc, idx) => (
-                    <div key={idx} className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2">
+                    <div key={idx} className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2 flex flex-col justify-between">
                       <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase">
                         <span>Foto Dokumentasi #{idx + 1}</span>
                         {doc.preview && (
                           <button
                             type="button"
                             onClick={() => handleCustomActivityPhotoChange(idx, null)}
-                            className="text-rose-400 hover:text-rose-300 font-semibold cursor-pointer"
+                            className="text-rose-400 hover:text-rose-300 font-semibold cursor-pointer text-[10px]"
                           >
                             Hapus
                           </button>
@@ -2654,22 +2655,20 @@ export default function JadwalClient({
                       </div>
 
                       {doc.preview ? (
-                        <div className="grid grid-cols-[100px_1fr] gap-3">
-                          <img src={doc.preview} alt={`Preview ${idx + 1}`} className="rounded-lg h-16 w-full object-cover border border-slate-800" />
-                          <div className="flex flex-col justify-center">
-                            <input
-                              type="text"
-                              placeholder="Keterangan foto..."
-                              value={doc.caption}
-                              onChange={(e) => handleCustomActivityCaptionChange(idx, e.target.value)}
-                              className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-                          </div>
+                        <div className="space-y-2">
+                          <img src={doc.preview} alt={`Preview ${idx + 1}`} className="rounded-lg h-24 w-full object-cover border border-slate-800" />
+                          <input
+                            type="text"
+                            placeholder="Keterangan foto..."
+                            value={doc.caption}
+                            onChange={(e) => handleCustomActivityCaptionChange(idx, e.target.value)}
+                            className="block w-full px-2.5 py-1.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
                         </div>
                       ) : (
-                        <label className="flex items-center justify-center w-full h-12 border border-dashed border-slate-800 rounded-xl cursor-pointer bg-slate-950/20 hover:bg-slate-950/40 transition-all gap-2">
-                          <Upload className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="text-xs text-slate-400">Upload Berkas Foto #{idx + 1}</span>
+                        <label className="flex flex-col items-center justify-center w-full h-24 border border-dashed border-slate-800 rounded-xl cursor-pointer bg-slate-950/20 hover:bg-slate-950/40 transition-all gap-1.5 p-2 text-center">
+                          <Upload className="w-4 h-4 text-slate-400" />
+                          <span className="text-xs text-slate-400">Upload Foto #{idx + 1}</span>
                           <input
                             type="file"
                             accept="image/*"
@@ -2686,7 +2685,7 @@ export default function JadwalClient({
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowCustomActivityModal(false)}
