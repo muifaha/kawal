@@ -6,10 +6,20 @@ import CetakJurnalView from "./CetakJurnalView";
 export default async function CetakJurnalPage({
   searchParams,
 }: {
-  searchParams: Promise<{ guruId?: string; tanggal?: string; token?: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  const params = await searchParams;
-  const { guruId, tanggal, token } = params;
+  const resolvedParams = await searchParams;
+
+  // Clean up params in case &amp; was passed in URL (HTML entity decoding fallback)
+  const params: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(resolvedParams)) {
+    const cleanKey = k.replace(/^amp;/, "");
+    params[cleanKey] = v;
+  }
+
+  const guruId = params.guruId;
+  const tanggal = params.tanggal;
+  const token = params.token;
 
   if (!guruId || !tanggal) {
     return notFound();
@@ -23,10 +33,6 @@ export default async function CetakJurnalPage({
   if (!isTokenValid && !user) {
     return notFound();
   }
-
-  // Parse date range
-  const startOfDay = new Date(`${tanggal}T00:00:00.000Z`);
-  const endOfDay = new Date(`${tanggal}T23:59:59.999Z`);
 
   // Fetch teacher profile
   const teacher = await prisma.user.findUnique({
@@ -44,6 +50,11 @@ export default async function CetakJurnalPage({
     return notFound();
   }
 
+  // Date range with timezone safety buffer (+/- 36 hours around target date)
+  const targetDateObj = new Date(`${tanggal}T12:00:00.000Z`);
+  const startOfDay = new Date(targetDateObj.getTime() - 36 * 3600 * 1000);
+  const endOfDay = new Date(targetDateObj.getTime() + 36 * 3600 * 1000);
+
   // Fetch school settings
   const settingsList = await prisma.appSetting.findMany();
   const schoolSettings: Record<string, string> = {};
@@ -51,8 +62,8 @@ export default async function CetakJurnalPage({
     schoolSettings[s.key] = s.value;
   }
 
-  // Fetch all journals for this teacher on this date
-  const journals = await prisma.jurnalMengajar.findMany({
+  // Fetch all journals for this teacher around this date
+  const candidateJournals = await prisma.jurnalMengajar.findMany({
     where: {
       guruId,
       tanggal: {
@@ -82,14 +93,24 @@ export default async function CetakJurnalPage({
     orderBy: { jamMulai: "asc" },
   });
 
-  const dateObj = new Date(`${tanggal}T12:00:00.000Z`);
+  // Filter exact matching date in WIB (Asia/Jakarta)
+  const journals = candidateJournals.filter((j) => {
+    const jDateStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(j.tanggal));
+    return jDateStr === tanggal;
+  });
+
   const dateLabel = new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
     timeZone: "Asia/Jakarta",
-  }).format(dateObj);
+  }).format(targetDateObj);
 
   return (
     <CetakJurnalView

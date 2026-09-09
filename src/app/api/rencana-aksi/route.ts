@@ -13,7 +13,14 @@ export async function GET(request: NextRequest) {
       (authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null) ||
       request.headers.get("x-api-key") ||
       request.headers.get("x-api-token");
-    const queryToken = searchParams.get("token") || searchParams.get("api_key") || searchParams.get("key");
+
+    const queryToken =
+      searchParams.get("token") ||
+      searchParams.get("amp;token") ||
+      searchParams.get("api_key") ||
+      searchParams.get("amp;api_key") ||
+      searchParams.get("key") ||
+      searchParams.get("amp;key");
 
     const providedToken = (headerToken || queryToken || "").trim();
 
@@ -36,28 +43,44 @@ export async function GET(request: NextRequest) {
     }
 
     // Support single date
-    const tanggalStr = searchParams.get("tanggal") || searchParams.get("date") || undefined;
+    const tanggalStr =
+      searchParams.get("tanggal") ||
+      searchParams.get("amp;tanggal") ||
+      searchParams.get("date") ||
+      searchParams.get("amp;date") ||
+      undefined;
 
     // Support date range
     const dariStr =
       searchParams.get("dari") ||
+      searchParams.get("amp;dari") ||
       searchParams.get("startDate") ||
+      searchParams.get("amp;startDate") ||
       searchParams.get("dariTanggal") ||
+      searchParams.get("amp;dariTanggal") ||
       undefined;
 
     const sampaiStr =
       searchParams.get("sampai") ||
+      searchParams.get("amp;sampai") ||
       searchParams.get("endDate") ||
+      searchParams.get("amp;endDate") ||
       searchParams.get("sampaiTanggal") ||
+      searchParams.get("amp;sampaiTanggal") ||
       undefined;
 
     // Support month filter (e.g. 2026-09)
-    const bulanStr = searchParams.get("bulan") || searchParams.get("month") || undefined;
+    const bulanStr =
+      searchParams.get("bulan") ||
+      searchParams.get("amp;bulan") ||
+      searchParams.get("month") ||
+      searchParams.get("amp;month") ||
+      undefined;
 
     // Filters
-    const guruId = searchParams.get("guruId") || undefined;
-    const nip = searchParams.get("nip") || undefined;
-    const search = searchParams.get("search") || undefined;
+    const guruId = searchParams.get("guruId") || searchParams.get("amp;guruId") || undefined;
+    const nip = searchParams.get("nip") || searchParams.get("amp;nip") || undefined;
+    const search = searchParams.get("search") || searchParams.get("amp;search") || undefined;
 
     // Build base URL dynamically from request header / origin
     const host = request.headers.get("host") || "localhost:3000";
