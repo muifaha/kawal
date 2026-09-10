@@ -37,6 +37,8 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   ClipboardCheck,
   CheckCircle,
   Share2,
@@ -626,6 +628,21 @@ export default function DashboardClient({
 
     return result;
   }, [filteredTeacherJournals]);
+
+  const [journalCurrentPage, setJournalCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setJournalCurrentPage(1);
+  }, [searchQuery]);
+
+  const JOURNAL_PAGE_SIZE = 5;
+
+  const paginatedTeacherJournalsByDate = useMemo(() => {
+    const start = (journalCurrentPage - 1) * JOURNAL_PAGE_SIZE;
+    return groupedTeacherJournalsByDate.slice(start, start + JOURNAL_PAGE_SIZE);
+  }, [groupedTeacherJournalsByDate, journalCurrentPage]);
+
+  const journalTotalPages = Math.ceil(groupedTeacherJournalsByDate.length / JOURNAL_PAGE_SIZE) || 1;
 
   const handleDownloadJournalPDF = async (jurnalId: string) => {
     setDownloadingPdfId(jurnalId);
@@ -3063,7 +3080,7 @@ export default function DashboardClient({
                         </td>
                       </tr>
                     ) : (
-                      groupedTeacherJournalsByDate.map((group) =>
+                      paginatedTeacherJournalsByDate.map((group) =>
                         group.journals.map((item, itemIdx) => (
                           <tr key={item.id} className="hover:bg-slate-800/30 transition">
                             {itemIdx === 0 && (
@@ -3180,6 +3197,69 @@ export default function DashboardClient({
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination Controls */}
+              {groupedTeacherJournalsByDate.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 text-xs text-slate-400">
+                  <div>
+                    Menampilkan Nomor <span className="font-bold text-white">{(journalCurrentPage - 1) * JOURNAL_PAGE_SIZE + 1}</span> s/d{" "}
+                    <span className="font-bold text-white">{Math.min(journalCurrentPage * JOURNAL_PAGE_SIZE, groupedTeacherJournalsByDate.length)}</span> dari{" "}
+                    <span className="font-bold text-white">{groupedTeacherJournalsByDate.length}</span> (Halaman {journalCurrentPage} dari {journalTotalPages})
+                  </div>
+
+                  {journalTotalPages > 1 && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setJournalCurrentPage(1)}
+                        disabled={journalCurrentPage === 1}
+                        className="px-2 py-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-semibold cursor-pointer"
+                        title="Halaman Pertama"
+                      >
+                        «
+                      </button>
+                      <button
+                        onClick={() => setJournalCurrentPage((prev) => Math.max(1, prev - 1))}
+                        disabled={journalCurrentPage === 1}
+                        className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                        title="Sebelumnya"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+
+                      {Array.from({ length: journalTotalPages }, (_, i) => i + 1).map((pageNum) => (
+                        <button
+                          key={pageNum}
+                          onClick={() => setJournalCurrentPage(pageNum)}
+                          className={`w-8 h-8 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                            journalCurrentPage === pageNum
+                              ? "bg-indigo-600 border-indigo-500 text-white shadow-sm"
+                              : "bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-white"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+
+                      <button
+                        onClick={() => setJournalCurrentPage((prev) => Math.min(journalTotalPages, prev + 1))}
+                        disabled={journalCurrentPage === journalTotalPages}
+                        className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                        title="Selanjutnya"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setJournalCurrentPage(journalTotalPages)}
+                        disabled={journalCurrentPage === journalTotalPages}
+                        className="px-2 py-1.5 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-900 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-semibold cursor-pointer"
+                        title="Halaman Terakhir"
+                      >
+                        »
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <>
