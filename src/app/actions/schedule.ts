@@ -1105,7 +1105,7 @@ export async function getDailyAttendanceMatrixAction(dateStr: string) {
   }
 }
 
-// Hapus Kegiatan Tambahan (Non-KBM Custom Activity)
+// Hapus Jurnal Mengajar / Kegiatan
 export async function deleteCustomActivityJurnalAction(jurnalId: string) {
   const user = await getSessionUser();
   if (!user) {
@@ -1126,16 +1126,11 @@ export async function deleteCustomActivityJurnalAction(jurnalId: string) {
       return { error: "Anda tidak memiliki akses untuk menghapus jurnal ini." };
     }
 
-    const isCustom =
-      !existing.jadwalId ||
-      existing.kelas?.nama === "KEGIATAN UMUM" ||
-      existing.mapel?.nama === "Kegiatan Pembelajaran";
-
-    if (!isCustom) {
-      return { error: "Hanya jurnal kegiatan tambahan yang dapat dihapus." };
-    }
-
     await prisma.jurnalAbsensi.deleteMany({
+      where: { jurnalId },
+    });
+
+    await prisma.jurnalPenilaian.deleteMany({
       where: { jurnalId },
     });
 
@@ -1146,10 +1141,10 @@ export async function deleteCustomActivityJurnalAction(jurnalId: string) {
     revalidatePath("/jadwal");
     revalidatePath("/dashboard");
 
-    return { success: true, message: "Kegiatan tambahan berhasil dihapus." };
+    return { success: true, message: "Jurnal berhasil dihapus." };
   } catch (error: any) {
     console.error("deleteCustomActivityJurnalAction error:", error);
-    return { error: error.message || "Gagal menghapus kegiatan tambahan." };
+    return { error: error.message || "Gagal menghapus jurnal." };
   }
 }
 

@@ -1412,10 +1412,10 @@ export default function JadwalClient({
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-indigo-400" />
-                Riwayat Jurnal Mengajar Saya
+                Riwayat Jurnal Kegiatan
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Kumpulan log jurnal kegiatan pembelajaran yang telah berhasil Anda buat.
+                Kumpulan log jurnal kegiatan yang telah berhasil Anda buat.
               </p>
             </div>
             <div className="w-full sm:w-64 relative rounded-xl">
@@ -1440,7 +1440,7 @@ export default function JadwalClient({
                   <th className="px-4 py-3.5 w-36 text-center border-b border-r border-slate-800/60">Tanggal</th>
                   <th className="px-4 py-3.5 w-64 border-b border-r border-slate-800/60">Nama Jurnal</th>
                   <th className="px-4 py-3.5 border-b border-r border-slate-800/60">Deskripsi</th>
-                  <th className="px-4 py-3.5 w-52 text-center border-b border-r border-slate-800/60">Aksi Sesi</th>
+                  <th className="px-4 py-3.5 w-48 text-center border-b border-r border-slate-800/60">Aksi Sesi</th>
                   <th className="px-4 py-3.5 w-40 text-center border-b border-slate-800/60">Aksi Per Hari</th>
                 </tr>
               </thead>
@@ -1498,54 +1498,52 @@ export default function JadwalClient({
                           <div className="flex items-center justify-center gap-1.5 flex-wrap">
                             <button
                               onClick={() => setSelectedJournal(item)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold transition cursor-pointer"
+                              className="inline-flex items-center justify-center p-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition cursor-pointer shadow-sm"
+                              title="Lihat Detail Jurnal"
                             >
-                              <Eye className="w-3.5 h-3.5" />
-                              Lihat
+                              <Eye className="w-4 h-4" />
                             </button>
                             {(!item.jadwalId || item.kelas?.nama === "KEGIATAN UMUM" || item.mapel?.nama === "Kegiatan Pembelajaran") ? (
                               <button
                                 type="button"
                                 onClick={() => handleEditCustomActivity(item)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition cursor-pointer"
+                                className="inline-flex items-center justify-center p-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white transition cursor-pointer shadow-sm"
+                                title="Edit Jurnal"
                               >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                Edit
+                                <Edit3 className="w-4 h-4" />
                               </button>
                             ) : (
                               <Link
                                 href={`/jadwal/jurnal/isi?jurnalId=${item.id}${item.jadwalId ? `&jadwalId=${item.jadwalId}` : ''}&tanggal=${new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(item.tanggal))}`}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition cursor-pointer"
+                                className="inline-flex items-center justify-center p-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white transition cursor-pointer shadow-sm"
+                                title="Edit Jurnal"
                               >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                Edit
+                                <Edit3 className="w-4 h-4" />
                               </Link>
                             )}
-                            {(!item.jadwalId || item.kelas?.nama === "KEGIATAN UMUM" || item.mapel?.nama === "Kegiatan Pembelajaran") && (
-                              <button
-                                onClick={() => handleDeleteCustomActivity(item.id, item.namaJurnal)}
-                                disabled={deletingJournalId === item.id}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:bg-rose-800 text-white text-[11px] font-bold transition cursor-pointer"
-                              >
-                                {deletingJournalId === item.id ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                )}
-                                Hapus
-                              </button>
-                            )}
+                            <button
+                              onClick={() => handleDeleteCustomActivity(item.id, item.namaJurnal)}
+                              disabled={deletingJournalId === item.id}
+                              className="inline-flex items-center justify-center p-2 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white transition cursor-pointer shadow-sm"
+                              title="Hapus Jurnal"
+                            >
+                              {deletingJournalId === item.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </button>
                             <button
                               onClick={() => handleDownloadJournalPDF(item.id)}
                               disabled={downloadingPdfId === item.id}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white text-[11px] font-bold transition cursor-pointer"
+                              className="inline-flex items-center justify-center p-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white transition cursor-pointer shadow-sm"
+                              title="Download PDF"
                             >
                               {downloadingPdfId === item.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <Loader2 className="w-4 h-4 animate-spin" />
                               ) : (
-                                <Download className="w-3.5 h-3.5" />
+                                <Download className="w-4 h-4" />
                               )}
-                              Download
                             </button>
                           </div>
                         </td>

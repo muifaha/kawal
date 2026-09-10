@@ -1210,7 +1210,7 @@ export default async function DashboardPage() {
     };
   }
 
-  // 7. Get unsubmitted attendance dates from PAST effective learning days (prior to today)
+  // 7. Get unsubmitted attendance dates from PAST effective learning days (past 7 days)
   const pastUnsubmittedAttendanceDates: Array<{
     dateStr: string;
     dateFormatted: string;
@@ -1219,9 +1219,9 @@ export default async function DashboardPage() {
     classes: Array<{ id: string; nama: string; walasNama: string }>;
   }> = [];
 
-  const pastCheckDaysLimit = 30;
+  const pastCheckDaysLimit = 7;
   const pastDatesToCheck: string[] = [];
-  const startDateObj = rangeMulai ? new Date(rangeMulai) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const startDateObj = rangeMulai ? new Date(rangeMulai) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const nowWib = new Date();
 
   const dbHolidaysAll = await prisma.hariLibur.findMany({ select: { tanggal: true } });
@@ -1249,37 +1249,16 @@ export default async function DashboardPage() {
   }
 
   if (pastDatesToCheck.length > 0) {
-    let checkClassFilterPast: any = {
-      tahunAjaran: { isActive: true },
-    };
-
-    if (user.role === "BK") {
-      checkClassFilterPast.bkId = user.id;
-    } else if (user.role === "WALAS") {
-      checkClassFilterPast.walasId = user.id;
-    }
-
-    const allActiveClassesPast = await prisma.kelas.findMany({
-      where: checkClassFilterPast,
-      select: {
-        id: true,
-        nama: true,
-        walas: { select: { nama: true } },
-      },
-      orderBy: { nama: "asc" },
-    });
+    const allActiveClassesPast = classes.map((c) => ({
+      id: c.id,
+      nama: c.nama,
+      walasNama: (c as any).walas?.nama || "Belum Ditentukan",
+    }));
 
     const dateObjList = pastDatesToCheck.map((d) => new Date(`${d}T00:00:00.000Z`));
     const allRecordedAbsensiBatch = await prisma.absensi.findMany({
       where: {
         tanggal: { in: dateObjList },
-        siswa: {
-          riwayatKelas: {
-            some: {
-              tahunAjaran: { isActive: true },
-            },
-          },
-        },
       },
       select: {
         tanggal: true,
@@ -1292,6 +1271,7 @@ export default async function DashboardPage() {
           },
         },
       },
+      take: 2000,
     });
 
     const dateToClassMap = new Map<string, Set<string>>();
@@ -1312,7 +1292,7 @@ export default async function DashboardPage() {
         .map((c) => ({
           id: c.id,
           nama: c.nama,
-          walasNama: c.walas?.nama || "Belum Ditentukan",
+          walasNama: c.walasNama,
         }))
         .sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: "base" }));
 
