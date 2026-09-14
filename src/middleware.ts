@@ -20,6 +20,7 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/api/cron/") ||
     pathname.startsWith("/api/pddikti/") ||
     pathname.startsWith("/api/get_public_data") ||
     pathname.startsWith("/api/public_data") ||
