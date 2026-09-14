@@ -24,7 +24,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const result = await checkAndApplyAutomaticRemissions();
+    const force = searchParams.get("force") === "true";
+    const result = await checkAndApplyAutomaticRemissions(force);
 
     return NextResponse.json(
       {

@@ -118,8 +118,140 @@ export async function applyConditionalRemisiAction(
 }
 
 /**
- * Menjalankan pencarian Remisi Otomatis Bulanan.
- * Mengurangi 10% poin untuk seluruh siswa aktif yang bersih dari pelanggaran selama 30 hari terakhir.
+ * Core function untuk memproses remisi otomatis 10% bagi siswa yang 30 hari bersih dari pelanggaran.
+ */
+export async function processAutomaticRemissions(options?: { forceRun?: boolean; approverId?: string }) {
+  const today = new Date();
+  const todayStr = getTodayWibStr(); // YYYY-MM-DD in Asia/Jakarta
+
+  // 1. Cek apakah pengecekan otomatis sudah pernah dilakukan hari ini (kecuali jika forceRun = true)
+  if (!options?.forceRun) {
+    const lastCheck = await prisma.appSetting.findUnique({
+      where: { key: "last_automatic_remission_check" },
+    });
+
+    if (lastCheck && lastCheck.value === todayStr) {
+      return { success: true, message: "Pengecekan remisi otomatis sudah berjalan hari ini.", processedCount: 0 };
+    }
+  }
+
+  // 2. Ambil seluruh siswa aktif yang memiliki sekurang-kurangnya 1 pelanggaran APPROVED
+  const activeStudents = await prisma.siswa.findMany({
+    where: {
+      status: "AKTIF",
+      pelanggaran: {
+        some: {
+          status: "APPROVED",
+        },
+      },
+    },
+    select: {
+      id: true,
+      nama: true,
+      createdAt: true,
+      pelanggaran: {
+        where: { status: "APPROVED" },
+        select: {
+          tanggal: true,
+          approvedAt: true,
+          detailPelanggaran: { select: { poin: true } },
+        },
+      },
+      remisi: {
+        select: {
+          jenis: true,
+          tanggal: true,
+          poinDikurangi: true,
+        },
+      },
+    },
+  });
+
+  const transactions = [];
+  let processedCount = 0;
+
+  for (const student of activeStudents) {
+    // Hitung poin net berjalan saat ini
+    const totalViolations = student.pelanggaran.reduce(
+      (sum, v) => sum + v.detailPelanggaran.poin,
+      0
+    );
+    const totalRemissions = Math.round(student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
+    const currentPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
+
+    // Lewati jika siswa tidak memiliki poin (> 0)
+    if (currentPoints <= 0) continue;
+
+    // Cari tanggal pelanggaran disetujui/tercatat terakhir (bisa dari approvedAt atau tanggal)
+    let lastViolationDate = student.createdAt;
+    student.pelanggaran.forEach((v) => {
+      const vDate = v.approvedAt || v.tanggal;
+      if (vDate && vDate > lastViolationDate) {
+        lastViolationDate = vDate;
+      }
+    });
+
+    // Cari tanggal remisi otomatis terakhir
+    let lastRemissionDate = student.createdAt;
+    student.remisi.forEach((r) => {
+      if (r.jenis === "OTOMATIS" && r.tanggal > lastRemissionDate) {
+        lastRemissionDate = r.tanggal;
+      }
+    });
+
+    // Baseline pembanding adalah tanggal terbaru antara pelanggaran terakhir dan remisi otomatis terakhir
+    const baselineDate = lastViolationDate > lastRemissionDate ? lastViolationDate : lastRemissionDate;
+
+    // Hitung selisih hari dari baselineDate ke hari ini
+    const diffTime = today.getTime() - baselineDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    // Jika selisih hari >= 30 hari
+    if (diffDays >= 30) {
+      const pointsToReduce = Math.max(0.1, Math.round(currentPoints * 0.1 * 100) / 100);
+
+      transactions.push(
+        prisma.transaksiRemisi.create({
+          data: {
+            siswaId: student.id,
+            jenis: "OTOMATIS",
+            poinDikurangi: pointsToReduce,
+            tanggal: today,
+            ...(options?.approverId ? { approverId: options.approverId } : {}),
+          },
+        })
+      );
+      processedCount++;
+    }
+  }
+
+  // Jalankan transaksi DB jika ada siswa yang berhak menerima remisi
+  if (transactions.length > 0) {
+    await prisma.$transaction(transactions);
+  }
+
+  // Catat tanggal pengecekan sukses hari ini
+  await prisma.appSetting.upsert({
+    where: { key: "last_automatic_remission_check" },
+    update: { value: todayStr },
+    create: { key: "last_automatic_remission_check", value: todayStr },
+  });
+
+  if (processedCount > 0) {
+    revalidatePath("/dashboard");
+    revalidatePath("/remisi");
+    revalidatePath("/pelanggaran");
+  }
+
+  return {
+    success: true,
+    message: `Pengecekan remisi otomatis selesai. ${processedCount} siswa berhasil menerima pengurangan poin 10% (karena bersih dari pelanggaran selama 30 hari).`,
+    processedCount,
+  };
+}
+
+/**
+ * Menjalankan pencarian Remisi Otomatis Bulanan secara manual (dari menu BK/Remisi).
  */
 export async function runAutomaticRemissionAction() {
   const user = await getSessionUser();
@@ -129,215 +261,22 @@ export async function runAutomaticRemissionAction() {
   }
 
   try {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    // 1. Ambil seluruh siswa aktif
-    const activeStudents = await prisma.siswa.findMany({
-      where: { status: "AKTIF" },
-      include: {
-        pelanggaran: {
-          where: { status: "APPROVED" },
-          include: { detailPelanggaran: true },
-        },
-        remisi: true,
-      },
-    });
-
-    let processedCount = 0;
-    const transactions = [];
-
-    for (const student of activeStudents) {
-      // Hitung poin saat ini
-      const totalViolations = student.pelanggaran.reduce(
-        (sum, v) => sum + v.detailPelanggaran.poin,
-        0
-      );
-      const totalRemissions = Math.round(student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
-      const currentPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
-
-      // Siswa harus memiliki poin > 0 untuk menerima remisi
-      if (currentPoints === 0) continue;
-
-      // Cek apakah ada pelanggaran yang disahkan dalam 30 hari terakhir
-      const hasRecentViolations = await prisma.laporanPelanggaran.findFirst({
-        where: {
-          siswaId: student.id,
-          status: "APPROVED",
-          tanggal: {
-            gte: thirtyDaysAgo,
-          },
-        },
-      });
-
-      // Jika bersih dari pelanggaran selama 30 hari terakhir, berikan remisi 10%
-      if (!hasRecentViolations) {
-        const pointsToReduce = Math.max(0.1, Math.round(currentPoints * 0.1 * 100) / 100);
-
-        transactions.push(
-          prisma.transaksiRemisi.create({
-            data: {
-              siswaId: student.id,
-              jenis: "OTOMATIS",
-              poinDikurangi: pointsToReduce,
-              approverId: user.id,
-            },
-          })
-        );
-        processedCount++;
-      }
-    }
-
-    if (transactions.length > 0) {
-      await prisma.$transaction(transactions);
-    }
-
-    revalidatePath("/dashboard");
-    revalidatePath("/remisi");
-    revalidatePath("/pelanggaran");
-
-    return {
-      success: true,
-      message: `Pemindaian selesai. Sebanyak ${processedCount} siswa berhasil mendapatkan Remisi Otomatis Bulanan (potongan 10% poin karena bersih dari pelanggaran selama 30 hari).`,
-    };
-  } catch (error) {
+    const res = await processAutomaticRemissions({ forceRun: true, approverId: user.id });
+    return res;
+  } catch (error: any) {
     console.error("Run automatic remission error:", error);
-    return { error: "Terjadi kesalahan saat menjalankan pemindaian remisi otomatis." };
+    return { error: error.message || "Terjadi kesalahan saat menjalankan pemindaian remisi otomatis." };
   }
 }
 
 /**
- * Memeriksa dan menerapkan remisi otomatis (potongan 10% poin)
- * jika siswa tidak melakukan pelanggaran baru dalam 30 hari terakhir.
- * Pengecekan ini dioptimalkan agar hanya berjalan sekali sehari per aplikasi (via AppSetting date check).
+ * Memeriksa dan menerapkan remisi otomatis (potongan 10% poin) via Cron / Daily check.
  */
-export async function checkAndApplyAutomaticRemissions() {
+export async function checkAndApplyAutomaticRemissions(forceRun = false) {
   try {
-    const today = new Date();
-    const todayStr = getTodayWibStr(); // YYYY-MM-DD in Asia/Jakarta
-
-    // 1. Cek apakah pengecekan otomatis sudah pernah dilakukan hari ini
-    const lastCheck = await prisma.appSetting.findUnique({
-      where: { key: "last_automatic_remission_check" },
-    });
-
-    if (lastCheck && lastCheck.value === todayStr) {
-      // Sudah dijalankan hari ini, lewati
-      return { success: true, message: "Pengecekan remisi otomatis sudah berjalan hari ini." };
-    }
-
-    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    // 2. Cari siswa aktif yang memiliki pelanggaran disetujui sekurang-kurangnya 30 hari lalu
-    const activeStudents = await prisma.siswa.findMany({
-      where: {
-        status: "AKTIF",
-        pelanggaran: {
-          some: {
-            status: "APPROVED",
-            approvedAt: { lte: thirtyDaysAgo },
-          },
-        },
-      },
-      select: {
-        id: true,
-        createdAt: true,
-        pelanggaran: {
-          where: { status: "APPROVED" },
-          select: {
-            approvedAt: true,
-            detailPelanggaran: { select: { poin: true } },
-          },
-        },
-        remisi: {
-          select: {
-            jenis: true,
-            tanggal: true,
-            poinDikurangi: true,
-          },
-        },
-      },
-    });
-
-    const transactions = [];
-    let processedCount = 0;
-
-    for (const student of activeStudents) {
-      // Hitung poin net berjalan
-      const totalViolations = student.pelanggaran.reduce(
-        (sum, v) => sum + v.detailPelanggaran.poin,
-        0
-      );
-      const totalRemissions = Math.round(student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
-      const currentPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
-
-      // Lewati jika siswa tidak memiliki poin
-      if (currentPoints === 0) continue;
-
-      // Cari tanggal pelanggaran disetujui terakhir
-      let lastViolationDate = student.createdAt;
-      student.pelanggaran.forEach((v) => {
-        if (v.approvedAt && v.approvedAt > lastViolationDate) {
-          lastViolationDate = v.approvedAt;
-        }
-      });
-
-      // Cari tanggal remisi otomatis terakhir
-      let lastRemissionDate = student.createdAt;
-      student.remisi.forEach((r) => {
-        if (r.jenis === "OTOMATIS" && r.tanggal > lastRemissionDate) {
-          lastRemissionDate = r.tanggal;
-        }
-      });
-
-      // Tentukan batas/baseline pembanding
-      const baselineDate = lastViolationDate > lastRemissionDate ? lastViolationDate : lastRemissionDate;
-
-      // Hitung selisih hari antara baselineDate dan today
-      const diffTime = Math.abs(today.getTime() - baselineDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      // Jika selisih hari >= 30 hari
-      if (diffDays >= 30) {
-        const pointsToReduce = Math.max(0.1, Math.round(currentPoints * 0.1 * 100) / 100);
-
-        transactions.push(
-          prisma.transaksiRemisi.create({
-            data: {
-              siswaId: student.id,
-              jenis: "OTOMATIS",
-              poinDikurangi: pointsToReduce,
-              tanggal: today,
-            },
-          })
-        );
-        processedCount++;
-      }
-    }
-
-    // Jalankan semua penambahan transaksi remisi dalam satu database transaction
-    if (transactions.length > 0) {
-      await prisma.$transaction(transactions);
-    }
-
-    // 3. Catat tanggal pengecekan sukses hari ini
-    await prisma.appSetting.upsert({
-      where: { key: "last_automatic_remission_check" },
-      update: { value: todayStr },
-      create: { key: "last_automatic_remission_check", value: todayStr },
-    });
-
-    if (processedCount > 0) {
-      revalidatePath("/dashboard");
-      revalidatePath("/remisi");
-    }
-
-    return {
-      success: true,
-      message: `Pengecekan remisi otomatis selesai. ${processedCount} siswa menerima pengurangan poin 10%.`,
-    };
-  } catch (error) {
+    return await processAutomaticRemissions({ forceRun });
+  } catch (error: any) {
     console.error("Check and apply automatic remissions error:", error);
-    return { error: "Terjadi kesalahan saat memproses remisi otomatis." };
+    return { error: error.message || "Terjadi kesalahan saat memproses remisi otomatis." };
   }
 }
