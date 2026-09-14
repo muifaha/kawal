@@ -153,7 +153,7 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
     }
 
     async function loadCloudDraft() {
-      const res = await getJurnalDraftAction(jadwal.id);
+      const res = await getJurnalDraftAction(jadwal.id, targetDateStr);
       if (res.success && res.draft) {
         if (res.draft.namaJurnal) setNamaJurnal(res.draft.namaJurnal);
         if (res.draft.kegiatan) setKegiatan(res.draft.kegiatan);

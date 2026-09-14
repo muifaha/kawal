@@ -691,7 +691,7 @@ export async function saveJurnalDraftAction(payload: {
 }
 
 // Get Jurnal Draft Action
-export async function getJurnalDraftAction(jadwalId: string) {
+export async function getJurnalDraftAction(jadwalId: string, targetDateStr?: string) {
   const user = await getSessionUser();
   if (!user) return { error: "Akses ditolak." };
 
@@ -706,6 +706,31 @@ export async function getJurnalDraftAction(jadwalId: string) {
     });
 
     if (!draft) return { success: true, draft: null };
+
+    // Format tanggal draft ke YYYY-MM-DD (Asia/Jakarta)
+    const draftDateStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(draft.updatedAt));
+
+    const todayWibStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
+    const expectedDateStr = (targetDateStr && /^\d{4}-\d{2}-\d{2}$/.test(targetDateStr)) ? targetDateStr : todayWibStr;
+
+    // Jika draf berasal dari tanggal/minggu berbeda, hapus draf kadaluarsa tersebut
+    if (draftDateStr !== expectedDateStr) {
+      await prisma.jurnalDraft.delete({
+        where: { id: draft.id },
+      });
+      return { success: true, draft: null };
+    }
 
     const timeStr = draft.updatedAt.toLocaleTimeString("id-ID", {
       hour: "2-digit",
