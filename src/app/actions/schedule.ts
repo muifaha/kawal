@@ -1348,14 +1348,16 @@ export async function getRekapKehadiranJurnalExcelAction(payload: {
             nama: sk.siswa.nama,
           }))
           .sort((a: any, b: any) => a.nama.localeCompare(b.nama)),
-        schedules: (c.jadwal || []).map((j: any) => ({
-          id: j.id,
-          hari: j.hari,
-          jamMulai: j.jamMulai,
-          jamSelesai: j.jamSelesai,
-          mapelNama: j.mapel.nama,
-          guruNama: j.guru.nama,
-        })),
+        schedules: (c.jadwal || [])
+          .filter((j: any) => isWaka || j.guruId === user.id)
+          .map((j: any) => ({
+            id: j.id,
+            hari: j.hari,
+            jamMulai: j.jamMulai,
+            jamSelesai: j.jamSelesai,
+            mapelNama: j.mapel.nama,
+            guruNama: j.guru.nama,
+          })),
       })),
       journals: journals.map((j) => ({
         id: j.id,

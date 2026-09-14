@@ -518,15 +518,17 @@ export default function JadwalClient({
         const titleRow = ws.addRow([`REKAP KEHADIRAN SISWA JURNAL MENGAJAR`]);
         titleRow.getCell(1).font = { name: "Segoe UI", size: 14, bold: true, color: { argb: "FF1E293B" } };
 
-        const subtitleRow = ws.addRow([
-          `Kelas: ${classItem.nama} | Mata Pelajaran: ${mapelSubtext} | Wali Kelas: ${classItem.walasNama} | Sekolah: ${res.schoolName}`
-        ]);
-        subtitleRow.getCell(1).font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF475569" } };
+        const classRow = ws.addRow([`Kelas : ${classItem.nama}`]);
+        classRow.getCell(1).font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF1E293B" } };
 
-        const periodeRow = ws.addRow([`Periode: ${res.periodeLabel}`]);
+        const mapelRow = ws.addRow([`Mata Pelajaran : ${mapelSubtext}`]);
+        mapelRow.getCell(1).font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF1E293B" } };
+
+        const walasRow = ws.addRow([`Wali Kelas : ${classItem.walasNama} | Sekolah: ${res.schoolName}`]);
+        walasRow.getCell(1).font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF475569" } };
+
+        const periodeRow = ws.addRow([`Periode : ${res.periodeLabel}`]);
         periodeRow.getCell(1).font = { name: "Segoe UI", size: 10, italic: true, color: { argb: "FF64748B" } };
-
-        ws.addRow([]); // Blank row spacing
 
         // Gather all unique teaching dates for this class with mapel names
         const datesMap = new Map<string, { dateStr: string; mapelNama: string; hasJournal: boolean }>();
@@ -565,29 +567,22 @@ export default function JadwalClient({
 
         const datesList = Array.from(datesMap.values()).sort((a, b) => a.dateStr.localeCompare(b.dateStr));
 
-        // Table Header Row
+        // Table Header Row: Clean date labels (e.g. 08/09)
         const headerRowValues: string[] = ["No", "NIS", "Nama Siswa"];
-        datesList.forEach((dInfo) => {
+        datesList.forEach((dInfo: any) => {
           const [, m, day] = dInfo.dateStr.split("-");
-          const dateLabel = `${day}/${m}`;
-          const mapelTag = dInfo.mapelNama ? `\n(${dInfo.mapelNama})` : "";
-
-          if (dInfo.hasJournal) {
-            headerRowValues.push(`${dateLabel}${mapelTag}`);
-          } else {
-            headerRowValues.push(`${dateLabel}${mapelTag}\n(-)`);
-          }
+          headerRowValues.push(`${day}/${m}`);
         });
 
         headerRowValues.push("Hadir (H)", "Sakit (S)", "Izin (I)", "Alpha (A)", "Dispensasi (D)", "% Kehadiran");
 
         const tableHeaderRow = ws.addRow(headerRowValues);
-        tableHeaderRow.height = 28;
+        tableHeaderRow.height = 24;
 
         const totalCols = headerRowValues.length;
-        ws.mergeCells(1, 1, 1, Math.max(totalCols, 6));
-        ws.mergeCells(2, 1, 2, Math.max(totalCols, 6));
-        ws.mergeCells(3, 1, 3, Math.max(totalCols, 6));
+        for (let r = 1; r <= 5; r++) {
+          ws.mergeCells(r, 1, r, Math.max(totalCols, 6));
+        }
 
         // Style Table Header Row
         tableHeaderRow.eachCell((cell) => {
