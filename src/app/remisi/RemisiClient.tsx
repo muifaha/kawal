@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { applyConditionalRemisiAction } from "@/app/actions/remisi";
-import { AlertCircle, CheckCircle, Sparkles, User, Calendar, Search, X, Paperclip, ChevronLeft, ChevronRight } from "lucide-react";
+import { applyConditionalRemisiAction, runAutomaticRemissionAction } from "@/app/actions/remisi";
+import { AlertCircle, CheckCircle, Sparkles, User, Calendar, Search, X, Paperclip, ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
 interface Siswa {
@@ -106,6 +106,36 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
     });
   };
 
+  const [isAutoRunning, setIsAutoRunning] = useState(false);
+
+  const handleRunAutoRemisi = async () => {
+    if (
+      !confirm(
+        "Jalankan pemindaian Remisi Otomatis Bulanan? Seluruh siswa aktif yang bersih dari pelanggaran selama 30 hari akan menerima pengurangan 10% poin."
+      )
+    ) {
+      return;
+    }
+    setIsAutoRunning(true);
+    setAlert(null);
+    try {
+      const res = await runAutomaticRemissionAction();
+      if ("error" in res && res.error) {
+        setAlert({ type: "error", message: String(res.error) });
+      } else if ("message" in res) {
+        setAlert({
+          type: "success",
+          message: res.message || "Pemindaian remisi otomatis berhasil dijalankan!",
+        });
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    } catch (err: any) {
+      setAlert({ type: "error", message: "Gagal memproses remisi otomatis." });
+    } finally {
+      setIsAutoRunning(false);
+    }
+  };
+
 
 
   const filteredHistory = history.filter((item) =>
@@ -131,29 +161,47 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
   return (
     <div className="space-y-0">
       {/* Tab Bar */}
-      <div className="flex border-b border-slate-900 mb-6">
-        <button
-          onClick={() => setActiveTab("form")}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all -mb-px ${
-            activeTab === "form"
-              ? "border-emerald-400 text-emerald-400"
-              : "border-transparent text-slate-500 hover:text-slate-300"
-          }`}
-        >
-          <Sparkles className="w-4 h-4" />
-          Tambah Remisi
-        </button>
-        <button
-          onClick={() => setActiveTab("log")}
-          className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all -mb-px ${
-            activeTab === "log"
-              ? "border-emerald-400 text-emerald-400"
-              : "border-transparent text-slate-500 hover:text-slate-300"
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          Log Riwayat Remisi ({filteredHistory.length})
-        </button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-900 mb-6 gap-3">
+        <div className="flex -mb-px">
+          <button
+            onClick={() => setActiveTab("form")}
+            className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all ${
+              activeTab === "form"
+                ? "border-emerald-400 text-emerald-400"
+                : "border-transparent text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            Tambah Remisi
+          </button>
+          <button
+            onClick={() => setActiveTab("log")}
+            className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all ${
+              activeTab === "log"
+                ? "border-emerald-400 text-emerald-400"
+                : "border-transparent text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            Log Riwayat Remisi ({filteredHistory.length})
+          </button>
+        </div>
+
+        <div className="pb-3 sm:pb-0">
+          <button
+            type="button"
+            onClick={handleRunAutoRemisi}
+            disabled={isAutoRunning}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 disabled:opacity-50 text-emerald-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-all cursor-pointer"
+          >
+            {isAutoRunning ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            Pindai & Eksekusi Remisi Otomatis (30 Hari)
+          </button>
+        </div>
       </div>
 
       {/* Tab: Form Tambah Remisi */}
