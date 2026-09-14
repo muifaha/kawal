@@ -1262,11 +1262,23 @@ export async function getRekapKehadiranJurnalExcelAction(payload: {
       }
     }
 
-    // 3. Ambil Kelas Aktif
+    // 3. Ambil Kelas Target (Jika role GURU/WALAS, hanya tampilkan kelas yang diajar/diwalikan)
+    const isWaka = user.role === "WAKA";
+    const teacherClassFilter = (!isWaka && !payload.kelasId)
+      ? {
+          OR: [
+            { jadwal: { some: { guruId: user.id } } },
+            { jurnal: { some: { guruId: user.id } } },
+            { walasId: user.id },
+          ],
+        }
+      : {};
+
     const classes = await prisma.kelas.findMany({
       where: {
         ...(activeTA ? { tahunAjaranId: activeTA.id } : {}),
         ...(payload.kelasId ? { id: payload.kelasId } : {}),
+        ...teacherClassFilter,
       },
       include: {
         walas: true,
@@ -1296,6 +1308,7 @@ export async function getRekapKehadiranJurnalExcelAction(payload: {
           lte: endDate,
         },
         ...(payload.kelasId ? { kelasId: payload.kelasId } : {}),
+        ...(!isWaka ? { guruId: user.id } : {}),
       },
       include: {
         absensi: true,

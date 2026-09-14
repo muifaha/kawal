@@ -501,12 +501,25 @@ export default function JadwalClient({
           .substring(0, 31);
         const ws = workbook.addWorksheet(cleanSheetName);
 
+        // Gather journals for this class
+        const classJournals = res.journals.filter((j: any) => j.kelasId === classItem.id);
+
+        // Map of distinct subjects taught in this class
+        const mapelNamesSet = new Set<string>();
+        classItem.schedules.forEach((s: any) => {
+          if (s.mapelNama) mapelNamesSet.add(s.mapelNama);
+        });
+        classJournals.forEach((j: any) => {
+          if (j.mapelNama) mapelNamesSet.add(j.mapelNama);
+        });
+        const mapelSubtext = mapelNamesSet.size > 0 ? Array.from(mapelNamesSet).join(", ") : "-";
+
         // Header Block
         const titleRow = ws.addRow([`REKAP KEHADIRAN SISWA JURNAL MENGAJAR`]);
         titleRow.getCell(1).font = { name: "Segoe UI", size: 14, bold: true, color: { argb: "FF1E293B" } };
 
         const subtitleRow = ws.addRow([
-          `Kelas: ${classItem.nama} | Wali Kelas: ${classItem.walasNama} | Sekolah: ${res.schoolName}`
+          `Kelas: ${classItem.nama} | Mata Pelajaran: ${mapelSubtext} | Wali Kelas: ${classItem.walasNama} | Sekolah: ${res.schoolName}`
         ]);
         subtitleRow.getCell(1).font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF475569" } };
 
@@ -515,37 +528,55 @@ export default function JadwalClient({
 
         ws.addRow([]); // Blank row spacing
 
-        // Gather all unique teaching dates for this class
-        const classJournals = res.journals.filter((j: any) => j.kelasId === classItem.id);
-        const journalDatesSet = new Set(classJournals.map((j: any) => j.tanggalStr));
+        // Gather all unique teaching dates for this class with mapel names
+        const datesMap = new Map<string, { dateStr: string; mapelNama: string; hasJournal: boolean }>();
 
-        // Find days of week where class had scheduled lessons (1=Mon..6=Sat)
-        const scheduledDays = new Set(classItem.schedules.map((s: any) => s.hari));
+        // 1) Add dates from actual journals
+        classJournals.forEach((j: any) => {
+          datesMap.set(j.tanggalStr, {
+            dateStr: j.tanggalStr,
+            mapelNama: j.mapelNama || "",
+            hasJournal: true,
+          });
+        });
 
-        const datesList: string[] = [];
+        // 2) Add dates from schedule slots
         const start = new Date(`${res.startDateStr}T00:00:00.000Z`);
         const end = new Date(`${res.endDateStr}T23:59:59.999Z`);
-
         const cur = new Date(start);
+
         while (cur <= end) {
           const dateStr = cur.toISOString().split("T")[0];
           const dayNum = cur.getUTCDay() === 0 ? 7 : cur.getUTCDay();
 
-          if (scheduledDays.has(dayNum) || journalDatesSet.has(dateStr)) {
-            datesList.push(dateStr);
+          const schedsOnDay = classItem.schedules.filter((s: any) => s.hari === dayNum);
+          if (schedsOnDay.length > 0) {
+            const mapelNamesOnDay = Array.from(new Set(schedsOnDay.map((s: any) => s.mapelNama))).join(", ");
+            if (!datesMap.has(dateStr)) {
+              datesMap.set(dateStr, {
+                dateStr,
+                mapelNama: mapelNamesOnDay,
+                hasJournal: false,
+              });
+            }
           }
           cur.setUTCDate(cur.getUTCDate() + 1);
         }
 
-        datesList.sort();
+        const datesList = Array.from(datesMap.values()).sort((a, b) => a.dateStr.localeCompare(b.dateStr));
 
         // Table Header Row
         const headerRowValues: string[] = ["No", "NIS", "Nama Siswa"];
-        datesList.forEach((d) => {
-          const [, m, day] = d.split("-");
+        datesList.forEach((dInfo) => {
+          const [, m, day] = dInfo.dateStr.split("-");
           const dateLabel = `${day}/${m}`;
-          const hasJournal = classJournals.some((j: any) => j.tanggalStr === d);
-          headerRowValues.push(hasJournal ? dateLabel : `${dateLabel}\n(-)`);
+          const mapelTag = dInfo.mapelNama ? `\n(${dInfo.mapelNama})` : "";
+
+          if (dInfo.hasJournal) {
+            headerRowValues.push(`${dateLabel}${mapelTag}`);
+          } else {
+            headerRowValues.push(`${dateLabel}${mapelTag}\n(-)`);
+          }
         });
 
         headerRowValues.push("Hadir (H)", "Sakit (S)", "Izin (I)", "Alpha (A)", "Dispensasi (D)", "% Kehadiran");
@@ -589,15 +620,16 @@ export default function JadwalClient({
           let totalA = 0;
           let totalD = 0;
 
-          datesList.forEach((d) => {
-            const jMatches = classJournals.filter((j) => j.tanggalStr === d);
+          datesList.forEach((dInfo: any) => {
+            const d = dInfo.dateStr;
+            const jMatches = classJournals.filter((j: any) => j.tanggalStr === d);
             if (jMatches.length === 0) {
               // TEACHER HAS NOT FILLED JOURNAL ON THIS DATE -> Display "-"
               rowVals.push("-");
             } else {
               let status = "";
               for (const jm of jMatches) {
-                const att = jm.absensi.find((a) => a.siswaId === student.id);
+                const att = jm.absensi.find((a: any) => a.siswaId === student.id);
                 if (att) {
                   status = att.status;
                   break;
