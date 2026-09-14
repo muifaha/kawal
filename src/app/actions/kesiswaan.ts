@@ -314,6 +314,37 @@ export async function deleteViolationItemAction(detailId: string) {
   }
 }
 
+export async function toggleDetailPelanggaranActiveAction(detailId: string) {
+  try {
+    await assertWaka();
+    const existing = await prisma.detailPelanggaran.findUnique({
+      where: { id: detailId },
+    });
+    if (!existing) {
+      return { error: "Jenis pelanggaran tidak ditemukan." };
+    }
+
+    const updated = await prisma.detailPelanggaran.update({
+      where: { id: detailId },
+      data: { isActive: !existing.isActive },
+    });
+
+    revalidatePath("/kesiswaan");
+    revalidatePath("/pelanggaran");
+    revalidatePath("/dashboard");
+
+    const statusText = updated.isActive ? "diaktifkan" : "dinonaktifkan";
+    return {
+      success: true,
+      message: `Jenis pelanggaran *${updated.nama}* berhasil ${statusText}.`,
+      isActive: updated.isActive,
+    };
+  } catch (error: any) {
+    console.error("Toggle detail pelanggaran active error:", error);
+    return { error: error.message || "Gagal mengubah status jenis pelanggaran." };
+  }
+}
+
 export async function updateCategoryAction(categoryId: string, name: string) {
   try {
     await assertWaka();

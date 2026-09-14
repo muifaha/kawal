@@ -158,6 +158,9 @@ export async function getViolationOptions() {
       },
       include: {
         details: {
+          where: {
+            isActive: true,
+          },
           orderBy: {
             nama: "asc",
           },

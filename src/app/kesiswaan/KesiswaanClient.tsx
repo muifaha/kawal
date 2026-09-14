@@ -30,6 +30,7 @@ import {
   updateTahunAjaranAction,
   updateCategoryAction,
   deleteCategoryAction,
+  toggleDetailPelanggaranActiveAction,
   duplicateClassStructureAction,
   graduateClassStudentsAction,
   saveSettingsAction,
@@ -53,6 +54,8 @@ import {
   Calendar,
   CalendarDays,
   Pencil,
+  ToggleLeft,
+  ToggleRight,
   Check,
   X,
   GraduationCap,
@@ -661,6 +664,14 @@ export default function KesiswaanClient({
     setAlert(null);
     startTransition(async () => {
       const res = await deleteViolationItemAction(id);
+      handleAlert(res);
+    });
+  };
+
+  const handleToggleActiveViolation = async (id: string) => {
+    setAlert(null);
+    startTransition(async () => {
+      const res = await toggleDetailPelanggaranActiveAction(id);
       handleAlert(res);
     });
   };
@@ -1639,8 +1650,9 @@ export default function KesiswaanClient({
                 <tr>
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4 w-1/4">Kategori</th>
-                  <th className="py-3.5 px-4 w-1/2">Nama Pelanggaran</th>
+                  <th className="py-3.5 px-4 w-1/3">Nama Pelanggaran</th>
                   <th className="py-3.5 px-4">Bobot Poin</th>
+                  <th className="py-3.5 px-4 text-center w-28">Status</th>
                   <th className="py-3.5 px-4 text-center w-28">Aksi</th>
                 </tr>
               </thead>
@@ -1652,7 +1664,7 @@ export default function KesiswaanClient({
                   if (allDetails.length === 0) {
                     return (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-slate-500">Belum ada data jenis pelanggaran.</td>
+                        <td colSpan={6} className="py-8 text-center text-slate-500">Belum ada data jenis pelanggaran.</td>
                       </tr>
                     );
                   }
@@ -1661,14 +1673,46 @@ export default function KesiswaanClient({
                     <>
                       {paginatedDetails.map((d, index) => {
                         const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
+                        const isActive = (d as any).isActive !== false;
                         return (
                           <tr key={d.id} className="hover:bg-slate-900/25 transition-all">
                             <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
                             <td className="py-3 px-4 text-slate-400 font-medium">{d.categoryName}</td>
-                            <td className="py-3 px-4 font-semibold text-white">{d.nama}</td>
+                            <td className="py-3 px-4 font-semibold text-white">
+                              {d.nama}
+                              {!isActive && (
+                                <span className="ml-2 text-[10px] text-slate-500 italic">(Disembunyikan dari input baru)</span>
+                              )}
+                            </td>
                             <td className="py-3 px-4 text-rose-400 font-bold">+{d.poin} Poin</td>
                             <td className="py-3 px-4 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
+                              {isActive ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                  Aktif
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                                  Non-Aktif
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  onClick={() => handleToggleActiveViolation(d.id)}
+                                  className={`p-1.5 rounded-lg transition-all ${
+                                    isActive
+                                      ? "text-emerald-400 hover:bg-emerald-500/10"
+                                      : "text-slate-500 hover:bg-slate-800"
+                                  }`}
+                                  title={isActive ? "Non-aktifkan (Sembunyikan dari pilihan input baru)" : "Aktifkan jenis pelanggaran ini"}
+                                >
+                                  {isActive ? (
+                                    <ToggleRight className="w-4 h-4 text-emerald-400" />
+                                  ) : (
+                                    <ToggleLeft className="w-4 h-4 text-slate-500" />
+                                  )}
+                                </button>
                                 <button
                                   onClick={() => {
                                     setEditingViolation({ ...d, categoryId: d.categoryId });
@@ -1683,7 +1727,7 @@ export default function KesiswaanClient({
                                 <button
                                   onClick={() => handleDeleteViolation(d.id, d.nama)}
                                   className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-                                  title="Hapus Pelanggaran"
+                                  title="Hapus Pelanggaran (Permanen & Menghapus Histori)"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>

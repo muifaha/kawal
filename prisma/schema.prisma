@@ -225,6 +225,7 @@ model DetailPelanggaran {
   kategori   KategoriPelanggaran @relation(fields: [kategoriId], references: [id])
   nama       String              // Contoh: "Tidak memakai dasi"
   poin       Float               // Contoh: 5 atau 44.5
+  isActive   Boolean             @default(true)
 
   laporan    LaporanPelanggaran[]
 }
