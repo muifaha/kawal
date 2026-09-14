@@ -200,27 +200,33 @@ export async function processAutomaticRemissions(options?: { forceRun?: boolean;
     });
 
     // Baseline pembanding adalah tanggal terbaru antara pelanggaran terakhir dan remisi otomatis terakhir
-    const baselineDate = lastViolationDate > lastRemissionDate ? lastViolationDate : lastRemissionDate;
+    let currentBaseline = lastViolationDate > lastRemissionDate ? lastViolationDate : lastRemissionDate;
+    let runningPoints = currentPoints;
 
-    // Hitung selisih hari dari baselineDate ke hari ini
-    const diffTime = today.getTime() - baselineDate.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    // Iterasi per kelipatan 30 hari yang sudah lengkap terlewat hingga hari ini
+    while (runningPoints > 0) {
+      const nextTargetDate = new Date(currentBaseline.getTime() + 30 * 24 * 60 * 60 * 1000);
+      if (nextTargetDate > today) {
+        break;
+      }
 
-    // Jika selisih hari >= 30 hari
-    if (diffDays >= 30) {
-      const pointsToReduce = Math.max(0.1, Math.round(currentPoints * 0.1 * 100) / 100);
+      const pointsToReduce = Math.max(0.1, Math.round(runningPoints * 0.1 * 100) / 100);
+      const actualDeduction = Math.min(runningPoints, pointsToReduce);
 
       transactions.push(
         prisma.transaksiRemisi.create({
           data: {
             siswaId: student.id,
             jenis: "OTOMATIS",
-            poinDikurangi: pointsToReduce,
-            tanggal: today,
+            poinDikurangi: actualDeduction,
+            tanggal: nextTargetDate,
             ...(options?.approverId ? { approverId: options.approverId } : {}),
           },
         })
       );
+
+      runningPoints = Math.max(0, Math.round((runningPoints - actualDeduction) * 100) / 100);
+      currentBaseline = nextTargetDate;
       processedCount++;
     }
   }
