@@ -245,15 +245,8 @@ export async function getRencanaAksiSingleDate(
     });
 
     let combinedKegiatan = baseKegiatanText;
-    if (customActivityJournals.length > 0) {
-      const customTitles = listKegiatanTambahan
-        .map((k) => `${k.namaJurnal} (${k.jam}) - ${k.kegiatan}`)
-        .join("; ");
-      if (totalJadwal === 0 || baseKegiatanText === "Tidak ada jadwal mengajar pada tanggal ini") {
-        combinedKegiatan = `Kegiatan Tambahan: ${customTitles}`;
-      } else {
-        combinedKegiatan = `${baseKegiatanText}; Kegiatan Tambahan: ${customTitles}`;
-      }
+    if (customActivityJournals.length > 0 && (totalJadwal === 0 || baseKegiatanText === "Tidak ada jadwal mengajar pada tanggal ini")) {
+      combinedKegiatan = "Kegiatan Tambahan";
     }
 
     // Determine top-level jam values
