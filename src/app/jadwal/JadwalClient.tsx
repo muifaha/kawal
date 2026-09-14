@@ -297,10 +297,32 @@ export default function JadwalClient({
     let match = journalsOnSelectedDate.find((j) => j.jadwalId === sched.id);
     if (!match) {
       match = journalsOnSelectedDate.find(
-        (j) => j.kelasId === sched.kelasId && (j.guruId === user.id || j.guruId === sched.guruId)
+        (j) => j.kelasId === sched.kelasId && j.mapelId === sched.mapelId && (j.guruId === user.id || j.guruId === sched.guruId)
       );
     }
     return match;
+  };
+
+  const formatJournalJamLabel = (item: JournalItem) => {
+    if (!item.jadwalId && (item.kelas?.nama === "KEGIATAN UMUM" || item.mapel?.nama === "Kegiatan Pembelajaran")) {
+      return null;
+    }
+
+    const dateObj = new Date(item.tanggal);
+    const dayNum = dateObj.getUTCDay() === 0 ? 7 : dateObj.getUTCDay();
+
+    const matchingScheds = schedules.filter(
+      (s) => s.kelasId === item.kelasId && s.mapelId === item.mapelId && s.hari === dayNum
+    ).sort((a, b) => a.jamMulai - b.jamMulai);
+
+    if (matchingScheds.length > 1) {
+      const jamParts = matchingScheds.map((s) =>
+        s.jamMulai === s.jamSelesai ? `${s.jamMulai}` : `${s.jamMulai}-${s.jamSelesai}`
+      );
+      return `Jam ke-${jamParts.join(", ")}`;
+    }
+
+    return `Jam ke-${item.jamMulai}${item.jamMulai !== item.jamSelesai ? `-${item.jamSelesai}` : ""}`;
   };
 
   // Compute journals submitted today
@@ -1747,9 +1769,11 @@ export default function JadwalClient({
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 whitespace-nowrap">
                                   Kelas {item.kelas?.nama || "-"}
                                 </span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
-                                  Jam ke-{item.jamMulai}{item.jamMulai !== item.jamSelesai ? `-${item.jamSelesai}` : ""}
-                                </span>
+                                {formatJournalJamLabel(item) && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
+                                    {formatJournalJamLabel(item)}
+                                  </span>
+                                )}
                                 {item.mapel?.nama && (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap">
                                     {item.mapel.nama}

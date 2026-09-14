@@ -312,11 +312,20 @@ export async function saveJurnalAction(formData: FormData) {
     const parsedAbsensi = JSON.parse(absensiJson) as Array<{ siswaId: string; status: string }>;
     const parsedPenilaian = JSON.parse(penilaianJson) as Array<{ siswaId: string; nilai: number; keterangan?: string }>;
 
-    // Check existing journal for targetDate or by ID
+    // Check existing journal for targetDate, by kelasId+mapelId, or by ID
     let existingTarget = null;
     if (existingJurnalId) {
       existingTarget = await prisma.jurnalMengajar.findUnique({
         where: { id: existingJurnalId },
+      });
+    } else if (kelasId && mapelId) {
+      existingTarget = await prisma.jurnalMengajar.findFirst({
+        where: {
+          kelasId,
+          mapelId,
+          tanggal: targetDate,
+          guruId: user.id,
+        },
       });
     } else if (validJadwalId) {
       existingTarget = await prisma.jurnalMengajar.findFirst({

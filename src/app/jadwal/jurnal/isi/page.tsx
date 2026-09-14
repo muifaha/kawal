@@ -109,6 +109,23 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
   const targetKelasId = jadwal?.kelasId || existingJurnal?.kelasId;
   const targetMapelId = jadwal?.mapelId || existingJurnal?.mapelId;
 
+  if (!existingJurnal && targetKelasId && targetMapelId) {
+    existingJurnal = await prisma.jurnalMengajar.findFirst({
+      where: {
+        kelasId: targetKelasId,
+        mapelId: targetMapelId,
+        tanggal: targetDate,
+        guruId: user.id,
+      },
+      include: {
+        kelas: true,
+        guru: true,
+        mapel: true,
+        absensi: true,
+      },
+    });
+  }
+
   if (!targetKelasId || !targetMapelId) {
     redirect("/jadwal");
   }
