@@ -16,6 +16,7 @@ import {
   getJurnalFullDetailAction,
   getDailyAttendanceMatrixAction,
   deleteCustomActivityJurnalAction,
+  getRekapKehadiranJurnalExcelAction,
 } from "@/app/actions/schedule";
 import {
   printJurnalMengajarPDF,
@@ -56,6 +57,7 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import PenilaianManager from "@/components/PenilaianManager";
@@ -202,6 +204,16 @@ export default function JadwalClient({
     }).format(today);
   });
   const [showPendingTeachers, setShowPendingTeachers] = useState(false);
+
+  // Export Modal State (Kehadiran Siswa Per Bulan / Per Semester - Per Kelas Per Sheet)
+  const [showExportAttendanceModal, setShowExportAttendanceModal] = useState(false);
+  const [exportFilterType, setExportFilterType] = useState<"MONTHLY" | "SEMESTER">("MONTHLY");
+  const [exportMonth, setExportMonth] = useState<number>(() => new Date().getMonth() + 1);
+  const [exportYear, setExportYear] = useState<number>(() => new Date().getFullYear());
+  const [exportSemester, setExportSemester] = useState<"GANJIL" | "GENAP">("GANJIL");
+  const [exportKelasId, setExportKelasId] = useState<string>("");
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
+  const [exportError, setExportError] = useState("");
 
   // Compute today's string in WIB (Asia/Jakarta)
   const todayWibStr = useMemo(() => {
@@ -427,6 +439,235 @@ export default function JadwalClient({
       alert("Terjadi kesalahan saat mengekspor data matriks kehadiran ke Excel.");
     } finally {
       setIsBulkProcessing(false);
+    }
+  };
+
+  const handleExportKehadiranMultiSheetExcel = async () => {
+    setIsExportingExcel(true);
+    setExportError("");
+
+    try {
+      const res = await getRekapKehadiranJurnalExcelAction({
+        filterType: exportFilterType,
+        month: exportMonth,
+        year: exportYear,
+        semester: exportSemester,
+        kelasId: exportKelasId || undefined,
+      });
+
+      if (res.error || !res.classes) {
+        setExportError(res.error || "Gagal mengambil data rekap.");
+        setIsExportingExcel(false);
+        return;
+      }
+
+      const ExcelJS = await import("exceljs");
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = "Aplikasi Kawal";
+      workbook.created = new Date();
+
+      if (res.classes.length === 0) {
+        setExportError("Tidak ada kelas yang ditemukan untuk periode ini.");
+        setIsExportingExcel(false);
+        return;
+      }
+
+      // Process each class as its own sheet
+      res.classes.forEach((classItem: any) => {
+        const cleanSheetName = classItem.nama
+          .replace(/[/\\?*:[\]]/g, "-")
+          .substring(0, 31);
+        const ws = workbook.addWorksheet(cleanSheetName);
+
+        // Header Block
+        const titleRow = ws.addRow([`REKAP KEHADIRAN SISWA JURNAL MENGAJAR`]);
+        titleRow.getCell(1).font = { name: "Segoe UI", size: 14, bold: true, color: { argb: "FF1E293B" } };
+
+        const subtitleRow = ws.addRow([
+          `Kelas: ${classItem.nama} | Wali Kelas: ${classItem.walasNama} | Sekolah: ${res.schoolName}`
+        ]);
+        subtitleRow.getCell(1).font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF475569" } };
+
+        const periodeRow = ws.addRow([`Periode: ${res.periodeLabel}`]);
+        periodeRow.getCell(1).font = { name: "Segoe UI", size: 10, italic: true, color: { argb: "FF64748B" } };
+
+        ws.addRow([]); // Blank row spacing
+
+        // Gather all unique teaching dates for this class
+        const classJournals = res.journals.filter((j: any) => j.kelasId === classItem.id);
+        const journalDatesSet = new Set(classJournals.map((j: any) => j.tanggalStr));
+
+        // Find days of week where class had scheduled lessons (1=Mon..6=Sat)
+        const scheduledDays = new Set(classItem.schedules.map((s: any) => s.hari));
+
+        const datesList: string[] = [];
+        const start = new Date(`${res.startDateStr}T00:00:00.000Z`);
+        const end = new Date(`${res.endDateStr}T23:59:59.999Z`);
+
+        const cur = new Date(start);
+        while (cur <= end) {
+          const dateStr = cur.toISOString().split("T")[0];
+          const dayNum = cur.getUTCDay() === 0 ? 7 : cur.getUTCDay();
+
+          if (scheduledDays.has(dayNum) || journalDatesSet.has(dateStr)) {
+            datesList.push(dateStr);
+          }
+          cur.setUTCDate(cur.getUTCDate() + 1);
+        }
+
+        datesList.sort();
+
+        // Table Header Row
+        const headerRowValues: string[] = ["No", "NIS", "Nama Siswa"];
+        datesList.forEach((d) => {
+          const [, m, day] = d.split("-");
+          const dateLabel = `${day}/${m}`;
+          const hasJournal = classJournals.some((j: any) => j.tanggalStr === d);
+          headerRowValues.push(hasJournal ? dateLabel : `${dateLabel}\n(-)`);
+        });
+
+        headerRowValues.push("Hadir (H)", "Sakit (S)", "Izin (I)", "Alpha (A)", "Dispensasi (D)", "% Kehadiran");
+
+        const tableHeaderRow = ws.addRow(headerRowValues);
+        tableHeaderRow.height = 28;
+
+        const totalCols = headerRowValues.length;
+        ws.mergeCells(1, 1, 1, Math.max(totalCols, 6));
+        ws.mergeCells(2, 1, 2, Math.max(totalCols, 6));
+        ws.mergeCells(3, 1, 3, Math.max(totalCols, 6));
+
+        // Style Table Header Row
+        tableHeaderRow.eachCell((cell) => {
+          cell.font = { name: "Segoe UI", size: 9, bold: true, color: { argb: "FFFFFFFF" } };
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FF1E293B" },
+          };
+          cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+          cell.border = {
+            top: { style: "thin", color: { argb: "FF334155" } },
+            left: { style: "thin", color: { argb: "FF334155" } },
+            bottom: { style: "medium", color: { argb: "FF0F172A" } },
+            right: { style: "thin", color: { argb: "FF334155" } },
+          };
+        });
+
+        // Student Data Rows
+        classItem.students.forEach((student: any, idx: number) => {
+          const rowVals: (string | number)[] = [
+            idx + 1,
+            student.nis,
+            student.nama,
+          ];
+
+          let totalH = 0;
+          let totalS = 0;
+          let totalI = 0;
+          let totalA = 0;
+          let totalD = 0;
+
+          datesList.forEach((d) => {
+            const jMatches = classJournals.filter((j) => j.tanggalStr === d);
+            if (jMatches.length === 0) {
+              // TEACHER HAS NOT FILLED JOURNAL ON THIS DATE -> Display "-"
+              rowVals.push("-");
+            } else {
+              let status = "";
+              for (const jm of jMatches) {
+                const att = jm.absensi.find((a) => a.siswaId === student.id);
+                if (att) {
+                  status = att.status;
+                  break;
+                }
+              }
+
+              if (status) {
+                rowVals.push(status);
+                if (status === "H") totalH++;
+                else if (status === "S") totalS++;
+                else if (status === "I") totalI++;
+                else if (status === "A") totalA++;
+                else if (status === "D") totalD++;
+              } else {
+                rowVals.push("-");
+              }
+            }
+          });
+
+          const totalFilled = totalH + totalS + totalI + totalA + totalD;
+          const pct = totalFilled > 0 ? Math.round(((totalH + totalD) / totalFilled) * 1000) / 10 : 0;
+
+          rowVals.push(totalH, totalS, totalI, totalA, totalD, `${pct}%`);
+
+          const dataRow = ws.addRow(rowVals);
+          dataRow.height = 20;
+
+          const isEven = idx % 2 === 0;
+          const bgArgb = isEven ? "FFFFFFFF" : "FFF8FAFC";
+
+          dataRow.eachCell((cell, colNumber) => {
+            cell.font = { name: "Segoe UI", size: 9 };
+            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bgArgb } };
+            cell.border = {
+              top: { style: "thin", color: { argb: "FFE2E8F0" } },
+              left: { style: "thin", color: { argb: "FFE2E8F0" } },
+              bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+              right: { style: "thin", color: { argb: "FFE2E8F0" } },
+            };
+
+            if (colNumber === 1 || colNumber === 2) {
+              cell.alignment = { vertical: "middle", horizontal: "center" };
+            } else if (colNumber === 3) {
+              cell.alignment = { vertical: "middle", horizontal: "left" };
+            } else {
+              cell.alignment = { vertical: "middle", horizontal: "center" };
+              const valStr = String(cell.value);
+
+              if (valStr === "H") {
+                cell.font = { name: "Segoe UI", size: 9, bold: true, color: { argb: "FF16A34A" } };
+              } else if (valStr === "S") {
+                cell.font = { name: "Segoe UI", size: 9, bold: true, color: { argb: "FFD97706" } };
+              } else if (valStr === "I") {
+                cell.font = { name: "Segoe UI", size: 9, bold: true, color: { argb: "FF0284C7" } };
+              } else if (valStr === "A") {
+                cell.font = { name: "Segoe UI", size: 9, bold: true, color: { argb: "FFDC2626" } };
+              } else if (valStr === "D") {
+                cell.font = { name: "Segoe UI", size: 9, bold: true, color: { argb: "FF9333EA" } };
+              } else if (valStr === "-") {
+                cell.font = { name: "Segoe UI", size: 9, color: { argb: "FF94A3B8" } };
+              }
+            }
+          });
+        });
+
+        // Set Column Widths
+        ws.columns.forEach((col, cIdx) => {
+          if (cIdx === 0) col.width = 5;
+          else if (cIdx === 1) col.width = 12;
+          else if (cIdx === 2) col.width = 28;
+          else col.width = 9;
+        });
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      const cleanLabel = res.periodeLabel.replace(/[\s/]+/g, "_");
+      anchor.download = `Rekap_Kehadiran_Jurnal_${cleanLabel}.xlsx`;
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+
+      setShowExportAttendanceModal(false);
+    } catch (err: any) {
+      console.error("Export Excel error:", err);
+      setExportError(err.message || "Terjadi kesalahan saat mengekspor file Excel.");
+    } finally {
+      setIsExportingExcel(false);
     }
   };
 
@@ -1435,17 +1676,29 @@ export default function JadwalClient({
                 Kumpulan log jurnal kegiatan yang telah berhasil Anda buat.
               </p>
             </div>
-            <div className="w-full sm:w-64 relative rounded-xl">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-slate-500" />
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowExportAttendanceModal(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs font-bold text-white rounded-xl shadow-lg shadow-emerald-500/10 transition-all cursor-pointer whitespace-nowrap"
+                title="Ekspor Rekap Kehadiran Siswa Per Bulan / Per Semester (Per Kelas Per Sheet)"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>Ekspor Excel Kehadiran Siswa</span>
+              </button>
+
+              <div className="w-full sm:w-56 relative rounded-xl">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-slate-500" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Cari jurnal..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="block w-full pl-9 pr-3 py-1.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Cari jurnal..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-9 pr-3 py-1.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
             </div>
           </div>
 
@@ -3042,6 +3295,181 @@ export default function JadwalClient({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EKSPOR KEHADIRAN SISWA PER BULAN / PER SEMESTER (PER KELAS PER SHEET) */}
+      {showExportAttendanceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h4 className="text-base font-bold text-white flex items-center gap-2">
+                  <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
+                  Ekspor Kehadiran Siswa (Excel)
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Laporan rekap kehadiran per kelas per sheet (.xlsx)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowExportAttendanceModal(false)}
+                className="text-slate-500 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {exportError && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{exportError}</span>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {/* Opsi Periode: Per Bulan vs Per Semester */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Pilih Periode Laporan
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setExportFilterType("MONTHLY")}
+                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      exportFilterType === "MONTHLY"
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>Per Bulan</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setExportFilterType("SEMESTER")}
+                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      exportFilterType === "SEMESTER"
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <CalendarDays className="w-4 h-4" />
+                    <span>Per Semester</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Form Controls for MONTHLY */}
+              {exportFilterType === "MONTHLY" && (
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Bulan</label>
+                    <select
+                      value={exportMonth}
+                      onChange={(e) => setExportMonth(Number(e.target.value))}
+                      className="w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                    >
+                      {[
+                        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+                      ].map((name, idx) => (
+                        <option key={idx + 1} value={idx + 1}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Tahun</label>
+                    <select
+                      value={exportYear}
+                      onChange={(e) => setExportYear(Number(e.target.value))}
+                      className="w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                    >
+                      {[2024, 2025, 2026, 2027, 2028].map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Form Controls for SEMESTER */}
+              {exportFilterType === "SEMESTER" && (
+                <div className="pt-1 space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Semester</label>
+                    <select
+                      value={exportSemester}
+                      onChange={(e) => setExportSemester(e.target.value as "GANJIL" | "GENAP")}
+                      className="w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                    >
+                      <option value="GANJIL">Semester Ganjil (Juli - Desember)</option>
+                      <option value="GENAP">Semester Genap (Januari - Juni)</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Filter Kelas */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Pilihan Kelas</label>
+                <select
+                  value={exportKelasId}
+                  onChange={(e) => setExportKelasId(e.target.value)}
+                  className="w-full py-2 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="">Semua Kelas (Sheet Per Kelas)</option>
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      Kelas {c.nama}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-[11px] text-slate-400 space-y-1">
+                <span className="font-semibold text-slate-300 block">ℹ️ Ketentuan Format File Excel:</span>
+                <p>• Setiap kelas ditampilkan pada <strong>sheet terpisah</strong> dalam 1 file Excel.</p>
+                <p>• Pertemuan/tanggal yang <strong>belum diisi oleh guru</strong> diberi tanda <code className="text-amber-400 font-bold">-</code> (strip).</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowExportAttendanceModal(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isExportingExcel}
+                onClick={handleExportKehadiranMultiSheetExcel}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 disabled:opacity-50 text-emerald-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-all cursor-pointer"
+              >
+                {isExportingExcel ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Mengunduh...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    <span>Unduh File Excel (.xlsx)</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

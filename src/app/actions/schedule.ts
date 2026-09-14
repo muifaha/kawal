@@ -1173,4 +1173,193 @@ export async function deleteCustomActivityJurnalAction(jurnalId: string) {
   }
 }
 
+/**
+ * Action untuk mengambil data rekap kehadiran jurnal mengajar per kelas per sheet
+ * Mendukung filter Per Bulan atau Per Semester.
+ */
+export async function getRekapKehadiranJurnalExcelAction(payload: {
+  filterType: "MONTHLY" | "SEMESTER";
+  month?: number;
+  year?: number;
+  semester?: "GANJIL" | "GENAP";
+  tahunAjaranId?: string;
+  kelasId?: string;
+}) {
+  const user = await getSessionUser();
+  if (!user) {
+    return { error: "Akses ditolak." };
+  }
+
+  try {
+    // 1. Ambil Tahun Ajaran Aktif / Target
+    let activeTA = null;
+    if (payload.tahunAjaranId) {
+      activeTA = await prisma.tahunAjaran.findUnique({
+        where: { id: payload.tahunAjaranId },
+      });
+    }
+    if (!activeTA) {
+      activeTA = await prisma.tahunAjaran.findFirst({
+        where: { isActive: true },
+      });
+    }
+
+    // 2. Tentukan Rentang Tanggal (StartDate & EndDate) dan Label Periode
+    let startDate: Date;
+    let endDate: Date;
+    let periodeLabel = "";
+
+    const monthNames = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+
+    if (payload.filterType === "MONTHLY") {
+      const m = payload.month || (new Date().getMonth() + 1);
+      const y = payload.year || new Date().getFullYear();
+
+      // Format ISO string YYYY-MM-DD
+      const startStr = `${y}-${String(m).padStart(2, "0")}-01T00:00:00.000Z`;
+      const lastDay = new Date(y, m, 0).getDate();
+      const endStr = `${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}T23:59:59.999Z`;
+
+      startDate = new Date(startStr);
+      endDate = new Date(endStr);
+      periodeLabel = `Bulan ${monthNames[m - 1]} ${y}`;
+    } else {
+      // SEMESTER
+      const sem = payload.semester || "GANJIL";
+      let startYear = new Date().getFullYear();
+      let endYear = startYear + 1;
+
+      if (activeTA?.nama) {
+        const parts = activeTA.nama.split("/");
+        if (parts.length === 2) {
+          const parsedStart = parseInt(parts[0].trim());
+          const parsedEnd = parseInt(parts[1].trim());
+          if (!isNaN(parsedStart)) startYear = parsedStart;
+          if (!isNaN(parsedEnd)) endYear = parsedEnd;
+        }
+      }
+
+      if (sem === "GANJIL") {
+        startDate = new Date(`${startYear}-07-01T00:00:00.000Z`);
+        endDate = new Date(`${startYear}-12-31T23:59:59.999Z`);
+        periodeLabel = `Semester Ganjil TA ${activeTA?.nama || `${startYear}/${endYear}`}`;
+      } else {
+        startDate = new Date(`${endYear}-01-01T00:00:00.000Z`);
+        endDate = new Date(`${endYear}-06-30T23:59:59.999Z`);
+        periodeLabel = `Semester Genap TA ${activeTA?.nama || `${startYear}/${endYear}`}`;
+      }
+    }
+
+    // 3. Ambil Kelas Aktif
+    const classes = await prisma.kelas.findMany({
+      where: {
+        ...(activeTA ? { tahunAjaranId: activeTA.id } : {}),
+        ...(payload.kelasId ? { id: payload.kelasId } : {}),
+      },
+      include: {
+        walas: true,
+        siswaKelas: {
+          where: {
+            siswa: { status: "AKTIF" },
+          },
+          include: {
+            siswa: true,
+          },
+        },
+        jadwal: {
+          include: {
+            mapel: true,
+            guru: true,
+          },
+        },
+      },
+      orderBy: { nama: "asc" },
+    });
+
+    // 4. Ambil Jurnal Mengajar pada Rentang Tanggal
+    const journals = await prisma.jurnalMengajar.findMany({
+      where: {
+        tanggal: {
+          gte: startDate,
+          lte: endDate,
+        },
+        ...(payload.kelasId ? { kelasId: payload.kelasId } : {}),
+      },
+      include: {
+        absensi: true,
+        guru: true,
+        mapel: true,
+        kelas: true,
+      },
+      orderBy: [{ tanggal: "asc" }, { jamMulai: "asc" }],
+    });
+
+    // 5. Ambil Pengaturan Sekolah
+    const settingsList = await prisma.appSetting.findMany();
+    const schoolSettings = settingsList.reduce((acc, s) => {
+      acc[s.key] = s.value;
+      return acc;
+    }, {} as Record<string, string>);
+
+    // Urutkan kelas secara alami (X-1, X-2, XI-1, dst)
+    const sortedClasses = [...classes].sort((a, b) =>
+      a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: "base" })
+    );
+
+    return {
+      success: true,
+      periodeLabel,
+      startDateStr: startDate.toISOString().split("T")[0],
+      endDateStr: endDate.toISOString().split("T")[0],
+      schoolName: schoolSettings.school_name || "SMK NEGERI KAWAL",
+      classes: sortedClasses.map((c: any) => ({
+        id: c.id,
+        nama: c.nama,
+        walasNama: c.walas?.nama || "-",
+        students: c.siswaKelas
+          .map((sk: any) => ({
+            id: sk.siswa.id,
+            nis: sk.siswa.nis,
+            nama: sk.siswa.nama,
+          }))
+          .sort((a: any, b: any) => a.nama.localeCompare(b.nama)),
+        schedules: (c.jadwal || []).map((j: any) => ({
+          id: j.id,
+          hari: j.hari,
+          jamMulai: j.jamMulai,
+          jamSelesai: j.jamSelesai,
+          mapelNama: j.mapel.nama,
+          guruNama: j.guru.nama,
+        })),
+      })),
+      journals: journals.map((j) => ({
+        id: j.id,
+        kelasId: j.kelasId,
+        mapelNama: j.mapel.nama,
+        guruNama: j.guru.nama,
+        tanggalStr: new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Jakarta",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(new Date(j.tanggal)),
+        jamMulai: j.jamMulai,
+        jamSelesai: j.jamSelesai,
+        namaJurnal: j.namaJurnal,
+        absensi: j.absensi.map((a) => ({
+          siswaId: a.siswaId,
+          status: a.status,
+        })),
+      })),
+    };
+  } catch (error: any) {
+    console.error("getRekapKehadiranJurnalExcelAction error:", error);
+    return { error: error.message || "Gagal mengambil data rekap kehadiran." };
+  }
+}
+
+
 
