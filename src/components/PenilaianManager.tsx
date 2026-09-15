@@ -1305,15 +1305,49 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-400 mb-1">Lingkup Materi / Bab *</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-medium text-slate-400">Lingkup Materi / Bab *</label>
+                    {tpList.length > 0 && Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).length > 0 && (
+                      <span className="text-[10px] text-indigo-400 font-semibold">
+                        {Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).length} materi tersimpan
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     required
-                    placeholder="Contoh: Perjuangan Mempertahankan Kemerdekaan"
+                    list="existing-materi-list"
+                    placeholder="Ketik atau pilih dari materi yang ada..."
                     value={newTpMateri}
                     onChange={(e) => setNewTpMateri(e.target.value)}
                     className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-900 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
+                  <datalist id="existing-materi-list">
+                    {Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).map((materi, idx) => (
+                      <option key={idx} value={materi} />
+                    ))}
+                  </datalist>
+
+                  {/* Quick-Select Chips untuk Materi yang Sudah Pernah Diisi */}
+                  {Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      <span className="text-[10px] text-slate-500 font-medium">Pilih materi tersimpan:</span>
+                      {Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).map((materi, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setNewTpMateri(materi)}
+                          className={`px-2 py-0.5 text-[10px] rounded-md border font-medium transition cursor-pointer ${
+                            newTpMateri === materi
+                              ? "bg-indigo-600 text-white border-indigo-500 font-bold shadow"
+                              : "bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white"
+                          }`}
+                        >
+                          {materi}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[11px] font-medium text-slate-400 mb-1">
