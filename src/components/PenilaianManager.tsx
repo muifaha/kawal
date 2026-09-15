@@ -195,9 +195,12 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
     setLoadingPenilaian(false);
   };
 
-  const calculateNextTpNumber = (targetSem: number) => {
-    const existingInSemester = tpList.filter((t) => t.semester === targetSem);
-    const numbers = existingInSemester.map((t) => {
+  const calculateNextTpNumber = (targetSem: number, targetMateri: string) => {
+    if (!targetMateri.trim()) return 1;
+    const existingInMateri = tpList.filter(
+      (t) => t.semester === targetSem && t.materi.trim().toLowerCase() === targetMateri.trim().toLowerCase()
+    );
+    const numbers = existingInMateri.map((t) => {
       const match = t.kodeTp.match(/\d+/);
       return match ? parseInt(match[0], 10) : 0;
     });
@@ -206,9 +209,9 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
   };
 
   useEffect(() => {
-    const nextNum = calculateNextTpNumber(newTpSemester);
+    const nextNum = calculateNextTpNumber(newTpSemester, newTpMateri);
     setNewTpKode(nextNum.toString());
-  }, [newTpSemester, tpList]);
+  }, [newTpSemester, newTpMateri, tpList]);
 
   const fetchTpList = async (kelasId: string, mapelId: string) => {
     setLoadingTp(true);
@@ -231,7 +234,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
     setSuccessMsg("");
 
     const cleanNum = newTpKode.replace(/\D/g, "");
-    const finalKodeTp = cleanNum ? `TP ${cleanNum}` : `TP ${calculateNextTpNumber(newTpSemester)}`;
+    const finalKodeTp = cleanNum ? `TP ${cleanNum}` : `TP ${calculateNextTpNumber(newTpSemester, newTpMateri)}`;
 
     startTransition(async () => {
       const res = await createTujuanPembelajaranAction({
@@ -1368,7 +1371,11 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                     />
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1">
-                    Urutan berikutnya untuk Sem {newTpSemester}: <strong>TP {calculateNextTpNumber(newTpSemester)}</strong>
+                    {newTpMateri.trim() ? (
+                      <>Urutan berikutnya untuk &quot;<strong className="text-indigo-300">{newTpMateri.trim()}</strong>&quot;: <strong>TP {calculateNextTpNumber(newTpSemester, newTpMateri)}</strong></>
+                    ) : (
+                      <>Otomatis reset ke <strong>TP 1</strong> untuk setiap Bab / Materi baru</>
+                    )}
                   </p>
                 </div>
               </div>

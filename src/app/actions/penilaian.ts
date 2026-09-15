@@ -539,13 +539,15 @@ export async function createTujuanPembelajaranAction(payload: {
 
     const activeTa = await prisma.tahunAjaran.findFirst({ where: { isActive: true } });
     const targetSemester = payload.semester || (activeTa?.semesterAktif === "GENAP" ? 2 : 1);
+    const targetMateri = payload.materi.trim();
 
-    // Ambil daftar TP yang sudah ada untuk (guru, mapel, tingkat, semester)
+    // Ambil daftar TP yang sudah ada untuk (guru, mapel, tingkat, semester, materi)
     const existingList = await prisma.tujuanPembelajaran.findMany({
       where: {
         mapelId: payload.mapelId,
         tingkatKelas: tingkat,
         semester: targetSemester,
+        materi: targetMateri,
         ...(user.role === "WAKA" ? {} : { guruId: user.id }),
       },
       select: { kodeTp: true },
@@ -569,7 +571,7 @@ export async function createTujuanPembelajaranAction(payload: {
 
     if (inputNum > expectedNextNum) {
       return {
-        error: `Kode TP harus berurutan! TP ${inputNum} tidak dapat dibuat sebelum TP ${expectedNextNum} dibuat.`,
+        error: `Kode TP harus berurutan untuk materi "${targetMateri}"! TP ${inputNum} tidak dapat dibuat sebelum TP ${expectedNextNum} dibuat.`,
       };
     }
 
@@ -577,7 +579,7 @@ export async function createTujuanPembelajaranAction(payload: {
 
     const isDuplicate = existingList.some((item) => item.kodeTp.trim().toUpperCase() === formattedKodeTp.toUpperCase());
     if (isDuplicate) {
-      return { error: `Kode ${formattedKodeTp} sudah ada di Semester ${targetSemester}. Silakan gunakan Kode TP ${expectedNextNum}.` };
+      return { error: `Kode ${formattedKodeTp} sudah ada untuk materi "${targetMateri}". Silakan gunakan Kode TP ${expectedNextNum}.` };
     }
 
     const newItem = await prisma.tujuanPembelajaran.create({
