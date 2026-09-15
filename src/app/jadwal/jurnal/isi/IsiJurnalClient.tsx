@@ -262,16 +262,20 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
 
   const handlePhotoSlotChange = async (index: number, file: File | null) => {
     if (file) {
-      const compressedBase64 = await compressImageFile(file, 800, 0.7);
-      setPhotos((prev) => {
-        const next = [...prev];
-        next[index] = {
-          file,
-          preview: compressedBase64 || null,
-          caption: next[index].caption,
-        };
-        return next;
-      });
+      try {
+        const compressedBase64 = await compressImageFile(file, 800, 0.7);
+        setPhotos((prev) => {
+          const next = [...prev];
+          next[index] = {
+            file: null,
+            preview: compressedBase64 || null,
+            caption: next[index].caption,
+          };
+          return next;
+        });
+      } catch (err) {
+        console.error("Error compressing photo:", err);
+      }
     } else {
       setPhotos((prev) => {
         const next = [...prev];

@@ -28,6 +28,7 @@ import {
   GraduationCap,
   FileText,
   Award,
+  BookOpen,
 } from "lucide-react";
 
 interface SidebarLayoutProps {
@@ -269,6 +270,12 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       name: user.role === "GURU" ? "Penilaian" : "Penilaian Siswa",
       href: "/penilaian",
       icon: Award,
+      roles: ["WAKA", "WALAS", "GURU"],
+    },
+    {
+      name: "Manajemen Materi",
+      href: "/materi",
+      icon: BookOpen,
       roles: ["WAKA", "WALAS", "GURU"],
     },
     {
