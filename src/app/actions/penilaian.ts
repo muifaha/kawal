@@ -458,3 +458,84 @@ export async function getRekapRaporKurikulumMerdekaAction(kelasId: string, mapel
   }
 }
 
+export async function getTujuanPembelajaranListAction(kelasId: string, mapelId: string) {
+  const user = await getSessionUser();
+  if (!user) return { error: "Akses ditolak." };
+
+  try {
+    const list = await prisma.tujuanPembelajaran.findMany({
+      where: {
+        kelasId,
+        mapelId,
+        ...(user.role === "WAKA" ? {} : { guruId: user.id }),
+      },
+      orderBy: { kodeTp: "asc" },
+    });
+
+    return { success: true, data: list };
+  } catch (error: any) {
+    console.error("getTujuanPembelajaranListAction error:", error);
+    return { error: error.message || "Gagal mengambil daftar TP & Materi." };
+  }
+}
+
+export async function createTujuanPembelajaranAction(payload: {
+  kelasId: string;
+  mapelId: string;
+  materi: string;
+  kodeTp: string;
+  deskripsi?: string;
+}) {
+  const user = await getSessionUser();
+  if (!user || (user.role !== "GURU" && user.role !== "WALAS" && user.role !== "WAKA")) {
+    return { error: "Akses ditolak." };
+  }
+
+  if (!payload.kelasId || !payload.mapelId || !payload.materi || !payload.kodeTp) {
+    return { error: "Kelas, Mapel, Lingkup Materi, dan Kode TP wajib diisi." };
+  }
+
+  try {
+    const newItem = await prisma.tujuanPembelajaran.create({
+      data: {
+        guruId: user.id,
+        kelasId: payload.kelasId,
+        mapelId: payload.mapelId,
+        materi: payload.materi.trim(),
+        kodeTp: payload.kodeTp.trim(),
+        deskripsi: payload.deskripsi?.trim() || null,
+      },
+    });
+
+    revalidatePath("/jadwal");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      message: "Tujuan Pembelajaran & Materi berhasil ditambahkan.",
+      data: newItem,
+    };
+  } catch (error: any) {
+    console.error("createTujuanPembelajaranAction error:", error);
+    return { error: error.message || "Gagal membuat TP & Materi." };
+  }
+}
+
+export async function deleteTujuanPembelajaranAction(id: string) {
+  const user = await getSessionUser();
+  if (!user || (user.role !== "GURU" && user.role !== "WALAS" && user.role !== "WAKA")) {
+    return { error: "Akses ditolak." };
+  }
+
+  try {
+    await prisma.tujuanPembelajaran.delete({ where: { id } });
+    revalidatePath("/jadwal");
+    revalidatePath("/dashboard");
+    return { success: true, message: "TP & Materi berhasil dihapus." };
+  } catch (error: any) {
+    console.error("deleteTujuanPembelajaranAction error:", error);
+    return { error: error.message || "Gagal menghapus TP & Materi." };
+  }
+}
+
+

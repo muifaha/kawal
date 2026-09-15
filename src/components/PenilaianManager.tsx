@@ -10,6 +10,9 @@ import {
   getPenilaianDetailAndStudentsAction,
   savePenilaianSiswaAction,
   getRekapRaporKurikulumMerdekaAction,
+  getTujuanPembelajaranListAction,
+  createTujuanPembelajaranAction,
+  deleteTujuanPembelajaranAction,
 } from "@/app/actions/penilaian";
 import {
   School,
@@ -136,6 +139,14 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
   const [loadingRekap, setLoadingRekap] = useState(false);
   const [useWeightedFormula, setUseWeightedFormula] = useState(false);
 
+  // Bank TP & Materi State
+  const [tpList, setTpList] = useState<Array<{ id: string; materi: string; kodeTp: string; deskripsi: string | null }>>([]);
+  const [loadingTp, setLoadingTp] = useState(false);
+  const [showTpModal, setShowTpModal] = useState(false);
+  const [newTpMateri, setNewTpMateri] = useState("");
+  const [newTpKode, setNewTpKode] = useState("");
+  const [newTpDeskripsi, setNewTpDeskripsi] = useState("");
+
   // Auto Save State
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const lastSavedRef = React.useRef<string>("");
@@ -159,12 +170,14 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
     loadData();
   }, []);
 
-  // Fetch Penilaian List when (selectedClass, selectedMapel) changes
+  // Fetch Penilaian List & TP List when (selectedClass, selectedMapel) changes
   useEffect(() => {
     if (selectedClass && selectedMapel) {
       fetchPenilaianList(selectedClass.id, selectedMapel.id);
+      fetchTpList(selectedClass.id, selectedMapel.id);
     } else {
       setPenilaianList([]);
+      setTpList([]);
     }
   }, [selectedClass, selectedMapel]);
 
@@ -175,6 +188,60 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
       setPenilaianList(res.data);
     }
     setLoadingPenilaian(false);
+  };
+
+  const fetchTpList = async (kelasId: string, mapelId: string) => {
+    setLoadingTp(true);
+    const res = await getTujuanPembelajaranListAction(kelasId, mapelId);
+    if (res.success && res.data) {
+      setTpList(res.data);
+    }
+    setLoadingTp(false);
+  };
+
+  const handleCreateTp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClass || !selectedMapel) return;
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    startTransition(async () => {
+      const res = await createTujuanPembelajaranAction({
+        kelasId: selectedClass.id,
+        mapelId: selectedMapel.id,
+        materi: newTpMateri,
+        kodeTp: newTpKode,
+        deskripsi: newTpDeskripsi,
+      });
+
+      if (res.error) {
+        setErrorMsg(res.error);
+      } else {
+        setSuccessMsg(res.message || "TP & Materi berhasil disimpan.");
+        setNewTpMateri("");
+        setNewTpKode("");
+        setNewTpDeskripsi("");
+        fetchTpList(selectedClass.id, selectedMapel.id);
+      }
+    });
+  };
+
+  const handleDeleteTp = async (id: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus TP ini dari Bank Data?")) return;
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    startTransition(async () => {
+      const res = await deleteTujuanPembelajaranAction(id);
+      if (res.error) {
+        setErrorMsg(res.error);
+      } else {
+        setSuccessMsg(res.message || "TP berhasil dihapus.");
+        if (selectedClass && selectedMapel) {
+          fetchTpList(selectedClass.id, selectedMapel.id);
+        }
+      }
+    });
   };
 
   const fetchRekapRapor = async () => {
@@ -856,11 +923,13 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
               selectedMapel={selectedMapel}
               penilaianList={penilaianList}
               loadingPenilaian={loadingPenilaian}
+              tpListCount={tpList.length}
               onBack={() => setSelectedMapel(null)}
               onAddClick={() => setShowAddModal(true)}
               onOpenEntry={handleOpenGradeEntry}
               onDeleteHeader={handleDeletePenilaian}
               onOpenRekap={fetchRekapRapor}
+              onOpenTpManage={() => setShowTpModal(true)}
             />
           )}
         </div>
@@ -931,11 +1000,13 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
               selectedMapel={selectedMapel}
               penilaianList={penilaianList}
               loadingPenilaian={loadingPenilaian}
+              tpListCount={tpList.length}
               onBack={() => setSelectedMapel(null)}
               onAddClick={() => setShowAddModal(true)}
               onOpenEntry={handleOpenGradeEntry}
               onDeleteHeader={handleDeletePenilaian}
               onOpenRekap={fetchRekapRapor}
+              onOpenTpManage={() => setShowTpModal(true)}
             />
           )}
         </div>
@@ -964,6 +1035,34 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
             </div>
 
             <form onSubmit={handleCreatePenilaian} className="space-y-4">
+              {/* Dropdown Fast-Picker dari Bank TP */}
+              {tpList.length > 0 && (
+                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl space-y-1.5">
+                  <label className="block text-[11px] font-bold text-indigo-300 uppercase tracking-wider">
+                    💡 Pilih dari Bank TP & Materi Tersimpan
+                  </label>
+                  <select
+                    onChange={(e) => {
+                      const found = tpList.find((t) => t.id === e.target.value);
+                      if (found) {
+                        setMateriPenilaian(found.materi);
+                        setTpCodePenilaian(found.kodeTp);
+                        setNamaPenilaian(`${found.materi} (${found.kodeTp})`);
+                        if (found.deskripsi) setDeskripsiPenilaian(found.deskripsi);
+                      }
+                    }}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">-- Pilih TP dari Bank Data --</option>
+                    {tpList.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.kodeTp} - {t.materi} {t.deskripsi ? `(${t.deskripsi})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Kategori Penilaian */}
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
@@ -1100,6 +1199,113 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
           </div>
         </div>
       )}
+
+      {/* MODAL: MANAJEMEN BANK TP & MATERI GURU */}
+      {showTpModal && selectedClass && selectedMapel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 space-y-4 p-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-indigo-400" />
+                  Manajemen Bank TP & Lingkup Materi
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Kelas {selectedClass.nama} • {selectedMapel.nama}
+                </p>
+              </div>
+              <button onClick={() => setShowTpModal(false)} className="text-slate-400 hover:text-white p-1 rounded-lg transition">
+                ✕
+              </button>
+            </div>
+
+            {/* Form Tambah TP */}
+            <form onSubmit={handleCreateTp} className="p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-3">
+              <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Tambah TP & Materi Baru</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-400 mb-1">Lingkup Materi / Bab *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Materi 1 Aljabar"
+                    value={newTpMateri}
+                    onChange={(e) => setNewTpMateri(e.target.value)}
+                    className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-900 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-400 mb-1">Kode TP *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: TP 1.1"
+                    value={newTpKode}
+                    onChange={(e) => setNewTpKode(e.target.value)}
+                    className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-900 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-400 mb-1">Deskripsi Tujuan Pembelajaran (TP)</label>
+                <input
+                  type="text"
+                  placeholder="Contoh: Peserta didik mampu menggeneralisasi sifat-sifat eksponen..."
+                  value={newTpDeskripsi}
+                  onChange={(e) => setNewTpDeskripsi(e.target.value)}
+                  className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-900 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="flex justify-end pt-1">
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  Simpan TP ke Bank Data
+                </button>
+              </div>
+            </form>
+
+            {/* Daftar TP */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Daftar TP & Materi Tersimpan</h4>
+              {loadingTp ? (
+                <div className="p-8 text-center text-slate-400 flex flex-col items-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
+                  <span className="text-xs">Memuat Bank TP...</span>
+                </div>
+              ) : tpList.length === 0 ? (
+                <div className="p-6 text-center text-slate-500 text-xs bg-slate-950/40 rounded-xl border border-slate-900">
+                  Belum ada TP & Materi tersimpan. Silakan tambahkan pada form di atas.
+                </div>
+              ) : (
+                <div className="max-h-60 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 text-xs">
+                  {tpList.map((t) => (
+                    <div key={t.id} className="p-3 bg-slate-950/40 hover:bg-slate-800/40 transition flex items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 font-mono">
+                          <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-300 rounded font-bold">{t.kodeTp}</span>
+                          <span className="font-bold text-white">{t.materi}</span>
+                        </div>
+                        {t.deskripsi && <p className="text-slate-400 text-[11px] mt-0.5">{t.deskripsi}</p>}
+                      </div>
+                      <button
+                        onClick={() => handleDeleteTp(t.id)}
+                        className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer shrink-0"
+                        title="Hapus TP"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1109,21 +1315,25 @@ function PenilaianListDashboard({
   selectedMapel,
   penilaianList,
   loadingPenilaian,
+  tpListCount,
   onBack,
   onAddClick,
   onOpenEntry,
   onDeleteHeader,
   onOpenRekap,
+  onOpenTpManage,
 }: {
   selectedClass: ClassItem;
   selectedMapel: MapelItem;
   penilaianList: PenilaianHeader[];
   loadingPenilaian: boolean;
+  tpListCount: number;
   onBack: () => void;
   onAddClick: () => void;
   onOpenEntry: (id: string) => void;
   onDeleteHeader: (id: string, e: React.MouseEvent) => void;
   onOpenRekap: () => void;
+  onOpenTpManage: () => void;
 }) {
   return (
     <div className="space-y-6">
@@ -1147,6 +1357,14 @@ function PenilaianListDashboard({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={onOpenTpManage}
+            className="px-4 py-2.5 bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"
+          >
+            <Layers className="w-4 h-4 text-indigo-400" />
+            Bank TP & Materi ({tpListCount})
+          </button>
+
           <button
             onClick={onOpenRekap}
             className="px-4 py-2.5 bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600/30 text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"

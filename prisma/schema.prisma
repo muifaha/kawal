@@ -64,6 +64,7 @@ model User {
   jurnalMengajar        JurnalMengajar[]
   jurnalDraft           JurnalDraft[]
   penilaianKelas        PenilaianKelas[]
+  tujuanPembelajaran    TujuanPembelajaran[]
   prestasiDilaporkan    PrestasiSiswa[]      @relation("PrestasiReporterRelation")
 
   createdAt       DateTime @default(now())
@@ -103,6 +104,7 @@ model Kelas {
   jadwal        JadwalPelajaran[]
   jurnal        JurnalMengajar[]
   penilaianKelas PenilaianKelas[]
+  tujuanPembelajaran TujuanPembelajaran[]
   createdAt     DateTime    @default(now())
 }
 
@@ -371,6 +373,7 @@ model MataPelajaran {
   jadwal         JadwalPelajaran[]
   jurnal         JurnalMengajar[]
   penilaianKelas PenilaianKelas[]
+  tujuanPembelajaran TujuanPembelajaran[]
   createdAt      DateTime          @default(now())
 }
 
@@ -593,3 +596,22 @@ model JurnalDraft {
 
   @@unique([jadwalId, guruId])
 }
+
+model TujuanPembelajaran {
+  id          String        @id @default(uuid())
+  guruId      String
+  guru        User          @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  kelasId     String
+  kelas       Kelas         @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+  mapelId     String
+  mapel       MataPelajaran @relation(fields: [mapelId], references: [id], onDelete: Cascade)
+  materi      String
+  kodeTp      String
+  deskripsi   String?
+  semester    Int           @default(1)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([guruId, kelasId, mapelId])
+}
+
