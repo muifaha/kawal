@@ -152,6 +152,14 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
   const [newTpSemester, setNewTpSemester] = useState<number>(1);
   const [fastPickerSemesterFilter, setFastPickerSemesterFilter] = useState<"ACTIVE" | "ALL">("ACTIVE");
 
+  const availableTpOptions = React.useMemo(() => {
+    if (fastPickerSemesterFilter === "ACTIVE") {
+      const activeFiltered = tpList.filter((t) => t.semester === activeSemester);
+      if (activeFiltered.length > 0) return activeFiltered;
+    }
+    return tpList;
+  }, [tpList, fastPickerSemesterFilter, activeSemester]);
+
   // Auto Save State
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const lastSavedRef = React.useRef<string>("");
@@ -1178,20 +1186,18 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                       className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium cursor-pointer"
                     >
                       <option value="">-- Wajib Pilih TP dari Bank Data --</option>
-                      {tpList
-                        .filter((t) => fastPickerSemesterFilter === "ALL" || t.semester === activeSemester)
-                        .map((t) => (
-                          <option key={t.id} value={t.id}>
-                            [Sem {t.semester === 1 ? "Ganjil" : "Genap"}] {t.kodeTp} - {t.materi} {t.deskripsi ? `(${t.deskripsi})` : ""}
-                          </option>
-                        ))}
+                      {availableTpOptions.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          [Sem {t.semester === 1 ? "Ganjil" : "Genap"}] {t.kodeTp} - {t.materi} {t.deskripsi ? `(${t.deskripsi})` : ""}
+                        </option>
+                      ))}
                     </select>
                   )}
                 </div>
               )}
 
               {jenisPenilaian === "SUMATIF" && (
-                <div className="p-3.5 bg-amber-950/40 border border-amber-800/50 rounded-xl space-y-3">
+                <div className="p-3.5 bg-amber-950/40 border border-amber-800/50 rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="block text-[11px] font-bold text-amber-300 uppercase tracking-wider">
                       2. Pilih Lingkup Materi / Bab ATAU TP *
@@ -1205,62 +1211,9 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                     </button>
                   </div>
 
-                  {/* Opsi A: Pilih Bab / Lingkup Materi */}
-                  {Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).length > 0 && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] text-amber-400 font-semibold uppercase">Opsi A: Pilih Lingkup Materi / Bab</span>
-                      <select
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val) {
-                            setMateriPenilaian(val);
-                            setTpCodePenilaian("");
-                            setNamaPenilaian(`Sumatif ${val}`);
-                          }
-                        }}
-                        className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium cursor-pointer"
-                      >
-                        <option value="">-- Pilih Lingkup Materi / Bab --</option>
-                        {Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).map((materi, idx) => (
-                          <option key={idx} value={materi}>
-                            Bab: {materi}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Opsi B: Pilih TP Spesifik */}
-                  {tpList.length > 0 && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] text-amber-400 font-semibold uppercase">Opsi B: Atau Pilih TP Spesifik</span>
-                      <select
-                        onChange={(e) => {
-                          const found = tpList.find((t) => t.id === e.target.value);
-                          if (found) {
-                            setMateriPenilaian(found.materi);
-                            setTpCodePenilaian(found.kodeTp);
-                            setNamaPenilaian(`Sumatif ${found.kodeTp} (${found.materi})`);
-                            if (found.deskripsi) setDeskripsiPenilaian(found.deskripsi);
-                          }
-                        }}
-                        className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium cursor-pointer"
-                      >
-                        <option value="">-- Pilih TP Spesifik --</option>
-                        {tpList
-                          .filter((t) => fastPickerSemesterFilter === "ALL" || t.semester === activeSemester)
-                          .map((t) => (
-                            <option key={t.id} value={t.id}>
-                              [Sem {t.semester === 1 ? "Ganjil" : "Genap"}] {t.kodeTp} - {t.materi}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {tpList.length === 0 && (
-                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400 space-y-2 text-center">
-                      <p>⚠️ Belum ada materi tersimpan di Bank TP. Anda bisa mengetik materi secara manual di bawah, atau isi Bank TP terlebih dahulu.</p>
+                  {tpList.length === 0 ? (
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400 flex flex-col items-center gap-2 text-center">
+                      <span>⚠️ Belum ada Lingkup Materi / TP tersimpan di Bank Data.</span>
                       <button
                         type="button"
                         onClick={() => {
@@ -1272,6 +1225,57 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                         + Isi Bank TP & Materi Sekarang
                       </button>
                     </div>
+                  ) : (
+                    <select
+                      value={
+                        tpCodePenilaian
+                          ? `TP:${tpList.find((t) => t.kodeTp === tpCodePenilaian && t.materi === materiPenilaian)?.id || ""}`
+                          : materiPenilaian
+                          ? `MATERI:${materiPenilaian}`
+                          : ""
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val.startsWith("MATERI:")) {
+                          const materi = val.replace("MATERI:", "");
+                          setMateriPenilaian(materi);
+                          setTpCodePenilaian("");
+                          setNamaPenilaian(`Sumatif ${materi}`);
+                        } else if (val.startsWith("TP:")) {
+                          const tpId = val.replace("TP:", "");
+                          const found = tpList.find((t) => t.id === tpId);
+                          if (found) {
+                            setMateriPenilaian(found.materi);
+                            setTpCodePenilaian(found.kodeTp);
+                            setNamaPenilaian(`Sumatif ${found.kodeTp} (${found.materi})`);
+                            if (found.deskripsi) setDeskripsiPenilaian(found.deskripsi);
+                          }
+                        } else {
+                          setMateriPenilaian("");
+                          setTpCodePenilaian("");
+                          setNamaPenilaian("");
+                        }
+                      }}
+                      className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium cursor-pointer"
+                    >
+                      <option value="">-- Wajib Pilih Lingkup Materi / Bab atau TP --</option>
+                      {Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).length > 0 && (
+                        <optgroup label="📚 Lingkup Materi / Bab (Nilai Per Bab)">
+                          {Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).map((materi, idx) => (
+                            <option key={`m-${idx}`} value={`MATERI:${materi}`}>
+                              Bab: {materi}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      <optgroup label="🎯 TP Spesifik (Nilai Per TP)">
+                        {availableTpOptions.map((t) => (
+                          <option key={`tp-${t.id}`} value={`TP:${t.id}`}>
+                            [Sem {t.semester === 1 ? "Ganjil" : "Genap"}] {t.kodeTp} - {t.materi}
+                          </option>
+                        ))}
+                      </optgroup>
+                    </select>
                   )}
                 </div>
               )}
