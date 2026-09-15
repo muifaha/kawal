@@ -397,7 +397,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                               placeholder="Nilai"
                               value={s.nilai !== null && s.nilai !== undefined ? s.nilai : ""}
                               onChange={(e) => handleGradeChange(s.siswaId, e.target.value)}
-                              className="block w-24 mx-auto px-3 py-1.5 border border-slate-800 rounded-xl bg-slate-950 text-center font-bold text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              className="block w-24 mx-auto px-3 py-1.5 border border-slate-800 rounded-xl bg-slate-950 text-center font-bold text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
                           </td>
                           <td className="py-3">
