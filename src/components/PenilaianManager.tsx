@@ -450,6 +450,60 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
 
   return (
     <div className="space-y-6">
+      {/* HEADER UTAMA HALAMAN PENILAIAN */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-slate-900/60 border border-slate-800 rounded-2xl backdrop-blur-xl">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+            <Award className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-white tracking-tight">Penilaian Siswa</h1>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Input & Manajemen Penilaian Formatif, Sumatif, PAS/UAS, dan Rekapitulasi Nilai Rapor Kurikulum Merdeka
+            </p>
+          </div>
+        </div>
+
+        {/* Tab Penilaian (Mode Alur Kelas vs Pilih Langsung) */}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-950/80 border border-slate-800/80 rounded-xl shrink-0">
+          <button
+            onClick={() => {
+              setActiveTab("KELAS");
+              setSelectedClass(null);
+              setSelectedMapel(null);
+              setActivePenilaianId(null);
+              setShowRekapRapor(false);
+            }}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === "KELAS"
+                ? "bg-indigo-600 text-white shadow-lg"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <School className="w-3.5 h-3.5" />
+            Alur Kelas Saya
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab("PENILAIAN");
+              setSelectedClass(null);
+              setSelectedMapel(null);
+              setActivePenilaianId(null);
+              setShowRekapRapor(false);
+            }}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === "PENILAIAN"
+                ? "bg-indigo-600 text-white shadow-lg"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            Pilih Langsung
+          </button>
+        </div>
+      </div>
+
       {/* Messages */}
       {errorMsg && (
         <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-2xl flex items-center gap-3 text-xs font-semibold">
@@ -464,45 +518,6 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
           {successMsg}
         </div>
       )}
-
-      {/* Main Mode Navigation (Tabs) */}
-      <div className="flex items-center gap-2 p-1.5 bg-slate-900/60 border border-slate-800 rounded-2xl w-fit">
-        <button
-          onClick={() => {
-            setActiveTab("KELAS");
-            setSelectedClass(null);
-            setSelectedMapel(null);
-            setActivePenilaianId(null);
-            setShowRekapRapor(false);
-          }}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === "KELAS"
-              ? "bg-indigo-600 text-white shadow-lg"
-              : "text-slate-400 hover:text-white"
-          }`}
-        >
-          <School className="w-4 h-4" />
-          Kelas Saya
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab("PENILAIAN");
-            setSelectedClass(null);
-            setSelectedMapel(null);
-            setActivePenilaianId(null);
-            setShowRekapRapor(false);
-          }}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === "PENILAIAN"
-              ? "bg-indigo-600 text-white shadow-lg"
-              : "text-slate-400 hover:text-white"
-          }`}
-        >
-          <Award className="w-4 h-4" />
-          Penilaian Siswa
-        </button>
-      </div>
 
       {/* VIEW LEVEL 4: INPUT NILAI SISWA */}
       {activePenilaianId && activePenilaianInfo ? (
