@@ -458,7 +458,7 @@ export async function getRekapRaporKurikulumMerdekaAction(kelasId: string, mapel
   }
 }
 
-export function extractTingkatKelas(nama: string): string {
+function extractTingkatKelas(nama: string): string {
   if (!nama) return "X";
   const clean = nama.trim().toUpperCase();
   if (clean.startsWith("XII") || clean.startsWith("12")) return "XII";
