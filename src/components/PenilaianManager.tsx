@@ -98,6 +98,11 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
   const [studentGrades, setStudentGrades] = useState<StudentGradeItem[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
 
+  // Auto Save State
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const lastSavedRef = React.useRef<string>("");
+  const isInitialLoadRef = React.useRef<boolean>(true);
+
   // Status & Transition
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState("");
@@ -140,16 +145,67 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
     setLoadingStudents(true);
     setErrorMsg("");
     setSuccessMsg("");
+    setAutoSaveStatus("idle");
+    isInitialLoadRef.current = true;
 
     const res = await getPenilaianDetailAndStudentsAction(penilaianId);
     if (res.success && res.header && res.students) {
       setActivePenilaianInfo(res.header);
       setStudentGrades(res.students);
+      const validScores = res.students
+        .filter((s) => s.nilai !== null && !isNaN(s.nilai))
+        .map((s) => ({
+          siswaId: s.siswaId,
+          nilai: s.nilai!,
+          catatan: s.catatan || "",
+        }));
+      lastSavedRef.current = JSON.stringify(validScores);
     } else {
       setErrorMsg(res.error || "Gagal memuat rincian siswa.");
     }
     setLoadingStudents(false);
+    setTimeout(() => {
+      isInitialLoadRef.current = false;
+    }, 150);
   };
+
+  // Debounced Auto Save Effect
+  useEffect(() => {
+    if (!activePenilaianId || loadingStudents || isInitialLoadRef.current) return;
+
+    const validScores = studentGrades
+      .filter((s) => s.nilai !== null && !isNaN(s.nilai))
+      .map((s) => ({
+        siswaId: s.siswaId,
+        nilai: s.nilai!,
+        catatan: s.catatan || "",
+      }));
+
+    const currentJson = JSON.stringify(validScores);
+    if (currentJson === lastSavedRef.current) return;
+
+    setAutoSaveStatus("saving");
+
+    const timer = setTimeout(async () => {
+      const res = await savePenilaianSiswaAction({
+        penilaianKelasId: activePenilaianId,
+        scores: validScores,
+      });
+
+      if (res.error) {
+        setAutoSaveStatus("error");
+        setErrorMsg("Gagal menyimpan otomatis: " + res.error);
+      } else {
+        lastSavedRef.current = currentJson;
+        setAutoSaveStatus("saved");
+        if (selectedClass && selectedMapel) {
+          fetchPenilaianList(selectedClass.id, selectedMapel.id);
+        }
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [studentGrades, activePenilaianId, loadingStudents, selectedClass, selectedMapel]);
 
   // Handle Grade Change locally
   const handleGradeChange = (siswaId: string, val: string) => {
@@ -166,7 +222,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
     );
   };
 
-  // Save All Student Grades
+  // Save All Student Grades (Manual Save Trigger)
   const handleSaveAllGrades = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activePenilaianId) return;
@@ -179,13 +235,15 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
       .map((s) => ({
         siswaId: s.siswaId,
         nilai: s.nilai!,
-        catatan: s.catatan,
+        catatan: s.catatan || "",
       }));
 
     if (validScores.length === 0) {
       setErrorMsg("Isi setidaknya satu nilai siswa sebelum menyimpan.");
       return;
     }
+
+    setAutoSaveStatus("saving");
 
     startTransition(async () => {
       const res = await savePenilaianSiswaAction({
@@ -195,7 +253,10 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
 
       if (res.error) {
         setErrorMsg(res.error);
+        setAutoSaveStatus("error");
       } else {
+        lastSavedRef.current = JSON.stringify(validScores);
+        setAutoSaveStatus("saved");
         setSuccessMsg(res.message || "Nilai berhasil disimpan!");
         if (selectedClass && selectedMapel) {
           fetchPenilaianList(selectedClass.id, selectedMapel.id);
@@ -345,14 +406,42 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
               </div>
             </div>
 
-            <button
-              onClick={handleSaveAllGrades}
-              disabled={isPending || loadingStudents}
-              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"
-            >
-              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {isPending ? "Menyimpan..." : "Simpan Semua Nilai"}
-            </button>
+            <div className="flex items-center gap-3">
+              {autoSaveStatus === "saving" && (
+                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl text-xs font-semibold animate-pulse">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Menyimpan otomatis...
+                </span>
+              )}
+              {autoSaveStatus === "saved" && (
+                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Tersimpan otomatis
+                </span>
+              )}
+              {autoSaveStatus === "error" && (
+                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-xs font-semibold">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  Gagal menyimpan
+                </span>
+              )}
+              {autoSaveStatus === "idle" && (
+                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 border border-slate-700/80 text-slate-400 rounded-xl text-xs font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
+                  Auto-save Aktif
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={handleSaveAllGrades}
+                disabled={isPending || loadingStudents}
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"
+              >
+                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {isPending ? "Menyimpan..." : "Simpan Nilai"}
+              </button>
+            </div>
           </div>
 
           {loadingStudents ? (
