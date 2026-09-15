@@ -195,6 +195,21 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
     setLoadingPenilaian(false);
   };
 
+  const calculateNextTpNumber = (targetSem: number) => {
+    const existingInSemester = tpList.filter((t) => t.semester === targetSem);
+    const numbers = existingInSemester.map((t) => {
+      const match = t.kodeTp.match(/\d+/);
+      return match ? parseInt(match[0], 10) : 0;
+    });
+    const maxNum = numbers.length > 0 ? Math.max(...numbers) : 0;
+    return maxNum + 1;
+  };
+
+  useEffect(() => {
+    const nextNum = calculateNextTpNumber(newTpSemester);
+    setNewTpKode(nextNum.toString());
+  }, [newTpSemester, tpList]);
+
   const fetchTpList = async (kelasId: string, mapelId: string) => {
     setLoadingTp(true);
     const res = await getTujuanPembelajaranListAction(kelasId, mapelId);
@@ -215,12 +230,15 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
     setErrorMsg("");
     setSuccessMsg("");
 
+    const cleanNum = newTpKode.replace(/\D/g, "");
+    const finalKodeTp = cleanNum ? `TP ${cleanNum}` : `TP ${calculateNextTpNumber(newTpSemester)}`;
+
     startTransition(async () => {
       const res = await createTujuanPembelajaranAction({
         kelasId: selectedClass.id,
         mapelId: selectedMapel.id,
         materi: newTpMateri,
-        kodeTp: newTpKode,
+        kodeTp: finalKodeTp,
         deskripsi: newTpDeskripsi,
         semester: newTpSemester,
         tingkatKelas: tingkatKelas,
@@ -231,7 +249,6 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
       } else {
         setSuccessMsg(res.message || "TP & Materi berhasil disimpan.");
         setNewTpMateri("");
-        setNewTpKode("");
         setNewTpDeskripsi("");
         fetchTpList(selectedClass.id, selectedMapel.id);
       }
@@ -1299,15 +1316,26 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-400 mb-1">Kode TP *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: TP 1.1"
-                    value={newTpKode}
-                    onChange={(e) => setNewTpKode(e.target.value)}
-                    className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-900 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+                  <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                    Kode TP * <span className="text-[10px] text-indigo-400 font-normal">(Otomatis Berurutan)</span>
+                  </label>
+                  <div className="flex items-center">
+                    <span className="px-3 py-1.5 bg-slate-800 border border-r-0 border-slate-700 rounded-l-lg text-xs font-bold text-indigo-300 font-mono select-none">
+                      TP
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      required
+                      placeholder="1"
+                      value={newTpKode}
+                      onChange={(e) => setNewTpKode(e.target.value)}
+                      className="block w-full px-3 py-1.5 border border-slate-700 rounded-r-lg bg-slate-900 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono font-bold"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Urutan berikutnya untuk Sem {newTpSemester}: <strong>TP {calculateNextTpNumber(newTpSemester)}</strong>
+                  </p>
                 </div>
               </div>
               <div>

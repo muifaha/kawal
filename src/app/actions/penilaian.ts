@@ -538,7 +538,47 @@ export async function createTujuanPembelajaranAction(payload: {
     }
 
     const activeTa = await prisma.tahunAjaran.findFirst({ where: { isActive: true } });
-    const defaultSemester = activeTa?.semesterAktif === "GENAP" ? 2 : 1;
+    const targetSemester = payload.semester || (activeTa?.semesterAktif === "GENAP" ? 2 : 1);
+
+    // Ambil daftar TP yang sudah ada untuk (guru, mapel, tingkat, semester)
+    const existingList = await prisma.tujuanPembelajaran.findMany({
+      where: {
+        mapelId: payload.mapelId,
+        tingkatKelas: tingkat,
+        semester: targetSemester,
+        ...(user.role === "WAKA" ? {} : { guruId: user.id }),
+      },
+      select: { kodeTp: true },
+    });
+
+    const numbers = existingList.map((item) => {
+      const match = item.kodeTp.match(/\d+/);
+      return match ? parseInt(match[0], 10) : 0;
+    });
+
+    const maxNum = numbers.length > 0 ? Math.max(...numbers) : 0;
+    const expectedNextNum = maxNum + 1;
+
+    // Ekstrak angka dari input
+    const inputMatch = payload.kodeTp.match(/\d+/);
+    const inputNum = inputMatch ? parseInt(inputMatch[0], 10) : NaN;
+
+    if (isNaN(inputNum) || inputNum <= 0) {
+      return { error: "Kode TP harus berupa angka (contoh: 1, 2, 3)." };
+    }
+
+    if (inputNum > expectedNextNum) {
+      return {
+        error: `Kode TP harus berurutan! TP ${inputNum} tidak dapat dibuat sebelum TP ${expectedNextNum} dibuat.`,
+      };
+    }
+
+    const formattedKodeTp = `TP ${inputNum}`;
+
+    const isDuplicate = existingList.some((item) => item.kodeTp.trim().toUpperCase() === formattedKodeTp.toUpperCase());
+    if (isDuplicate) {
+      return { error: `Kode ${formattedKodeTp} sudah ada di Semester ${targetSemester}. Silakan gunakan Kode TP ${expectedNextNum}.` };
+    }
 
     const newItem = await prisma.tujuanPembelajaran.create({
       data: {
@@ -547,9 +587,9 @@ export async function createTujuanPembelajaranAction(payload: {
         mapelId: payload.mapelId,
         tingkatKelas: tingkat,
         materi: payload.materi.trim(),
-        kodeTp: payload.kodeTp.trim(),
+        kodeTp: formattedKodeTp,
         deskripsi: payload.deskripsi?.trim() || null,
-        semester: payload.semester || defaultSemester,
+        semester: targetSemester,
       },
     });
 
@@ -558,7 +598,7 @@ export async function createTujuanPembelajaranAction(payload: {
 
     return {
       success: true,
-      message: "Tujuan Pembelajaran & Materi berhasil ditambahkan.",
+      message: `${formattedKodeTp} & Materi berhasil ditambahkan.`,
       data: newItem,
     };
   } catch (error: any) {
