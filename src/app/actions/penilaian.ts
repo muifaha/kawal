@@ -93,6 +93,9 @@ export async function getPenilaianKelasListAction(kelasId: string, mapelId: stri
       data: list.map((item) => ({
         id: item.id,
         namaPenilaian: item.namaPenilaian,
+        jenisPenilaian: (item as any).jenisPenilaian || "FORMATIF",
+        materi: (item as any).materi || "",
+        tpCode: (item as any).tpCode || "",
         tanggal: formatDateWib(item.tanggal),
         deskripsi: item.deskripsi || "",
         totalTerisi: item._count.nilaiSiswa,
@@ -108,6 +111,9 @@ export async function createPenilaianKelasAction(payload: {
   kelasId: string;
   mapelId: string;
   namaPenilaian: string;
+  jenisPenilaian?: string;
+  materi?: string;
+  tpCode?: string;
   tanggal: string;
   deskripsi?: string;
 }) {
@@ -127,6 +133,9 @@ export async function createPenilaianKelasAction(payload: {
         mapelId: payload.mapelId,
         guruId: user.id,
         namaPenilaian: payload.namaPenilaian.trim(),
+        jenisPenilaian: payload.jenisPenilaian || "FORMATIF",
+        materi: payload.materi?.trim() || null,
+        tpCode: payload.tpCode?.trim() || null,
         tanggal: new Date(payload.tanggal),
         deskripsi: payload.deskripsi?.trim() || null,
       },
@@ -223,6 +232,9 @@ export async function getPenilaianDetailAndStudentsAction(penilaianKelasId: stri
         mapelNama: header.mapel.nama,
         guruNama: header.guru.nama,
         namaPenilaian: header.namaPenilaian,
+        jenisPenilaian: (header as any).jenisPenilaian || "FORMATIF",
+        materi: (header as any).materi || "",
+        tpCode: (header as any).tpCode || "",
         tanggal: formatDateWib(header.tanggal),
         deskripsi: header.deskripsi || "",
       },
@@ -280,3 +292,169 @@ export async function savePenilaianSiswaAction(payload: {
     return { error: error.message || "Gagal menyimpan nilai siswa." };
   }
 }
+
+export async function getRekapRaporKurikulumMerdekaAction(kelasId: string, mapelId: string) {
+  const user = await getSessionUser();
+  if (!user) return { error: "Akses ditolak." };
+
+  try {
+    const activeTa = await prisma.tahunAjaran.findFirst({ where: { isActive: true } });
+
+    // Fetch all active students in class
+    const studentRecords = await prisma.siswaKelas.findMany({
+      where: {
+        kelasId,
+        tahunAjaran: activeTa ? { id: activeTa.id } : { isActive: true },
+        siswa: { status: "AKTIF" },
+      },
+      include: { siswa: true },
+      orderBy: { siswa: { nama: "asc" } },
+    });
+
+    // Fetch all penilaian headers for this class & mapel
+    const penilaianList = await prisma.penilaianKelas.findMany({
+      where: {
+        kelasId,
+        mapelId,
+        ...(user.role === "WAKA" ? {} : { guruId: user.id }),
+      },
+      include: {
+        nilaiSiswa: true,
+      },
+      orderBy: { tanggal: "asc" },
+    });
+
+    // Collect all unique Materi names for Sumatif
+    const sumatifMateriSet = new Set<string>();
+    penilaianList.forEach((p) => {
+      const jenis = (p as any).jenisPenilaian || "FORMATIF";
+      if (jenis === "SUMATIF") {
+        const mat = (p as any).materi?.trim() || p.namaPenilaian;
+        sumatifMateriSet.add(mat);
+      }
+    });
+
+    const materiList = Array.from(sumatifMateriSet);
+
+    // Build matrix per student
+    const studentRows = studentRecords.map((sr) => {
+      const siswaId = sr.siswa.id;
+
+      const formatifScores: Array<{ nama: string; materi: string; nilai: number }> = [];
+      const sumatifByMateri = new Map<string, number[]>(); // materi -> array of scores
+      let uasScore: number | null = null;
+
+      // Track highest and lowest TP/Materi scores for draft description
+      const allTpScores: Array<{ name: string; score: number }> = [];
+
+      penilaianList.forEach((p) => {
+        const ns = p.nilaiSiswa.find((n) => n.siswaId === siswaId);
+        if (ns && ns.nilai !== null && !isNaN(ns.nilai)) {
+          const jenis = (p as any).jenisPenilaian || "FORMATIF";
+          const mat = (p as any).materi?.trim() || p.namaPenilaian;
+
+          if (jenis === "FORMATIF") {
+            formatifScores.push({ nama: p.namaPenilaian, materi: mat, nilai: ns.nilai });
+            allTpScores.push({ name: `${mat} (${p.namaPenilaian})`, score: ns.nilai });
+          } else if (jenis === "SUMATIF") {
+            const arr = sumatifByMateri.get(mat) || [];
+            arr.push(ns.nilai);
+            sumatifByMateri.set(mat, arr);
+            allTpScores.push({ name: mat, score: ns.nilai });
+          } else if (jenis === "PAS_UAS") {
+            uasScore = ns.nilai;
+            allTpScores.push({ name: "PAS/UAS", score: ns.nilai });
+          }
+        }
+      });
+
+      // 1. Rata-rata Formatif (NA_F)
+      const naF = formatifScores.length > 0
+        ? Number((formatifScores.reduce((acc, curr) => acc + curr.nilai, 0) / formatifScores.length).toFixed(1))
+        : null;
+
+      // 2. Rata-rata Sumatif per Materi (NA_S per Materi)
+      const sumatifMateriScores: Record<string, number | null> = {};
+      const validSumatifValues: number[] = [];
+
+      materiList.forEach((mat) => {
+        const scores = sumatifByMateri.get(mat) || [];
+        if (scores.length > 0) {
+          const avgMat = Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1));
+          sumatifMateriScores[mat] = avgMat;
+          validSumatifValues.push(avgMat);
+        } else {
+          sumatifMateriScores[mat] = null;
+        }
+      });
+
+      // Rata-rata Seluruh Sumatif Materi (Rata-rata NA_S)
+      const avgSumatifMateri = validSumatifValues.length > 0
+        ? Number((validSumatifValues.reduce((a, b) => a + b, 0) / validSumatifValues.length).toFixed(1))
+        : null;
+
+      // 3. Nilai Rapor Akhir
+      // Formula Kurikulum Merdeka: (Sum(NA_S) + UAS) / (Jumlah Materi + 1)
+      let nilaiRapor: number | null = null;
+      let nilaiRaporBobot: number | null = null;
+
+      if (validSumatifValues.length > 0) {
+        const sumSumatif = validSumatifValues.reduce((a, b) => a + b, 0);
+        if (uasScore !== null) {
+          nilaiRapor = Number(((sumSumatif + uasScore) / (validSumatifValues.length + 1)).toFixed(1));
+          nilaiRaporBobot = Number(((avgSumatifMateri! * 0.6) + (uasScore * 0.4)).toFixed(1));
+        } else {
+          nilaiRapor = avgSumatifMateri;
+          nilaiRaporBobot = avgSumatifMateri;
+        }
+      } else if (uasScore !== null) {
+        nilaiRapor = uasScore;
+        nilaiRaporBobot = uasScore;
+      }
+
+      // 4. Generate Draft Deskripsi Capaian Kompetensi
+      let deskripsiCapaian = "";
+      if (allTpScores.length > 0) {
+        const sorted = [...allTpScores].sort((a, b) => b.score - a.score);
+        const highest = sorted[0];
+        const lowest = sorted[sorted.length - 1];
+
+        if (highest.score >= 80 && lowest.score < 75 && highest.name !== lowest.name) {
+          deskripsiCapaian = `Menunjukkan penguasaan yang sangat baik dalam ${highest.name}, serta perlu bimbingan lebih lanjut dalam ${lowest.name}.`;
+        } else if (highest.score >= 80) {
+          deskripsiCapaian = `Menunjukkan penguasaan yang sangat baik dan konsisten dalam ${highest.name}.`;
+        } else if (lowest.score < 75) {
+          deskripsiCapaian = `Perlu bimbingan dan pemantauan lebih lanjut terutama dalam materi ${lowest.name}.`;
+        } else {
+          deskripsiCapaian = `Menunjukkan penguasaan materi pembelajaran yang cukup baik secara umum.`;
+        }
+      } else {
+        deskripsiCapaian = "Belum ada data nilai penilaian yang terisi.";
+      }
+
+      return {
+        siswaId: sr.siswa.id,
+        nis: sr.siswa.nis,
+        nisn: sr.siswa.nisn || "-",
+        nama: sr.siswa.nama,
+        naFormatif: naF,
+        sumatifMateriScores,
+        avgSumatifMateri,
+        uasScore,
+        nilaiRapor,
+        nilaiRaporBobot,
+        deskripsiCapaian,
+      };
+    });
+
+    return {
+      success: true,
+      materiList,
+      students: studentRows,
+    };
+  } catch (error: any) {
+    console.error("getRekapRaporKurikulumMerdekaAction error:", error);
+    return { error: error.message || "Gagal mengambil rekapitulasi nilai rapor." };
+  }
+}
+

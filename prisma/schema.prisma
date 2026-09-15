@@ -555,6 +555,9 @@ model PenilaianKelas {
   guruId         String
   guru           User             @relation(fields: [guruId], references: [id], onDelete: Cascade)
   namaPenilaian  String
+  jenisPenilaian String           @default("FORMATIF")
+  materi         String?
+  tpCode         String?
   tanggal        DateTime         @db.Date
   deskripsi      String?
   createdAt      DateTime         @default(now())

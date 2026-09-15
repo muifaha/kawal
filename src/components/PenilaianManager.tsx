@@ -9,6 +9,7 @@ import {
   deletePenilaianKelasAction,
   getPenilaianDetailAndStudentsAction,
   savePenilaianSiswaAction,
+  getRekapRaporKurikulumMerdekaAction,
 } from "@/app/actions/penilaian";
 import {
   School,
@@ -25,7 +26,14 @@ import {
   Users,
   Award,
   ChevronRight,
+  Download,
+  Calculator,
+  Sliders,
+  Sparkles,
+  Layers,
+  FileSpreadsheet,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 interface MapelItem {
   id: string;
@@ -42,6 +50,9 @@ interface ClassItem {
 interface PenilaianHeader {
   id: string;
   namaPenilaian: string;
+  jenisPenilaian?: string; // "FORMATIF" | "SUMATIF" | "PAS_UAS"
+  materi?: string;
+  tpCode?: string;
   tanggal: string;
   deskripsi: string;
   totalTerisi: number;
@@ -82,6 +93,9 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
   // Form State - Add New Penilaian Header
   const [showAddModal, setShowAddModal] = useState(false);
   const [namaPenilaian, setNamaPenilaian] = useState("");
+  const [jenisPenilaian, setJenisPenilaian] = useState<"FORMATIF" | "SUMATIF" | "PAS_UAS">("FORMATIF");
+  const [materiPenilaian, setMateriPenilaian] = useState("");
+  const [tpCodePenilaian, setTpCodePenilaian] = useState("");
   const [tanggalPenilaian, setTanggalPenilaian] = useState(() => getTodayWibStr());
   const [deskripsiPenilaian, setDeskripsiPenilaian] = useState("");
 
@@ -92,11 +106,35 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
     kelasNama: string;
     mapelNama: string;
     namaPenilaian: string;
+    jenisPenilaian?: string;
+    materi?: string;
+    tpCode?: string;
     tanggal: string;
     deskripsi: string;
   } | null>(null);
   const [studentGrades, setStudentGrades] = useState<StudentGradeItem[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
+
+  // Rekap Rapor Kurikulum Merdeka State
+  const [showRekapRapor, setShowRekapRapor] = useState(false);
+  const [rekapData, setRekapData] = useState<{
+    materiList: string[];
+    students: Array<{
+      siswaId: string;
+      nis: string;
+      nisn: string;
+      nama: string;
+      naFormatif: number | null;
+      sumatifMateriScores: Record<string, number | null>;
+      avgSumatifMateri: number | null;
+      uasScore: number | null;
+      nilaiRapor: number | null;
+      nilaiRaporBobot: number | null;
+      deskripsiCapaian: string;
+    }>;
+  } | null>(null);
+  const [loadingRekap, setLoadingRekap] = useState(false);
+  const [useWeightedFormula, setUseWeightedFormula] = useState(false);
 
   // Auto Save State
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -137,6 +175,20 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
       setPenilaianList(res.data);
     }
     setLoadingPenilaian(false);
+  };
+
+  const fetchRekapRapor = async () => {
+    if (!selectedClass || !selectedMapel) return;
+    setLoadingRekap(true);
+    setErrorMsg("");
+    const res = await getRekapRaporKurikulumMerdekaAction(selectedClass.id, selectedMapel.id);
+    if (res.success && res.students && res.materiList) {
+      setRekapData({ materiList: res.materiList, students: res.students });
+      setShowRekapRapor(true);
+    } else {
+      setErrorMsg(res.error || "Gagal memuat rekapitulasi nilai rapor.");
+    }
+    setLoadingRekap(false);
   };
 
   // Open Grade Entry Form for a specific Penilaian Header
@@ -278,6 +330,9 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
         kelasId: selectedClass.id,
         mapelId: selectedMapel.id,
         namaPenilaian,
+        jenisPenilaian,
+        materi: materiPenilaian,
+        tpCode: tpCodePenilaian,
         tanggal: tanggalPenilaian,
         deskripsi: deskripsiPenilaian,
       });
@@ -288,6 +343,8 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
         setSuccessMsg(res.message || "Penilaian baru dibuat.");
         setShowAddModal(false);
         setNamaPenilaian("");
+        setMateriPenilaian("");
+        setTpCodePenilaian("");
         setDeskripsiPenilaian("");
         fetchPenilaianList(selectedClass.id, selectedMapel.id);
         if (res.data?.id) {
@@ -322,6 +379,39 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
     });
   };
 
+  // Export Rekap Rapor to Excel
+  const handleExportExcelRekap = () => {
+    if (!rekapData || !selectedClass || !selectedMapel) return;
+
+    const dataForExcel = rekapData.students.map((s, idx) => {
+      const row: Record<string, any> = {
+        "No": idx + 1,
+        "NIS": s.nis,
+        "NISN": s.nisn,
+        "Nama Siswa": s.nama,
+        "Rata-rata Formatif (NA_F)": s.naFormatif !== null ? s.naFormatif : "-",
+      };
+
+      rekapData.materiList.forEach((m) => {
+        row[`Sumatif: ${m}`] = s.sumatifMateriScores[m] !== null ? s.sumatifMateriScores[m] : "-";
+      });
+
+      row["Rata-rata Sumatif (NA_S)"] = s.avgSumatifMateri !== null ? s.avgSumatifMateri : "-";
+      row["Nilai PAS/UAS"] = s.uasScore !== null ? s.uasScore : "-";
+      row["Nilai Akhir Rapor"] = useWeightedFormula
+        ? (s.nilaiRaporBobot !== null ? s.nilaiRaporBobot : "-")
+        : (s.nilaiRapor !== null ? s.nilaiRapor : "-");
+      row["Draft Deskripsi Capaian Kompetensi"] = s.deskripsiCapaian;
+
+      return row;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataForExcel);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap Nilai Rapor");
+    XLSX.writeFile(workbook, `Rekap_Rapor_Kurmer_${selectedClass.nama}_${selectedMapel.kode}.xlsx`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Messages */}
@@ -347,6 +437,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
             setSelectedClass(null);
             setSelectedMapel(null);
             setActivePenilaianId(null);
+            setShowRekapRapor(false);
           }}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
             activeTab === "KELAS"
@@ -364,6 +455,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
             setSelectedClass(null);
             setSelectedMapel(null);
             setActivePenilaianId(null);
+            setShowRekapRapor(false);
           }}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
             activeTab === "PENILAIAN"
@@ -392,14 +484,31 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-indigo-400">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-indigo-400">
                   <span>{activePenilaianInfo.kelasNama}</span>
                   <span>•</span>
                   <span>{activePenilaianInfo.mapelNama}</span>
                   <span>•</span>
                   <span>{activePenilaianInfo.tanggal}</span>
+                  {activePenilaianInfo.jenisPenilaian && (
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      activePenilaianInfo.jenisPenilaian === "FORMATIF"
+                        ? "bg-sky-500/10 border border-sky-500/20 text-sky-400"
+                        : activePenilaianInfo.jenisPenilaian === "SUMATIF"
+                        ? "bg-amber-500/10 border border-amber-500/20 text-amber-400"
+                        : "bg-rose-500/10 border border-rose-500/20 text-rose-400"
+                    }`}>
+                      {activePenilaianInfo.jenisPenilaian === "FORMATIF" ? "Formatif (Proses)" : activePenilaianInfo.jenisPenilaian === "SUMATIF" ? "Sumatif (TP/Materi)" : "Sumatif Akhir (PAS/UAS)"}
+                    </span>
+                  )}
                 </div>
                 <h3 className="text-lg font-bold text-white mt-0.5">{activePenilaianInfo.namaPenilaian}</h3>
+                {(activePenilaianInfo.materi || activePenilaianInfo.tpCode) && (
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 mt-1 font-mono">
+                    {activePenilaianInfo.materi && <span>Materi: {activePenilaianInfo.materi}</span>}
+                    {activePenilaianInfo.tpCode && <span>• TP: {activePenilaianInfo.tpCode}</span>}
+                  </div>
+                )}
                 {activePenilaianInfo.deskripsi && (
                   <p className="text-xs text-slate-400 mt-1">{activePenilaianInfo.deskripsi}</p>
                 )}
@@ -518,6 +627,131 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
             </form>
           )}
         </div>
+      ) : showRekapRapor && selectedClass && selectedMapel ? (
+        /* RENDER VIEW: REKAPITULASI RAPOR KURIKULUM MERDEKA */
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-slate-900/60 border border-slate-800 rounded-2xl backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowRekapRapor(false)}
+                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white transition cursor-pointer"
+                title="Kembali ke Daftar Penilaian"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <div className="flex items-center gap-2 text-xs font-semibold text-indigo-400">
+                  <span>Kelas {selectedClass.nama}</span>
+                  <span>•</span>
+                  <span>{selectedMapel.nama} ({selectedMapel.kode})</span>
+                </div>
+                <h3 className="text-lg font-bold text-white mt-0.5 flex items-center gap-2">
+                  <Calculator className="w-5 h-5 text-emerald-400" />
+                  Rekapitulasi Nilai Rapor Kurikulum Merdeka
+                </h3>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => setUseWeightedFormula(!useWeightedFormula)}
+                className={`px-3 py-2 border rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                  useWeightedFormula
+                    ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-300"
+                    : "bg-slate-800 border-slate-700 text-slate-300 hover:text-white"
+                }`}
+                title="Ganti Metode Formula Pembobotan"
+              >
+                <Sliders className="w-3.5 h-3.5" />
+                {useWeightedFormula ? "Formula: 60% Sumatif + 40% UAS" : "Formula: (Σ NA_S + UAS) / (N+1)"}
+              </button>
+
+              <button
+                onClick={handleExportExcelRekap}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 shadow-lg cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                Export Excel (.xlsx)
+              </button>
+            </div>
+          </div>
+
+          {loadingRekap ? (
+            <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-2 bg-slate-900/40 border border-slate-900 rounded-2xl">
+              <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+              <span className="text-xs">Mengolah & menghitung rekapitulasi nilai rapor...</span>
+            </div>
+          ) : !rekapData || rekapData.students.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 bg-slate-900/40 border border-slate-900 rounded-2xl">
+              Belum ada data nilai penilaian untuk dihitung. Silakan isi penilaian formatif/sumatif terlebih dahulu.
+            </div>
+          ) : (
+            <div className="bg-slate-900/40 border border-slate-900 rounded-2xl p-6 backdrop-blur-xl space-y-4">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-800 text-xs">
+                  <thead>
+                    <tr className="text-left font-semibold text-slate-400 uppercase tracking-wider">
+                      <th className="pb-3 w-10 text-center">No</th>
+                      <th className="pb-3 w-28">NIS</th>
+                      <th className="pb-3 w-44">Nama Siswa</th>
+                      <th className="pb-3 w-28 text-center bg-sky-950/40 text-sky-300">NA Formatif (NA_F)</th>
+                      {rekapData.materiList.map((m, idx) => (
+                        <th key={m} className="pb-3 w-28 text-center bg-amber-950/30 text-amber-300">
+                          Sumatif {idx + 1}
+                          <span className="block text-[9px] font-normal normal-case text-slate-400 truncate max-w-[100px]" title={m}>
+                            {m}
+                          </span>
+                        </th>
+                      ))}
+                      <th className="pb-3 w-28 text-center bg-amber-950/50 text-amber-200">Rata Sumatif (NA_S)</th>
+                      <th className="pb-3 w-24 text-center bg-rose-950/40 text-rose-300">PAS / UAS</th>
+                      <th className="pb-3 w-28 text-center bg-emerald-950/50 text-emerald-300">Nilai Rapor</th>
+                      <th className="pb-3 min-w-[280px]">Draft Deskripsi Capaian Kompetensi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {rekapData.students.map((s, index) => {
+                      const finalScore = useWeightedFormula
+                        ? (s.nilaiRaporBobot !== null ? s.nilaiRaporBobot : s.nilaiRapor)
+                        : s.nilaiRapor;
+
+                      return (
+                        <tr key={s.siswaId} className="hover:bg-slate-800/30 transition">
+                          <td className="py-3 text-center text-slate-500 font-mono">{index + 1}</td>
+                          <td className="py-3 font-mono text-slate-400">{s.nis}</td>
+                          <td className="py-3 font-bold text-white">{s.nama}</td>
+                          <td className="py-3 text-center bg-sky-950/20 font-semibold text-sky-400">
+                            {s.naFormatif !== null ? s.naFormatif : "-"}
+                          </td>
+                          {rekapData.materiList.map((m) => {
+                            const val = s.sumatifMateriScores[m];
+                            return (
+                              <td key={m} className="py-3 text-center bg-amber-950/10 font-mono text-slate-300">
+                                {val !== null ? val : "-"}
+                              </td>
+                            );
+                          })}
+                          <td className="py-3 text-center bg-amber-950/20 font-bold text-amber-300">
+                            {s.avgSumatifMateri !== null ? s.avgSumatifMateri : "-"}
+                          </td>
+                          <td className="py-3 text-center bg-rose-950/20 font-semibold text-rose-300">
+                            {s.uasScore !== null ? s.uasScore : "-"}
+                          </td>
+                          <td className="py-3 text-center bg-emerald-950/30 font-bold text-base text-emerald-400">
+                            {finalScore !== null ? finalScore : "-"}
+                          </td>
+                          <td className="py-3 text-slate-300 text-[11px] leading-relaxed italic">
+                            {s.deskripsiCapaian}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
       ) : activeTab === "KELAS" ? (
         /* TAB 1: KELAS SAYA FLOW */
         <div className="space-y-6">
@@ -626,6 +860,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
               onAddClick={() => setShowAddModal(true)}
               onOpenEntry={handleOpenGradeEntry}
               onDeleteHeader={handleDeletePenilaian}
+              onOpenRekap={fetchRekapRapor}
             />
           )}
         </div>
@@ -700,20 +935,21 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
               onAddClick={() => setShowAddModal(true)}
               onOpenEntry={handleOpenGradeEntry}
               onDeleteHeader={handleDeletePenilaian}
+              onOpenRekap={fetchRekapRapor}
             />
           )}
         </div>
       )}
 
-      {/* MODAL: TAMBAH PENILAIAN BARU */}
+      {/* MODAL: TAMBAH PENILAIAN BARU (KURIKULUM MERDEKA) */}
       {showAddModal && selectedClass && selectedMapel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 space-y-4 p-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 space-y-4 p-6">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <Plus className="w-5 h-5 text-indigo-400" />
-                  Tambah Penilaian Baru
+                  Tambah Penilaian Baru (Kurikulum Merdeka)
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
                   {selectedClass.nama} • {selectedMapel.nama}
@@ -728,6 +964,53 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
             </div>
 
             <form onSubmit={handleCreatePenilaian} className="space-y-4">
+              {/* Kategori Penilaian */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Kategori / Jenis Penilaian *
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setJenisPenilaian("FORMATIF")}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 ${
+                      jenisPenilaian === "FORMATIF"
+                        ? "bg-sky-500/20 border-sky-500/50 text-sky-300 shadow-md"
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <span>🔵 Formatif</span>
+                    <span className="text-[9px] font-normal text-slate-400">Proses / Feedback</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setJenisPenilaian("SUMATIF")}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 ${
+                      jenisPenilaian === "SUMATIF"
+                        ? "bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-md"
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <span>🟡 Sumatif</span>
+                    <span className="text-[9px] font-normal text-slate-400">Nilai TP / Materi</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setJenisPenilaian("PAS_UAS")}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 ${
+                      jenisPenilaian === "PAS_UAS"
+                        ? "bg-rose-500/20 border-rose-500/50 text-rose-300 shadow-md"
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <span>🔴 PAS / UAS</span>
+                    <span className="text-[9px] font-normal text-slate-400">Akhir Semester</span>
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                   Nama Penilaian *
@@ -735,11 +1018,39 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Ulangan Harian 1, Tugas 2, PTS"
+                  placeholder="Contoh: Formatif TP 1, Sumatif Bab 1 Aljabar, PAS Semester 1"
                   value={namaPenilaian}
                   onChange={(e) => setNamaPenilaian(e.target.value)}
                   className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Lingkup Materi / Bab (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Materi 1 Aljabar"
+                    value={materiPenilaian}
+                    onChange={(e) => setMateriPenilaian(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Tujuan Pembelajaran (TP)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: TP 1.1"
+                    value={tpCodePenilaian}
+                    onChange={(e) => setTpCodePenilaian(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
               </div>
 
               <div>
@@ -760,7 +1071,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                   Deskripsi / Keterangan (Opsional)
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   placeholder="Tuliskan materi atau instruksi penilaian..."
                   value={deskripsiPenilaian}
                   onChange={(e) => setDeskripsiPenilaian(e.target.value)}
@@ -802,6 +1113,7 @@ function PenilaianListDashboard({
   onAddClick,
   onOpenEntry,
   onDeleteHeader,
+  onOpenRekap,
 }: {
   selectedClass: ClassItem;
   selectedMapel: MapelItem;
@@ -811,6 +1123,7 @@ function PenilaianListDashboard({
   onAddClick: () => void;
   onOpenEntry: (id: string) => void;
   onDeleteHeader: (id: string, e: React.MouseEvent) => void;
+  onOpenRekap: () => void;
 }) {
   return (
     <div className="space-y-6">
@@ -833,13 +1146,23 @@ function PenilaianListDashboard({
           </div>
         </div>
 
-        <button
-          onClick={onAddClick}
-          className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Tambah Penilaian Baru
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={onOpenRekap}
+            className="px-4 py-2.5 bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600/30 text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"
+          >
+            <Calculator className="w-4 h-4 text-emerald-400" />
+            Rekap Rapor Kurikulum Merdeka
+          </button>
+
+          <button
+            onClick={onAddClick}
+            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Tambah Penilaian Baru
+          </button>
+        </div>
       </div>
 
       {loadingPenilaian ? (
@@ -863,44 +1186,62 @@ function PenilaianListDashboard({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {penilaianList.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => onOpenEntry(item.id)}
-              className="p-5 bg-slate-900/40 border border-slate-800 hover:border-indigo-500/50 rounded-2xl transition-all cursor-pointer group flex flex-col justify-between gap-4"
-            >
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <span className="px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold text-indigo-400">
-                    {item.tanggal}
-                  </span>
-                  <button
-                    onClick={(e) => onDeleteHeader(item.id, e)}
-                    className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
-                    title="Hapus Penilaian"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+          {penilaianList.map((item) => {
+            const jenis = item.jenisPenilaian || "FORMATIF";
+            return (
+              <div
+                key={item.id}
+                onClick={() => onOpenEntry(item.id)}
+                className="p-5 bg-slate-900/40 border border-slate-800 hover:border-indigo-500/50 rounded-2xl transition-all cursor-pointer group flex flex-col justify-between gap-4"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold ${
+                      jenis === "FORMATIF"
+                        ? "bg-sky-500/10 border-sky-500/20 text-sky-400"
+                        : jenis === "SUMATIF"
+                        ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                        : "bg-rose-500/10 border-rose-500/20 text-rose-400"
+                    }`}>
+                      {jenis === "FORMATIF" ? "Formatif (Proses)" : jenis === "SUMATIF" ? "Sumatif (TP/Materi)" : "PAS / UAS"}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-slate-500">{item.tanggal}</span>
+                      <button
+                        onClick={(e) => onDeleteHeader(item.id, e)}
+                        className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
+                        title="Hapus Penilaian"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <h4 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">
+                    {item.namaPenilaian}
+                  </h4>
+                  {(item.materi || item.tpCode) && (
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-400">
+                      {item.materi && <span className="bg-slate-800/60 px-2 py-0.5 rounded text-slate-300">{item.materi}</span>}
+                      {item.tpCode && <span className="bg-indigo-500/10 text-indigo-300 px-2 py-0.5 rounded">{item.tpCode}</span>}
+                    </div>
+                  )}
+                  {item.deskripsi && (
+                    <p className="text-xs text-slate-400 line-clamp-2">{item.deskripsi}</p>
+                  )}
                 </div>
-                <h4 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">
-                  {item.namaPenilaian}
-                </h4>
-                {item.deskripsi && (
-                  <p className="text-xs text-slate-400 line-clamp-2">{item.deskripsi}</p>
-                )}
-              </div>
 
-              <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                <span className="text-slate-400 flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-slate-500" />
-                  {item.totalTerisi} Siswa Dinilai
-                </span>
-                <span className="font-bold text-indigo-400 group-hover:underline flex items-center gap-1">
-                  Input Nilai →
-                </span>
+                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                  <span className="text-slate-400 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-slate-500" />
+                    {item.totalTerisi} Siswa Dinilai
+                  </span>
+                  <span className="font-bold text-indigo-400 group-hover:underline flex items-center gap-1">
+                    Input Nilai →
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
