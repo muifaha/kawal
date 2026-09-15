@@ -1303,30 +1303,36 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    Lingkup Materi / Bab {jenisPenilaian === "SUMATIF" ? "*" : "(Opsional)"}
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Lingkup Materi / Bab {jenisPenilaian === "SUMATIF" ? "*" : "(Opsional)"}
+                    </label>
+                    <span className="text-[10px] text-slate-500 font-mono flex items-center gap-1">🔒 Terkunci</span>
+                  </div>
                   <input
                     type="text"
+                    readOnly
                     required={jenisPenilaian === "SUMATIF"}
-                    placeholder="Otomatis dari pilihan TP / Bab"
+                    placeholder="Otomatis terisi dari pilihan TP / Bab di atas"
                     value={materiPenilaian}
-                    onChange={(e) => setMateriPenilaian(e.target.value)}
-                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="block w-full px-3 py-2 border border-slate-800/80 rounded-xl bg-slate-900/60 text-xs text-indigo-300 font-semibold focus:outline-none cursor-not-allowed select-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    Kode TP {jenisPenilaian === "FORMATIF" ? "*" : "(Opsional)"}
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Kode TP {jenisPenilaian === "FORMATIF" ? "*" : "(Opsional)"}
+                    </label>
+                    <span className="text-[10px] text-slate-500 font-mono flex items-center gap-1">🔒 Terkunci</span>
+                  </div>
                   <input
                     type="text"
+                    readOnly
                     required={jenisPenilaian === "FORMATIF"}
-                    placeholder="Otomatis dari pilihan TP"
+                    placeholder="Otomatis terisi dari pilihan TP di atas"
                     value={tpCodePenilaian}
-                    onChange={(e) => setTpCodePenilaian(e.target.value)}
-                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="block w-full px-3 py-2 border border-slate-800/80 rounded-xl bg-slate-900/60 text-xs text-indigo-300 font-semibold focus:outline-none cursor-not-allowed select-none font-mono"
                   />
                 </div>
               </div>
