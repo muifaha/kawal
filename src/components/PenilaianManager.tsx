@@ -1067,81 +1067,57 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
             </div>
 
             <form onSubmit={handleCreatePenilaian} className="space-y-4">
-              {/* Dropdown Fast-Picker dari Bank TP */}
-              {tpList.length > 0 && (
-                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-[11px] font-bold text-indigo-300 uppercase tracking-wider">
-                      💡 Pilih dari Bank TP & Materi
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setFastPickerSemesterFilter(fastPickerSemesterFilter === "ACTIVE" ? "ALL" : "ACTIVE")}
-                      className="px-2 py-0.5 rounded bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-[10px] font-semibold transition cursor-pointer"
-                    >
-                      {fastPickerSemesterFilter === "ACTIVE" ? `Filter: Sem ${activeSemester === 1 ? "Ganjil" : "Genap"} (Aktif)` : "Filter: Semua Sem"}
-                    </button>
-                  </div>
-                  <select
-                    onChange={(e) => {
-                      const found = tpList.find((t) => t.id === e.target.value);
-                      if (found) {
-                        setMateriPenilaian(found.materi);
-                        setTpCodePenilaian(found.kodeTp);
-                        setNamaPenilaian(`${found.materi} (${found.kodeTp})`);
-                        if (found.deskripsi) setDeskripsiPenilaian(found.deskripsi);
-                      }
-                    }}
-                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="">-- Pilih TP dari Bank Data --</option>
-                    {tpList
-                      .filter((t) => fastPickerSemesterFilter === "ALL" || t.semester === activeSemester)
-                      .map((t) => (
-                        <option key={t.id} value={t.id}>
-                          [Sem {t.semester === 1 ? "Ganjil" : "Genap"}] {t.kodeTp} - {t.materi} {t.deskripsi ? `(${t.deskripsi})` : ""}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Kategori Penilaian */}
+              {/* 1. KATEGORI / JENIS PENILAIAN (PALING ATAS) */}
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Kategori / Jenis Penilaian *
+                  1. Pilih Kategori Penilaian *
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => setJenisPenilaian("FORMATIF")}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 ${
+                    onClick={() => {
+                      setJenisPenilaian("FORMATIF");
+                      setMateriPenilaian("");
+                      setTpCodePenilaian("");
+                      setNamaPenilaian("");
+                    }}
+                    className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
                       jenisPenilaian === "FORMATIF"
                         ? "bg-sky-500/20 border-sky-500/50 text-sky-300 shadow-md"
                         : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
                     }`}
                   >
                     <span>🔵 Formatif</span>
-                    <span className="text-[9px] font-normal text-slate-400">Proses / Feedback</span>
+                    <span className="text-[9px] font-normal text-slate-400">Proses / Feedback TP</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setJenisPenilaian("SUMATIF")}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 ${
+                    onClick={() => {
+                      setJenisPenilaian("SUMATIF");
+                      setMateriPenilaian("");
+                      setTpCodePenilaian("");
+                      setNamaPenilaian("");
+                    }}
+                    className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
                       jenisPenilaian === "SUMATIF"
                         ? "bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-md"
                         : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
                     }`}
                   >
                     <span>🟡 Sumatif</span>
-                    <span className="text-[9px] font-normal text-slate-400">Nilai TP / Materi</span>
+                    <span className="text-[9px] font-normal text-slate-400">Nilai Materi / TP</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setJenisPenilaian("PAS_UAS")}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 ${
+                    onClick={() => {
+                      setJenisPenilaian("PAS_UAS");
+                      setMateriPenilaian("");
+                      setTpCodePenilaian("");
+                      setNamaPenilaian("Sumatif Akhir Semester (PAS/UAS)");
+                    }}
+                    className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
                       jenisPenilaian === "PAS_UAS"
                         ? "bg-rose-500/20 border-rose-500/50 text-rose-300 shadow-md"
                         : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
@@ -1153,28 +1129,183 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                 </div>
               </div>
 
+              {/* 2. PEMILIHAN TP / LINGKUP MATERI BERDASARKAN KATEGORI */}
+              {jenisPenilaian === "FORMATIF" && (
+                <div className="p-3.5 bg-sky-950/40 border border-sky-800/50 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-bold text-sky-300 uppercase tracking-wider">
+                      2. Pilih Tujuan Pembelajaran (TP) *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setFastPickerSemesterFilter(fastPickerSemesterFilter === "ACTIVE" ? "ALL" : "ACTIVE")}
+                      className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-semibold transition cursor-pointer"
+                    >
+                      {fastPickerSemesterFilter === "ACTIVE" ? `Filter: Sem ${activeSemester === 1 ? "Ganjil" : "Genap"}` : "Filter: Semua Sem"}
+                    </button>
+                  </div>
+
+                  {tpList.length === 0 ? (
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400 flex flex-col items-center gap-2 text-center">
+                      <span>⚠️ Belum ada TP tersimpan di Bank Data untuk tingkat {tingkatKelas}.</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddModal(false);
+                          setShowTpModal(true);
+                        }}
+                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] rounded-lg transition cursor-pointer"
+                      >
+                        + Isi Bank TP & Materi Sekarang
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      value={tpList.find((t) => t.kodeTp === tpCodePenilaian && t.materi === materiPenilaian)?.id || ""}
+                      onChange={(e) => {
+                        const found = tpList.find((t) => t.id === e.target.value);
+                        if (found) {
+                          setMateriPenilaian(found.materi);
+                          setTpCodePenilaian(found.kodeTp);
+                          setNamaPenilaian(`Formatif ${found.kodeTp} - ${found.materi}`);
+                          if (found.deskripsi) setDeskripsiPenilaian(found.deskripsi);
+                        } else {
+                          setMateriPenilaian("");
+                          setTpCodePenilaian("");
+                          setNamaPenilaian("");
+                        }
+                      }}
+                      className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium cursor-pointer"
+                    >
+                      <option value="">-- Wajib Pilih TP dari Bank Data --</option>
+                      {tpList
+                        .filter((t) => fastPickerSemesterFilter === "ALL" || t.semester === activeSemester)
+                        .map((t) => (
+                          <option key={t.id} value={t.id}>
+                            [Sem {t.semester === 1 ? "Ganjil" : "Genap"}] {t.kodeTp} - {t.materi} {t.deskripsi ? `(${t.deskripsi})` : ""}
+                          </option>
+                        ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
+              {jenisPenilaian === "SUMATIF" && (
+                <div className="p-3.5 bg-amber-950/40 border border-amber-800/50 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-bold text-amber-300 uppercase tracking-wider">
+                      2. Pilih Lingkup Materi / Bab ATAU TP *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setFastPickerSemesterFilter(fastPickerSemesterFilter === "ACTIVE" ? "ALL" : "ACTIVE")}
+                      className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-semibold transition cursor-pointer"
+                    >
+                      {fastPickerSemesterFilter === "ACTIVE" ? `Filter: Sem ${activeSemester === 1 ? "Ganjil" : "Genap"}` : "Filter: Semua Sem"}
+                    </button>
+                  </div>
+
+                  {/* Opsi A: Pilih Bab / Lingkup Materi */}
+                  {Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-amber-400 font-semibold uppercase">Opsi A: Pilih Lingkup Materi / Bab</span>
+                      <select
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val) {
+                            setMateriPenilaian(val);
+                            setTpCodePenilaian("");
+                            setNamaPenilaian(`Sumatif ${val}`);
+                          }
+                        }}
+                        className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium cursor-pointer"
+                      >
+                        <option value="">-- Pilih Lingkup Materi / Bab --</option>
+                        {Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).map((materi, idx) => (
+                          <option key={idx} value={materi}>
+                            Bab: {materi}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Opsi B: Pilih TP Spesifik */}
+                  {tpList.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-amber-400 font-semibold uppercase">Opsi B: Atau Pilih TP Spesifik</span>
+                      <select
+                        onChange={(e) => {
+                          const found = tpList.find((t) => t.id === e.target.value);
+                          if (found) {
+                            setMateriPenilaian(found.materi);
+                            setTpCodePenilaian(found.kodeTp);
+                            setNamaPenilaian(`Sumatif ${found.kodeTp} (${found.materi})`);
+                            if (found.deskripsi) setDeskripsiPenilaian(found.deskripsi);
+                          }
+                        }}
+                        className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium cursor-pointer"
+                      >
+                        <option value="">-- Pilih TP Spesifik --</option>
+                        {tpList
+                          .filter((t) => fastPickerSemesterFilter === "ALL" || t.semester === activeSemester)
+                          .map((t) => (
+                            <option key={t.id} value={t.id}>
+                              [Sem {t.semester === 1 ? "Ganjil" : "Genap"}] {t.kodeTp} - {t.materi}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {tpList.length === 0 && (
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400 space-y-2 text-center">
+                      <p>⚠️ Belum ada materi tersimpan di Bank TP. Anda bisa mengetik materi secara manual di bawah, atau isi Bank TP terlebih dahulu.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddModal(false);
+                          setShowTpModal(true);
+                        }}
+                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] rounded-lg transition cursor-pointer"
+                      >
+                        + Isi Bank TP & Materi Sekarang
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 3. FIELD DETAIL PENILAIAN */}
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Nama Penilaian *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Formatif TP 1, Sumatif Bab 1 Aljabar, PAS Semester 1"
+                  placeholder={
+                    jenisPenilaian === "FORMATIF"
+                      ? "Pilih TP di atas untuk mengisi otomatis..."
+                      : jenisPenilaian === "SUMATIF"
+                      ? "Contoh: Sumatif Masa Mempertahankan Kemerdekaan"
+                      : "Sumatif Akhir Semester (PAS/UAS)"
+                  }
                   value={namaPenilaian}
                   onChange={(e) => setNamaPenilaian(e.target.value)}
-                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Lingkup Materi / Bab (Opsional)
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Lingkup Materi / Bab {jenisPenilaian === "SUMATIF" ? "*" : "(Opsional)"}
                   </label>
                   <input
                     type="text"
-                    placeholder="Contoh: Materi 1 Aljabar"
+                    required={jenisPenilaian === "SUMATIF"}
+                    placeholder="Otomatis dari pilihan TP / Bab"
                     value={materiPenilaian}
                     onChange={(e) => setMateriPenilaian(e.target.value)}
                     className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -1182,12 +1313,13 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Tujuan Pembelajaran (TP)
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Kode TP {jenisPenilaian === "FORMATIF" ? "*" : "(Opsional)"}
                   </label>
                   <input
                     type="text"
-                    placeholder="Contoh: TP 1.1"
+                    required={jenisPenilaian === "FORMATIF"}
+                    placeholder="Otomatis dari pilihan TP"
                     value={tpCodePenilaian}
                     onChange={(e) => setTpCodePenilaian(e.target.value)}
                     className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -1196,7 +1328,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Tanggal Penilaian *
                 </label>
                 <input
@@ -1209,17 +1341,30 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Deskripsi / Keterangan (Opsional)
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Tuliskan materi atau instruksi penilaian..."
+                  placeholder="Tuliskan catatan atau instruksi penilaian..."
                   value={deskripsiPenilaian}
                   onChange={(e) => setDeskripsiPenilaian(e.target.value)}
                   className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
+
+              {/* Status Validasi Penguncian */}
+              {((jenisPenilaian === "FORMATIF" && (!tpCodePenilaian || !materiPenilaian)) ||
+                (jenisPenilaian === "SUMATIF" && (!materiPenilaian && !tpCodePenilaian))) && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300 flex items-center gap-2 font-medium">
+                  <span>⚠️</span>
+                  <span>
+                    {jenisPenilaian === "FORMATIF"
+                      ? "Wajib memilih Tujuan Pembelajaran (TP) dari Bank Data di atas untuk melanjutkan."
+                      : "Wajib memilih Lingkup Materi / Bab atau TP dari Bank Data di atas untuk melanjutkan."}
+                  </span>
+                </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
                 <button
@@ -1231,11 +1376,16 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                 </button>
                 <button
                   type="submit"
-                  disabled={isPending}
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer"
+                  disabled={
+                    isPending ||
+                    (jenisPenilaian === "FORMATIF" && (!tpCodePenilaian || !materiPenilaian)) ||
+                    (jenisPenilaian === "SUMATIF" && (!materiPenilaian && !tpCodePenilaian)) ||
+                    !namaPenilaian.trim()
+                  }
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-lg"
                 >
                   {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  {isPending ? "Memproses..." : "Buat Penilaian"}
+                  Buat & Mulai Penilaian
                 </button>
               </div>
             </form>
