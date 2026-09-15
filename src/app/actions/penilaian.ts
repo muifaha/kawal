@@ -458,21 +458,51 @@ export async function getRekapRaporKurikulumMerdekaAction(kelasId: string, mapel
   }
 }
 
+export function extractTingkatKelas(nama: string): string {
+  if (!nama) return "X";
+  const clean = nama.trim().toUpperCase();
+  if (clean.startsWith("XII") || clean.startsWith("12")) return "XII";
+  if (clean.startsWith("XI") || clean.startsWith("11")) return "XI";
+  if (clean.startsWith("X") || clean.startsWith("10")) return "X";
+  if (clean.startsWith("IX") || clean.startsWith("9")) return "IX";
+  if (clean.startsWith("VIII") || clean.startsWith("8")) return "VIII";
+  if (clean.startsWith("VII") || clean.startsWith("7")) return "VII";
+  const parts = clean.split(/[\s\-_]+/);
+  return parts[0] || "X";
+}
+
 export async function getTujuanPembelajaranListAction(kelasId: string, mapelId: string) {
   const user = await getSessionUser();
   if (!user) return { error: "Akses ditolak." };
 
   try {
-    const list = await prisma.tujuanPembelajaran.findMany({
-      where: {
-        kelasId,
-        mapelId,
-        ...(user.role === "WAKA" ? {} : { guruId: user.id }),
-      },
-      orderBy: { kodeTp: "asc" },
+    const targetKelas = await prisma.kelas.findUnique({
+      where: { id: kelasId },
+      select: { nama: true },
     });
 
-    return { success: true, data: list };
+    const tingkatKelas = targetKelas ? extractTingkatKelas(targetKelas.nama) : "X";
+    const activeTa = await prisma.tahunAjaran.findFirst({ where: { isActive: true } });
+    const activeSemester = activeTa?.semesterAktif === "GENAP" ? 2 : 1;
+
+    const list = await prisma.tujuanPembelajaran.findMany({
+      where: {
+        mapelId,
+        ...(user.role === "WAKA" ? {} : { guruId: user.id }),
+        OR: [
+          { tingkatKelas },
+          { kelasId },
+        ],
+      },
+      orderBy: [{ semester: "asc" }, { kodeTp: "asc" }],
+    });
+
+    return {
+      success: true,
+      data: list,
+      tingkatKelas,
+      activeSemester,
+    };
   } catch (error: any) {
     console.error("getTujuanPembelajaranListAction error:", error);
     return { error: error.message || "Gagal mengambil daftar TP & Materi." };
@@ -485,6 +515,8 @@ export async function createTujuanPembelajaranAction(payload: {
   materi: string;
   kodeTp: string;
   deskripsi?: string;
+  semester?: number;
+  tingkatKelas?: string;
 }) {
   const user = await getSessionUser();
   if (!user || (user.role !== "GURU" && user.role !== "WALAS" && user.role !== "WAKA")) {
@@ -496,14 +528,28 @@ export async function createTujuanPembelajaranAction(payload: {
   }
 
   try {
+    let tingkat = payload.tingkatKelas;
+    if (!tingkat) {
+      const targetKelas = await prisma.kelas.findUnique({
+        where: { id: payload.kelasId },
+        select: { nama: true },
+      });
+      tingkat = targetKelas ? extractTingkatKelas(targetKelas.nama) : "X";
+    }
+
+    const activeTa = await prisma.tahunAjaran.findFirst({ where: { isActive: true } });
+    const defaultSemester = activeTa?.semesterAktif === "GENAP" ? 2 : 1;
+
     const newItem = await prisma.tujuanPembelajaran.create({
       data: {
         guruId: user.id,
         kelasId: payload.kelasId,
         mapelId: payload.mapelId,
+        tingkatKelas: tingkat,
         materi: payload.materi.trim(),
         kodeTp: payload.kodeTp.trim(),
         deskripsi: payload.deskripsi?.trim() || null,
+        semester: payload.semester || defaultSemester,
       },
     });
 

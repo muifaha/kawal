@@ -598,20 +598,21 @@ model JurnalDraft {
 }
 
 model TujuanPembelajaran {
-  id          String        @id @default(uuid())
-  guruId      String
-  guru        User          @relation(fields: [guruId], references: [id], onDelete: Cascade)
-  kelasId     String
-  kelas       Kelas         @relation(fields: [kelasId], references: [id], onDelete: Cascade)
-  mapelId     String
-  mapel       MataPelajaran @relation(fields: [mapelId], references: [id], onDelete: Cascade)
-  materi      String
-  kodeTp      String
-  deskripsi   String?
-  semester    Int           @default(1)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id           String        @id @default(uuid())
+  guruId       String
+  guru         User          @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  kelasId      String?
+  kelas        Kelas?        @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+  mapelId      String
+  mapel        MataPelajaran @relation(fields: [mapelId], references: [id], onDelete: Cascade)
+  tingkatKelas String        @default("X")
+  materi       String
+  kodeTp       String
+  deskripsi    String?
+  semester     Int           @default(1) // 1 = Ganjil, 2 = Genap
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
-  @@index([guruId, kelasId, mapelId])
+  @@index([guruId, mapelId, tingkatKelas, semester])
 }
 
