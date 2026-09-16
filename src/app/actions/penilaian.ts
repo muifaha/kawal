@@ -509,8 +509,41 @@ export async function getTujuanPembelajaranListAction(kelasId: string, mapelId: 
   }
 }
 
+export async function getAllTujuanPembelajaranAction(filterMapelId?: string, filterTingkat?: string) {
+  const user = await getSessionUser();
+  if (!user) return { error: "Akses ditolak." };
+
+  try {
+    const activeTa = await prisma.tahunAjaran.findFirst({ where: { isActive: true } });
+    const activeSemester = activeTa?.semesterAktif === "GENAP" ? 2 : 1;
+
+    const list = await prisma.tujuanPembelajaran.findMany({
+      where: {
+        ...(user.role === "WAKA" ? {} : { guruId: user.id }),
+        ...(filterMapelId ? { mapelId: filterMapelId } : {}),
+        ...(filterTingkat ? { tingkatKelas: filterTingkat } : {}),
+      },
+      include: {
+        mapel: {
+          select: { id: true, kode: true, nama: true },
+        },
+      },
+      orderBy: [{ tingkatKelas: "asc" }, { materi: "asc" }, { semester: "asc" }, { kodeTp: "asc" }],
+    });
+
+    return {
+      success: true,
+      data: list,
+      activeSemester,
+    };
+  } catch (error: any) {
+    console.error("getAllTujuanPembelajaranAction error:", error);
+    return { error: error.message || "Gagal mengambil daftar Bank TP." };
+  }
+}
+
 export async function createTujuanPembelajaranAction(payload: {
-  kelasId: string;
+  kelasId?: string;
   mapelId: string;
   materi: string;
   kodeTp: string;
@@ -523,19 +556,20 @@ export async function createTujuanPembelajaranAction(payload: {
     return { error: "Akses ditolak." };
   }
 
-  if (!payload.kelasId || !payload.mapelId || !payload.materi || !payload.kodeTp) {
-    return { error: "Kelas, Mapel, Lingkup Materi, dan Kode TP wajib diisi." };
+  if (!payload.mapelId || !payload.materi || !payload.kodeTp) {
+    return { error: "Mapel, Lingkup Materi, dan Kode TP wajib diisi." };
   }
 
   try {
     let tingkat = payload.tingkatKelas;
-    if (!tingkat) {
+    if (!tingkat && payload.kelasId) {
       const targetKelas = await prisma.kelas.findUnique({
         where: { id: payload.kelasId },
         select: { nama: true },
       });
       tingkat = targetKelas ? extractTingkatKelas(targetKelas.nama) : "X";
     }
+    if (!tingkat) tingkat = "X";
 
     const activeTa = await prisma.tahunAjaran.findFirst({ where: { isActive: true } });
     const targetSemester = payload.semester || (activeTa?.semesterAktif === "GENAP" ? 2 : 1);
@@ -585,7 +619,7 @@ export async function createTujuanPembelajaranAction(payload: {
     const newItem = await prisma.tujuanPembelajaran.create({
       data: {
         guruId: user.id,
-        kelasId: payload.kelasId,
+        kelasId: payload.kelasId || null,
         mapelId: payload.mapelId,
         tingkatKelas: tingkat,
         materi: payload.materi.trim(),
