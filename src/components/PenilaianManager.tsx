@@ -29,6 +29,7 @@ import {
   Users,
   Award,
   ChevronRight,
+  ChevronDown,
   Download,
   Calculator,
   Sliders,
@@ -104,6 +105,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
   const [tpCodePenilaian, setTpCodePenilaian] = useState("");
   const [tanggalPenilaian, setTanggalPenilaian] = useState(() => getTodayWibStr());
   const [deskripsiPenilaian, setDeskripsiPenilaian] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // Grade Entry State - Selected Penilaian Header
   const [activePenilaianId, setActivePenilaianId] = useState<string | null>(null);
@@ -156,6 +158,14 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
     }
     return tpList;
   }, [tpList, fastPickerSemesterFilter, activeSemester]);
+
+  const realTpOptions = React.useMemo(() => {
+    return availableTpOptions.filter((t) => t.kodeTp !== "BAB");
+  }, [availableTpOptions]);
+
+  const uniqueBabList = React.useMemo(() => {
+    return Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean)));
+  }, [tpList]);
 
   // Auto Save State
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -532,12 +542,16 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-indigo-400">
-                  <span>{activePenilaianInfo.kelasNama}</span>
-                  <span>•</span>
-                  <span>{activePenilaianInfo.mapelNama}</span>
-                  <span>•</span>
-                  <span>{activePenilaianInfo.tanggal}</span>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-bold mb-1">
+                  <span className="px-2.5 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg">
+                    {activePenilaianInfo.kelasNama}
+                  </span>
+                  <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg">
+                    {activePenilaianInfo.mapelNama}
+                  </span>
+                  <span className="px-2.5 py-0.5 bg-slate-800 text-slate-300 border border-slate-700 rounded-lg font-mono">
+                    {activePenilaianInfo.tanggal}
+                  </span>
                   {activePenilaianInfo.jenisPenilaian && (
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                       activePenilaianInfo.jenisPenilaian === "FORMATIF"
@@ -688,10 +702,13 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-indigo-400">
-                  <span>Kelas {selectedClass.nama}</span>
-                  <span>•</span>
-                  <span>{selectedMapel.nama} ({selectedMapel.kode})</span>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-bold mb-1">
+                  <span className="px-2.5 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg">
+                    Kelas {selectedClass.nama}
+                  </span>
+                  <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg">
+                    {selectedMapel.nama} ({selectedMapel.kode})
+                  </span>
                 </div>
                 <h3 className="text-lg font-bold text-white mt-0.5 flex items-center gap-2">
                   <Calculator className="w-5 h-5 text-emerald-400" />
@@ -983,7 +1000,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
         </div>
       )}
 
-      {/* MODAL: TAMBAH PENILAIAN BARU (KURIKULUM MERDEKA) */}
+      {/* MODAL: TAMBAH PENILAIAN */}
       {showAddModal && selectedClass && selectedMapel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200 space-y-4 p-6">
@@ -991,15 +1008,20 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <Plus className="w-5 h-5 text-indigo-400" />
-                  Tambah Penilaian Baru (Kurikulum Merdeka)
+                  Tambah Penilaian
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {selectedClass.nama} • {selectedMapel.nama}
-                </p>
+                <div className="flex flex-wrap items-center gap-2 text-xs mt-1.5 font-bold">
+                  <span className="px-2.5 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg">
+                    Kelas {selectedClass.nama}
+                  </span>
+                  <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg">
+                    {selectedMapel.nama} ({selectedMapel.kode})
+                  </span>
+                </div>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition cursor-pointer"
               >
                 ✕
               </button>
@@ -1018,7 +1040,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                       setJenisPenilaian("FORMATIF");
                       setMateriPenilaian("");
                       setTpCodePenilaian("");
-                      setNamaPenilaian("");
+                      setPickerOpen(false);
                     }}
                     className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
                       jenisPenilaian === "FORMATIF"
@@ -1036,7 +1058,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                       setJenisPenilaian("SUMATIF");
                       setMateriPenilaian("");
                       setTpCodePenilaian("");
-                      setNamaPenilaian("");
+                      setPickerOpen(false);
                     }}
                     className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
                       jenisPenilaian === "SUMATIF"
@@ -1054,7 +1076,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                       setJenisPenilaian("PAS_UAS");
                       setMateriPenilaian("");
                       setTpCodePenilaian("");
-                      setNamaPenilaian("Sumatif Akhir Semester (PAS/UAS)");
+                      setPickerOpen(false);
                     }}
                     className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
                       jenisPenilaian === "PAS_UAS"
@@ -1077,14 +1099,17 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                     </label>
                     <button
                       type="button"
-                      onClick={() => setFastPickerSemesterFilter(fastPickerSemesterFilter === "ACTIVE" ? "ALL" : "ACTIVE")}
+                      onClick={() => {
+                        setFastPickerSemesterFilter(fastPickerSemesterFilter === "ACTIVE" ? "ALL" : "ACTIVE");
+                        setPickerOpen(false);
+                      }}
                       className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-semibold transition cursor-pointer"
                     >
                       {fastPickerSemesterFilter === "ACTIVE" ? `Filter: Sem ${activeSemester === 1 ? "Ganjil" : "Genap"}` : "Filter: Semua Sem"}
                     </button>
                   </div>
 
-                  {tpList.length === 0 ? (
+                  {realTpOptions.length === 0 ? (
                     <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400 flex flex-col items-center gap-2 text-center">
                       <span>⚠️ Belum ada TP tersimpan di Bank Data untuk tingkat {tingkatKelas}.</span>
                       <button
@@ -1099,30 +1124,82 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                       </button>
                     </div>
                   ) : (
-                    <select
-                      value={tpList.find((t) => t.kodeTp === tpCodePenilaian && t.materi === materiPenilaian)?.id || ""}
-                      onChange={(e) => {
-                        const found = tpList.find((t) => t.id === e.target.value);
-                        if (found) {
-                          setMateriPenilaian(found.materi);
-                          setTpCodePenilaian(found.kodeTp);
-                          setNamaPenilaian(`Formatif ${found.kodeTp} - ${found.materi}`);
-                          if (found.deskripsi) setDeskripsiPenilaian(found.deskripsi);
-                        } else {
-                          setMateriPenilaian("");
-                          setTpCodePenilaian("");
-                          setNamaPenilaian("");
-                        }
-                      }}
-                      className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium cursor-pointer"
-                    >
-                      <option value="">-- Wajib Pilih TP dari Bank Data --</option>
-                      {availableTpOptions.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          [Sem {t.semester === 1 ? "Ganjil" : "Genap"}] {t.kodeTp} - {t.materi} {t.deskripsi ? `(${t.deskripsi})` : ""}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      {/* Trigger Button with text wrapping */}
+                      <button
+                        type="button"
+                        onClick={() => setPickerOpen((prev) => !prev)}
+                        className="w-full text-left p-3 border border-sky-500/40 rounded-xl bg-slate-950 text-xs text-white hover:border-sky-400 flex items-start justify-between gap-2 cursor-pointer transition"
+                      >
+                        {tpCodePenilaian && materiPenilaian ? (
+                          <div className="space-y-1 min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1.5 font-bold">
+                              {(() => {
+                                const selectedTp = realTpOptions.find((t) => t.kodeTp === tpCodePenilaian && t.materi === materiPenilaian);
+                                return (
+                                  <>
+                                    <span className="px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded text-[10px] font-mono shrink-0">
+                                      Sem {selectedTp?.semester === 1 ? "Ganjil" : "Genap"}
+                                    </span>
+                                    <span className="text-sky-300 font-mono font-bold">{tpCodePenilaian}</span>
+                                    <span className="text-white font-semibold">• {materiPenilaian}</span>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                            {(() => {
+                              const selectedTp = realTpOptions.find((t) => t.kodeTp === tpCodePenilaian && t.materi === materiPenilaian);
+                              return selectedTp?.deskripsi ? (
+                                <p className="text-slate-400 text-[11px] leading-relaxed whitespace-normal break-words">
+                                  {selectedTp.deskripsi}
+                                </p>
+                              ) : null;
+                            })()}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">-- Klik untuk Pilih TP dari Bank Data --</span>
+                        )}
+                        <ChevronDown className={`w-4 h-4 text-sky-400 shrink-0 mt-0.5 transition-transform ${pickerOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {/* Dropdown Options Popup Container with Auto Text Wrapping */}
+                      {pickerOpen && (
+                        <div className="mt-2 max-h-60 overflow-y-auto space-y-1 p-1.5 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl animate-in fade-in duration-150 z-20">
+                          {realTpOptions.map((t) => {
+                            const isSelected = tpCodePenilaian === t.kodeTp && materiPenilaian === t.materi;
+                            return (
+                              <div
+                                key={t.id}
+                                onClick={() => {
+                                  setMateriPenilaian(t.materi);
+                                  setTpCodePenilaian(t.kodeTp);
+                                  if (t.deskripsi) setDeskripsiPenilaian(t.deskripsi);
+                                  setPickerOpen(false);
+                                }}
+                                className={`p-2.5 rounded-lg text-xs cursor-pointer transition space-y-1 text-left ${
+                                  isSelected
+                                    ? "bg-sky-500/20 border border-sky-500/40 text-white"
+                                    : "hover:bg-slate-900 text-slate-300 hover:text-white"
+                                }`}
+                              >
+                                <div className="flex flex-wrap items-center gap-1.5 font-bold">
+                                  <span className="px-1.5 py-0.5 bg-sky-500/20 text-sky-300 rounded text-[9px] font-mono">
+                                    Sem {t.semester === 1 ? "Ganjil" : "Genap"}
+                                  </span>
+                                  <span className="text-sky-300 font-mono">{t.kodeTp}</span>
+                                  <span className="text-white font-semibold">• {t.materi}</span>
+                                </div>
+                                {t.deskripsi && (
+                                  <p className="text-slate-400 text-[11px] leading-relaxed whitespace-normal break-words">
+                                    {t.deskripsi}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -1135,7 +1212,10 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                     </label>
                     <button
                       type="button"
-                      onClick={() => setFastPickerSemesterFilter(fastPickerSemesterFilter === "ACTIVE" ? "ALL" : "ACTIVE")}
+                      onClick={() => {
+                        setFastPickerSemesterFilter(fastPickerSemesterFilter === "ACTIVE" ? "ALL" : "ACTIVE");
+                        setPickerOpen(false);
+                      }}
                       className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-semibold transition cursor-pointer"
                     >
                       {fastPickerSemesterFilter === "ACTIVE" ? `Filter: Sem ${activeSemester === 1 ? "Ganjil" : "Genap"}` : "Filter: Semua Sem"}
@@ -1157,56 +1237,130 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                       </button>
                     </div>
                   ) : (
-                    <select
-                      value={
-                        tpCodePenilaian
-                          ? `TP:${tpList.find((t) => t.kodeTp === tpCodePenilaian && t.materi === materiPenilaian)?.id || ""}`
-                          : materiPenilaian
-                          ? `MATERI:${materiPenilaian}`
-                          : ""
-                      }
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val.startsWith("MATERI:")) {
-                          const materi = val.replace("MATERI:", "");
-                          setMateriPenilaian(materi);
-                          setTpCodePenilaian("");
-                          setNamaPenilaian(`Sumatif ${materi}`);
-                        } else if (val.startsWith("TP:")) {
-                          const tpId = val.replace("TP:", "");
-                          const found = tpList.find((t) => t.id === tpId);
-                          if (found) {
-                            setMateriPenilaian(found.materi);
-                            setTpCodePenilaian(found.kodeTp);
-                            setNamaPenilaian(`Sumatif ${found.kodeTp} (${found.materi})`);
-                            if (found.deskripsi) setDeskripsiPenilaian(found.deskripsi);
-                          }
-                        } else {
-                          setMateriPenilaian("");
-                          setTpCodePenilaian("");
-                          setNamaPenilaian("");
-                        }
-                      }}
-                      className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium cursor-pointer"
-                    >
-                      <option value="">-- Wajib Pilih Lingkup Materi / Bab atau TP --</option>
-                      {Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).length > 0 && (
-                        <optgroup label="📚 Lingkup Materi / Bab (Nilai Per Bab)">
-                          {Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean))).map((materi, idx) => (
-                            <option key={`m-${idx}`} value={`MATERI:${materi}`}>
-                              Bab: {materi}
-                            </option>
-                          ))}
-                        </optgroup>
+                    <div className="relative">
+                      {/* Trigger Button with text wrapping */}
+                      <button
+                        type="button"
+                        onClick={() => setPickerOpen((prev) => !prev)}
+                        className="w-full text-left p-3 border border-amber-500/40 rounded-xl bg-slate-950 text-xs text-white hover:border-amber-400 flex items-start justify-between gap-2 cursor-pointer transition"
+                      >
+                        {materiPenilaian ? (
+                          <div className="space-y-1 min-w-0 flex-1">
+                            {tpCodePenilaian ? (
+                              <>
+                                <div className="flex flex-wrap items-center gap-1.5 font-bold">
+                                  {(() => {
+                                    const selectedTp = realTpOptions.find((t) => t.kodeTp === tpCodePenilaian && t.materi === materiPenilaian);
+                                    return (
+                                      <>
+                                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded text-[10px] font-mono shrink-0">
+                                          🎯 TP Spesifik [Sem {selectedTp?.semester === 1 ? "Ganjil" : "Genap"}]
+                                        </span>
+                                        <span className="text-amber-300 font-mono font-bold">{tpCodePenilaian}</span>
+                                        <span className="text-white font-semibold">• {materiPenilaian}</span>
+                                      </>
+                                    );
+                                  })()}
+                                </div>
+                                {(() => {
+                                  const selectedTp = realTpOptions.find((t) => t.kodeTp === tpCodePenilaian && t.materi === materiPenilaian);
+                                  return selectedTp?.deskripsi ? (
+                                    <p className="text-slate-400 text-[11px] leading-relaxed whitespace-normal break-words">
+                                      {selectedTp.deskripsi}
+                                    </p>
+                                  ) : null;
+                                })()}
+                              </>
+                            ) : (
+                              <div className="flex flex-wrap items-center gap-1.5 font-bold">
+                                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded text-[10px] shrink-0">
+                                  📚 Lingkup Materi / Bab
+                                </span>
+                                <span className="text-white font-bold">{materiPenilaian}</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">-- Klik untuk Pilih Lingkup Materi / Bab atau TP --</span>
+                        )}
+                        <ChevronDown className={`w-4 h-4 text-amber-400 shrink-0 mt-0.5 transition-transform ${pickerOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {/* Dropdown Options Popup Container with Auto Text Wrapping */}
+                      {pickerOpen && (
+                        <div className="mt-2 max-h-64 overflow-y-auto space-y-2 p-1.5 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl animate-in fade-in duration-150 z-20">
+                          {/* SECTION 1: LINGKUP MATERI / BAB */}
+                          {uniqueBabList.length > 0 && (
+                            <div className="space-y-1">
+                              <div className="px-2 py-1 text-[10px] font-bold text-amber-400 uppercase tracking-wider bg-amber-950/40 rounded">
+                                📚 Lingkup Materi / Bab (Nilai Per Bab)
+                              </div>
+                              {uniqueBabList.map((babTitle) => {
+                                const isSelected = materiPenilaian === babTitle && !tpCodePenilaian;
+                                return (
+                                  <div
+                                    key={`bab-${babTitle}`}
+                                    onClick={() => {
+                                      setMateriPenilaian(babTitle);
+                                      setTpCodePenilaian("");
+                                      setPickerOpen(false);
+                                    }}
+                                    className={`p-2.5 rounded-lg text-xs cursor-pointer transition text-left font-bold ${
+                                      isSelected
+                                        ? "bg-amber-500/20 border border-amber-500/40 text-amber-300"
+                                        : "hover:bg-slate-900 text-slate-200 hover:text-white"
+                                    }`}
+                                  >
+                                    Bab: {babTitle}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* SECTION 2: TP SPESIFIK */}
+                          {realTpOptions.length > 0 && (
+                            <div className="space-y-1 pt-1 border-t border-slate-800">
+                              <div className="px-2 py-1 text-[10px] font-bold text-sky-400 uppercase tracking-wider bg-sky-950/40 rounded">
+                                🎯 TP Spesifik (Nilai Per TP)
+                              </div>
+                              {realTpOptions.map((t) => {
+                                const isSelected = tpCodePenilaian === t.kodeTp && materiPenilaian === t.materi;
+                                return (
+                                  <div
+                                    key={`tp-${t.id}`}
+                                    onClick={() => {
+                                      setMateriPenilaian(t.materi);
+                                      setTpCodePenilaian(t.kodeTp);
+                                      if (t.deskripsi) setDeskripsiPenilaian(t.deskripsi);
+                                      setPickerOpen(false);
+                                    }}
+                                    className={`p-2.5 rounded-lg text-xs cursor-pointer transition space-y-1 text-left ${
+                                      isSelected
+                                        ? "bg-sky-500/20 border border-sky-500/40 text-white"
+                                        : "hover:bg-slate-900 text-slate-300 hover:text-white"
+                                    }`}
+                                  >
+                                    <div className="flex flex-wrap items-center gap-1.5 font-bold">
+                                      <span className="px-1.5 py-0.5 bg-sky-500/20 text-sky-300 rounded text-[9px] font-mono">
+                                        Sem {t.semester === 1 ? "Ganjil" : "Genap"}
+                                      </span>
+                                      <span className="text-sky-300 font-mono">{t.kodeTp}</span>
+                                      <span className="text-white font-semibold">• {t.materi}</span>
+                                    </div>
+                                    {t.deskripsi && (
+                                      <p className="text-slate-400 text-[11px] leading-relaxed whitespace-normal break-words">
+                                        {t.deskripsi}
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       )}
-                      <optgroup label="🎯 TP Spesifik (Nilai Per TP)">
-                        {availableTpOptions.map((t) => (
-                          <option key={`tp-${t.id}`} value={`TP:${t.id}`}>
-                            [Sem {t.semester === 1 ? "Ganjil" : "Genap"}] {t.kodeTp} - {t.materi}
-                          </option>
-                        ))}
-                      </optgroup>
-                    </select>
+                    </div>
                   )}
                 </div>
               )}
@@ -1219,13 +1373,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                 <input
                   type="text"
                   required
-                  placeholder={
-                    jenisPenilaian === "FORMATIF"
-                      ? "Pilih TP di atas untuk mengisi otomatis..."
-                      : jenisPenilaian === "SUMATIF"
-                      ? "Contoh: Sumatif Masa Mempertahankan Kemerdekaan"
-                      : "Sumatif Akhir Semester (PAS/UAS)"
-                  }
+                  placeholder="Ketik nama penilaian (contoh: Formatif 1 / Quiz Bab 1)..."
                   value={namaPenilaian}
                   onChange={(e) => setNamaPenilaian(e.target.value)}
                   className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
@@ -1374,10 +1522,13 @@ function PenilaianListDashboard({
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-indigo-400">
-              <span>Kelas {selectedClass.nama}</span>
-              <span>•</span>
-              <span>{selectedMapel.nama} ({selectedMapel.kode})</span>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-bold mb-1">
+              <span className="px-2.5 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg">
+                Kelas {selectedClass.nama}
+              </span>
+              <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg">
+                {selectedMapel.nama} ({selectedMapel.kode})
+              </span>
             </div>
             <h3 className="text-lg font-bold text-white mt-0.5">Daftar Penilaian Mata Pelajaran</h3>
           </div>
@@ -1405,7 +1556,7 @@ function PenilaianListDashboard({
             className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
-            Tambah Penilaian Baru
+            Tambah Penilaian
           </button>
         </div>
       </div>
