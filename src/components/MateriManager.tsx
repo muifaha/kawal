@@ -615,7 +615,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
           <div>
             <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-wider">
               <Layers className="w-4 h-4 text-indigo-400" />
-              Daftar Lingkup Materi / Bab & Tujuan Pembelajaran (TP)
+              Daftar Materi dan TP
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
               Total {babGroups.length} Lingkup Materi / Bab tersimpan
