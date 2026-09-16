@@ -545,7 +545,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                         : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
                     }`}
                   >
-                    Sem 1 (Ganjil)
+                    Ganjil
                   </button>
                   <button
                     type="button"
@@ -556,7 +556,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                         : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
                     }`}
                   >
-                    Sem 2 (Genap)
+                    Genap
                   </button>
                 </div>
               </div>
@@ -875,7 +875,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                                                   : "bg-purple-500/10 text-purple-300 border border-purple-500/20"
                                               }`}
                                             >
-                                              Sem {tp.semester === 1 ? "1" : "2"}
+                                              {tp.semester === 1 ? "Ganjil" : "Genap"}
                                             </span>
                                           </td>
                                           <td className="p-3 text-center">
@@ -1033,8 +1033,8 @@ export default function MateriManager({ user }: MateriManagerProps) {
                     onChange={(e) => setEditingTp({ ...editingTp, semester: parseInt(e.target.value, 10) })}
                     className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
                   >
-                    <option value={1}>Semester 1 (Ganjil)</option>
-                    <option value={2}>Semester 2 (Genap)</option>
+                    <option value={1}>Ganjil</option>
+                    <option value={2}>Genap</option>
                   </select>
                 </div>
               </div>
