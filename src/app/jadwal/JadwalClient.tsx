@@ -1729,11 +1729,11 @@ export default function JadwalClient({
               <button
                 type="button"
                 onClick={() => setShowExportAttendanceModal(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs font-bold text-white rounded-xl shadow-lg shadow-emerald-500/10 transition-all cursor-pointer whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 whitespace-nowrap"
                 title="Ekspor Rekap Kehadiran Siswa Per Bulan / Per Semester (Per Kelas Per Sheet)"
               >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span>Ekspor Excel Kehadiran Siswa</span>
+                <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
+                <span>Ekspor Kehadiran</span>
               </button>
 
               <div className="w-full sm:w-56 relative rounded-xl">
