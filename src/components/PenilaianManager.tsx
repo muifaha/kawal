@@ -1076,6 +1076,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                       setJenisPenilaian("PAS_UAS");
                       setMateriPenilaian("");
                       setTpCodePenilaian("");
+                      setNamaPenilaian(activeSemester === 1 ? "Asesmen Akhir Semester" : "Asesmen Akhir Tahun");
                       setPickerOpen(false);
                     }}
                     className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
@@ -1370,14 +1371,25 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Nama Penilaian *
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ketik nama penilaian (contoh: Formatif 1 / Quiz Bab 1)..."
-                  value={namaPenilaian}
-                  onChange={(e) => setNamaPenilaian(e.target.value)}
-                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
-                />
+                {jenisPenilaian === "PAS_UAS" ? (
+                  <select
+                    value={namaPenilaian || (activeSemester === 1 ? "Asesmen Akhir Semester" : "Asesmen Akhir Tahun")}
+                    onChange={(e) => setNamaPenilaian(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-rose-500 font-bold cursor-pointer"
+                  >
+                    <option value="Asesmen Akhir Semester">Asesmen Akhir Semester (Semester Ganjil)</option>
+                    <option value="Asesmen Akhir Tahun">Asesmen Akhir Tahun (Semester Genap)</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ketik nama penilaian (contoh: Formatif 1 / Quiz Bab 1)..."
+                    value={namaPenilaian}
+                    onChange={(e) => setNamaPenilaian(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
+                  />
+                )}
               </div>
 
 
