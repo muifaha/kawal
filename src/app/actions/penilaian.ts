@@ -595,7 +595,45 @@ export async function createTujuanPembelajaranAction(payload: {
     const maxNum = numbers.length > 0 ? Math.max(...numbers) : 0;
     const expectedNextNum = maxNum + 1;
 
-    // Ekstrak angka dari input
+    // Jika kodeTp adalah "BAB", buat record placeholder Bab tanpa TP otomatis
+    if (payload.kodeTp.trim().toUpperCase() === "BAB") {
+      const existingBab = await prisma.tujuanPembelajaran.findFirst({
+        where: {
+          mapelId: payload.mapelId,
+          tingkatKelas: tingkat,
+          materi: targetMateri,
+          ...(user.role === "WAKA" ? {} : { guruId: user.id }),
+        },
+      });
+
+      if (existingBab) {
+        return { error: `Lingkup Materi / "${targetMateri}" sudah ada.` };
+      }
+
+      const newItem = await prisma.tujuanPembelajaran.create({
+        data: {
+          guruId: user.id,
+          kelasId: payload.kelasId || null,
+          mapelId: payload.mapelId,
+          tingkatKelas: tingkat,
+          materi: targetMateri,
+          kodeTp: "BAB",
+          deskripsi: null,
+          semester: targetSemester,
+        },
+      });
+
+      revalidatePath("/materi");
+      revalidatePath("/penilaian");
+
+      return {
+        success: true,
+        message: `Lingkup Materi / ${targetMateri} berhasil disimpan.`,
+        data: newItem,
+      };
+    }
+
+    // Ekstrak angka dari input untuk TP
     const inputMatch = payload.kodeTp.match(/\d+/);
     const inputNum = inputMatch ? parseInt(inputMatch[0], 10) : NaN;
 

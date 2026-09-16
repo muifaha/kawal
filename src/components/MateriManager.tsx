@@ -191,7 +191,9 @@ export default function MateriManager({ user }: MateriManagerProps) {
           tps: [],
         });
       }
-      map.get(key)!.tps.push(t);
+      if (t.kodeTp !== "BAB") {
+        map.get(key)!.tps.push(t);
+      }
     });
 
     return Array.from(map.values());
@@ -262,7 +264,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
         mapelId: newBabMapelId,
         tingkatKelas: newBabTingkat,
         materi: formattedBabName,
-        kodeTp: "TP 1",
+        kodeTp: "BAB",
         deskripsi: undefined,
         semester: newBabSemester,
       });
@@ -433,9 +435,12 @@ export default function MateriManager({ user }: MateriManagerProps) {
             type="button"
             onClick={() => setShowAddBabForm((prev) => !prev)}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shrink-0 shadow-lg shadow-indigo-600/20 border border-indigo-500/30"
+            style={{ color: "#ffffff" }}
           >
-            <FolderPlus className="w-4 h-4 text-white" />
-            <span className="text-white font-bold">{showAddBabForm ? "Tutup Form" : "Tambah Lingkup Materi"}</span>
+            <FolderPlus className="w-4 h-4" style={{ color: "#ffffff" }} />
+            <span className="font-bold" style={{ color: "#ffffff" }}>
+              {showAddBabForm ? "Tutup Form" : "Tambah Lingkup Materi"}
+            </span>
           </button>
         </div>
       </div>
