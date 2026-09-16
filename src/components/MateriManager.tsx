@@ -666,9 +666,9 @@ export default function MateriManager({ user }: MateriManagerProps) {
                 <tr className="bg-slate-900/90 text-left font-semibold text-slate-300 uppercase tracking-wider">
                   <th className="p-3.5 w-16 text-center">No</th>
                   <th className="p-3.5 min-w-[200px]">Lingkup Materi / Bab</th>
-                  <th className="p-3.5 w-24 text-center">Tingkatan Kelas</th>
-                  <th className="p-3.5 w-48">Mata Pelajaran</th>
-                  <th className="p-3.5 w-24 text-center">Jumlah TP</th>
+                  <th className="p-3.5 w-40 text-center">Tingkatan Kelas</th>
+                  <th className="p-3.5 w-72">Mata Pelajaran</th>
+                  <th className="p-3.5 w-36 text-center">Jumlah TP</th>
                   <th className="p-3.5 w-24 text-center">Aksi</th>
                 </tr>
               </thead>
