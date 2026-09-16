@@ -423,20 +423,17 @@ export default function MateriManager({ user }: MateriManagerProps) {
   return (
     <div className="space-y-6">
       {/* HEADER UTAMA HALAMAN MANAJEMEN MATERI */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-slate-900/60 border border-slate-800 rounded-2xl backdrop-blur-xl">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-            <BookOpen className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">Manajemen Materi</h1>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Kelola Bank Lingkup Materi / Bab & Tujuan Pembelajaran (TP) Kurikulum Merdeka
-            </p>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white text-balance">
+            Manajemen Materi
+          </h1>
+          <p className="text-sm text-slate-400 mt-1">
+            Kelola Bank Lingkup Materi / Bab & Tujuan Pembelajaran (TP) Kurikulum Merdeka
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
             onClick={() => setShowAddBabForm((prev) => !prev)}

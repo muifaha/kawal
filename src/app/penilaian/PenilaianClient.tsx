@@ -16,7 +16,7 @@ interface PenilaianClientProps {
 export default function PenilaianClient({ user }: PenilaianClientProps) {
   return (
     <SidebarLayout user={user}>
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="space-y-6">
         <PenilaianManager user={user} defaultMode="KELAS" />
       </div>
     </SidebarLayout>

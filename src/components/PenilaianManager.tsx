@@ -451,17 +451,14 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
   return (
     <div className="space-y-6">
       {/* HEADER UTAMA HALAMAN PENILAIAN */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-slate-900/60 border border-slate-800 rounded-2xl backdrop-blur-xl">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-            <Award className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">Penilaian Siswa</h1>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Input & Manajemen Penilaian Formatif, Sumatif, PAS/UAS, dan Rekapitulasi Nilai Rapor Kurikulum Merdeka
-            </p>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white text-balance">
+            Penilaian Siswa
+          </h1>
+          <p className="text-sm text-slate-400 mt-1">
+            Input & Manajemen Penilaian Formatif, Sumatif, PAS/UAS, dan Rekapitulasi Nilai Rapor Kurikulum Merdeka
+          </p>
         </div>
 
         {/* Tab Penilaian (Mode Alur Kelas vs Pilih Langsung) */}
