@@ -434,7 +434,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
           <button
             type="button"
             onClick={() => setShowAddBabForm((prev) => !prev)}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shrink-0 shadow-lg shadow-indigo-600/20 border border-indigo-500/30"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shrink-0 border border-indigo-500/30"
             style={{ color: "#ffffff" }}
           >
             <FolderPlus className="w-4 h-4" style={{ color: "#ffffff" }} />
@@ -501,7 +501,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                       onClick={() => setNewBabTingkat(t)}
                       className={`flex-1 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
                         newBabTingkat === t
-                          ? "bg-indigo-600 border-indigo-500 text-white shadow"
+                          ? "bg-indigo-600 border-indigo-500 text-white"
                           : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
                       }`}
                     >
@@ -546,7 +546,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                     onClick={() => setNewBabSemester(1)}
                     className={`flex-1 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
                       newBabSemester === 1
-                        ? "bg-sky-600 border-sky-500 text-white shadow"
+                        ? "bg-sky-600 border-sky-500 text-white"
                         : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
                     }`}
                   >
@@ -557,7 +557,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                     onClick={() => setNewBabSemester(2)}
                     className={`flex-1 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
                       newBabSemester === 2
-                        ? "bg-purple-600 border-purple-500 text-white shadow"
+                        ? "bg-purple-600 border-purple-500 text-white"
                         : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
                     }`}
                   >
@@ -591,7 +591,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
               <button
                 type="submit"
                 disabled={isPending}
-                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-lg"
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer"
               >
                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 Simpan Lingkup Materi Baru
@@ -666,7 +666,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
         </div>
       ) : (
           /* MAIN DIRECT HIERARCHICAL TABLE VIEW */
-          <div className="overflow-x-auto border border-slate-800 rounded-2xl bg-slate-950/40 shadow-xl">
+          <div className="overflow-x-auto border border-slate-800 rounded-2xl bg-slate-950/40">
             <table className="min-w-full divide-y divide-slate-800 text-xs">
               <thead>
                 <tr className="bg-slate-900/90 text-left font-semibold text-slate-300 uppercase tracking-wider">
@@ -770,7 +770,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                             <div className="space-y-3 pl-4 border-l-2 border-indigo-500/40">
                               {/* FORM INPUT TP BAWAH BAB */}
                               {isCurrentActive ? (
-                                <div className="p-3.5 bg-slate-900/90 border border-indigo-500/30 rounded-xl space-y-3 shadow-md animate-in fade-in duration-150">
+                                <div className="p-3.5 bg-slate-900/90 border border-indigo-500/30 rounded-xl space-y-3 animate-in fade-in duration-150">
                                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                                     <h5 className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-2">
                                       <Plus className="w-3.5 h-3.5 text-indigo-400" />
@@ -820,7 +820,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                                       type="button"
                                       onClick={() => handleCreateTpUnderGroup(group)}
                                       disabled={isPending || !newTpDeskripsi.trim()}
-                                      className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer shadow"
+                                      className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer"
                                     >
                                       {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                                       Simpan TP
@@ -835,7 +835,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                                   <button
                                     type="button"
                                     onClick={() => setActiveBabKey(group.key)}
-                                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1 shadow"
+                                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1"
                                   >
                                     <Plus className="w-3.5 h-3.5" />
                                     <span>+ Input TP Baru</span>
@@ -932,7 +932,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
       {/* MODAL EDIT NAMA LINGKUP MATERI / BAB */}
       {editingBab && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Edit2 className="w-4 h-4 text-amber-400" />
@@ -980,7 +980,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shadow"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer"
                 >
                   {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   Simpan Perubahan
@@ -994,7 +994,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
       {/* MODAL EDIT TUJUAN PEMBELAJARAN (TP) */}
       {editingTp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Edit2 className="w-4 h-4 text-indigo-400" />
@@ -1067,7 +1067,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shadow"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer"
                 >
                   {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   Simpan Perubahan TP
