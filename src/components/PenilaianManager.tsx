@@ -36,6 +36,7 @@ import {
   Sparkles,
   Layers,
   FileSpreadsheet,
+  Target,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -1040,6 +1041,8 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                       setJenisPenilaian("FORMATIF");
                       setMateriPenilaian("");
                       setTpCodePenilaian("");
+                      setNamaPenilaian("");
+                      setDeskripsiPenilaian("");
                       setPickerOpen(false);
                     }}
                     className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
@@ -1058,6 +1061,8 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                       setJenisPenilaian("SUMATIF");
                       setMateriPenilaian("");
                       setTpCodePenilaian("");
+                      setNamaPenilaian("");
+                      setDeskripsiPenilaian("");
                       setPickerOpen(false);
                     }}
                     className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
@@ -1077,6 +1082,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                       setMateriPenilaian("");
                       setTpCodePenilaian("");
                       setNamaPenilaian(activeSemester === 1 ? "Asesmen Akhir Semester" : "Asesmen Akhir Tahun");
+                      setDeskripsiPenilaian("");
                       setPickerOpen(false);
                     }}
                     className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
@@ -1093,25 +1099,29 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
 
               {/* 2. PEMILIHAN TP / LINGKUP MATERI BERDASARKAN KATEGORI */}
               {jenisPenilaian === "FORMATIF" && (
-                <div className="p-3.5 bg-sky-950/40 border border-sky-800/50 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-[11px] font-bold text-sky-300 uppercase tracking-wider">
-                      2. Pilih Tujuan Pembelajaran (TP) *
-                    </label>
+                <div className="p-4 bg-slate-950/90 border border-slate-800 rounded-2xl space-y-3 shadow-inner">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <Target className="w-4 h-4 text-sky-400 shrink-0" />
+                      <label className="block text-xs font-bold text-sky-300 uppercase tracking-wider">
+                        2. Pilih Tujuan Pembelajaran (TP) *
+                      </label>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
                         setFastPickerSemesterFilter(fastPickerSemesterFilter === "ACTIVE" ? "ALL" : "ACTIVE");
                         setPickerOpen(false);
                       }}
-                      className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-semibold transition cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-300 text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0"
                     >
-                      {fastPickerSemesterFilter === "ACTIVE" ? `Filter: Sem ${activeSemester === 1 ? "Ganjil" : "Genap"}` : "Filter: Semua Sem"}
+                      <Sliders className="w-3 h-3 text-sky-400" />
+                      <span>{fastPickerSemesterFilter === "ACTIVE" ? `Semester ${activeSemester === 1 ? "Ganjil" : "Genap"}` : "Semua Semester"}</span>
                     </button>
                   </div>
 
                   {realTpOptions.length === 0 ? (
-                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400 flex flex-col items-center gap-2 text-center">
+                    <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl text-xs text-slate-400 flex flex-col items-center gap-2.5 text-center">
                       <span>⚠️ Belum ada TP tersimpan di Bank Data untuk tingkat {tingkatKelas}.</span>
                       <button
                         type="button"
@@ -1119,7 +1129,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                           setShowAddModal(false);
                           router.push(`/materi?kelasId=${selectedClass.id}&mapelId=${selectedMapel.id}`);
                         }}
-                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] rounded-lg transition cursor-pointer"
+                        className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition cursor-pointer"
                       >
                         + Isi Bank TP & Materi Sekarang
                       </button>
@@ -1130,19 +1140,21 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                       <button
                         type="button"
                         onClick={() => setPickerOpen((prev) => !prev)}
-                        className="w-full text-left p-3 border border-sky-500/40 rounded-xl bg-slate-950 text-xs text-white hover:border-sky-400 flex items-start justify-between gap-2 cursor-pointer transition"
+                        className="w-full text-left p-3.5 border border-slate-800 hover:border-sky-500/50 rounded-xl bg-slate-900/90 text-xs text-white flex items-start justify-between gap-3 cursor-pointer transition-all shadow-inner"
                       >
                         {tpCodePenilaian && materiPenilaian ? (
-                          <div className="space-y-1 min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-1.5 font-bold">
+                          <div className="space-y-1.5 min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2 font-bold">
                               {(() => {
                                 const selectedTp = realTpOptions.find((t) => t.kodeTp === tpCodePenilaian && t.materi === materiPenilaian);
                                 return (
                                   <>
-                                    <span className="px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded text-[10px] font-mono shrink-0">
+                                    <span className="px-2 py-0.5 bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded text-[10px] font-mono shrink-0 font-bold">
                                       Sem {selectedTp?.semester === 1 ? "Ganjil" : "Genap"}
                                     </span>
-                                    <span className="text-sky-300 font-mono font-bold">{tpCodePenilaian}</span>
+                                    <span className="px-2 py-0.5 bg-slate-800 text-sky-400 font-mono font-bold rounded text-[11px]">
+                                      {tpCodePenilaian}
+                                    </span>
                                     <span className="text-white font-semibold">• {materiPenilaian}</span>
                                   </>
                                 );
@@ -1151,21 +1163,21 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                             {(() => {
                               const selectedTp = realTpOptions.find((t) => t.kodeTp === tpCodePenilaian && t.materi === materiPenilaian);
                               return selectedTp?.deskripsi ? (
-                                <p className="text-slate-400 text-[11px] leading-relaxed whitespace-normal break-words">
+                                <p className="text-slate-400 text-xs leading-relaxed whitespace-normal break-words pl-0.5">
                                   {selectedTp.deskripsi}
                                 </p>
                               ) : null;
                             })()}
                           </div>
                         ) : (
-                          <span className="text-slate-400">-- Klik untuk Pilih TP dari Bank Data --</span>
+                          <span className="text-slate-400 font-medium">-- Klik untuk Pilih TP dari Bank Data --</span>
                         )}
                         <ChevronDown className={`w-4 h-4 text-sky-400 shrink-0 mt-0.5 transition-transform ${pickerOpen ? "rotate-180" : ""}`} />
                       </button>
 
                       {/* Dropdown Options Popup Container with Auto Text Wrapping */}
                       {pickerOpen && (
-                        <div className="mt-2 max-h-60 overflow-y-auto space-y-1 p-1.5 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl animate-in fade-in duration-150 z-20">
+                        <div className="mt-2 max-h-64 overflow-y-auto space-y-1.5 p-2 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-150 z-30 divide-y divide-slate-800/40">
                           {realTpOptions.map((t) => {
                             const isSelected = tpCodePenilaian === t.kodeTp && materiPenilaian === t.materi;
                             return (
@@ -1177,21 +1189,21 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                                   if (t.deskripsi) setDeskripsiPenilaian(t.deskripsi);
                                   setPickerOpen(false);
                                 }}
-                                className={`p-2.5 rounded-lg text-xs cursor-pointer transition space-y-1 text-left ${
+                                className={`p-3 rounded-xl text-xs cursor-pointer transition space-y-1.5 text-left border ${
                                   isSelected
-                                    ? "bg-sky-500/20 border border-sky-500/40 text-white"
-                                    : "hover:bg-slate-900 text-slate-300 hover:text-white"
+                                    ? "bg-sky-500/15 border-sky-500/50 text-white"
+                                    : "border-transparent hover:bg-slate-800/80 hover:border-slate-700 text-slate-300 hover:text-white"
                                 }`}
                               >
                                 <div className="flex flex-wrap items-center gap-1.5 font-bold">
-                                  <span className="px-1.5 py-0.5 bg-sky-500/20 text-sky-300 rounded text-[9px] font-mono">
+                                  <span className="px-1.5 py-0.5 bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded text-[9px] font-mono">
                                     Sem {t.semester === 1 ? "Ganjil" : "Genap"}
                                   </span>
-                                  <span className="text-sky-300 font-mono">{t.kodeTp}</span>
+                                  <span className="text-sky-300 font-mono font-bold">{t.kodeTp}</span>
                                   <span className="text-white font-semibold">• {t.materi}</span>
                                 </div>
                                 {t.deskripsi && (
-                                  <p className="text-slate-400 text-[11px] leading-relaxed whitespace-normal break-words">
+                                  <p className="text-slate-400 text-xs leading-relaxed whitespace-normal break-words">
                                     {t.deskripsi}
                                   </p>
                                 )}
@@ -1206,25 +1218,29 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
               )}
 
               {jenisPenilaian === "SUMATIF" && (
-                <div className="p-3.5 bg-amber-950/40 border border-amber-800/50 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-[11px] font-bold text-amber-300 uppercase tracking-wider">
-                      2. Pilih Lingkup Materi / Bab ATAU TP *
-                    </label>
+                <div className="p-4 bg-slate-950/90 border border-slate-800 rounded-2xl space-y-3 shadow-inner">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-amber-400 shrink-0" />
+                      <label className="block text-xs font-bold text-amber-300 uppercase tracking-wider">
+                        2. Pilih Lingkup Materi / Bab ATAU TP *
+                      </label>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
                         setFastPickerSemesterFilter(fastPickerSemesterFilter === "ACTIVE" ? "ALL" : "ACTIVE");
                         setPickerOpen(false);
                       }}
-                      className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-semibold transition cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0"
                     >
-                      {fastPickerSemesterFilter === "ACTIVE" ? `Filter: Sem ${activeSemester === 1 ? "Ganjil" : "Genap"}` : "Filter: Semua Sem"}
+                      <Sliders className="w-3 h-3 text-amber-400" />
+                      <span>{fastPickerSemesterFilter === "ACTIVE" ? `Semester ${activeSemester === 1 ? "Ganjil" : "Genap"}` : "Semua Semester"}</span>
                     </button>
                   </div>
 
                   {tpList.length === 0 ? (
-                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400 flex flex-col items-center gap-2 text-center">
+                    <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl text-xs text-slate-400 flex flex-col items-center gap-2.5 text-center">
                       <span>⚠️ Belum ada Lingkup Materi / TP tersimpan di Bank Data.</span>
                       <button
                         type="button"
@@ -1232,7 +1248,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                           setShowAddModal(false);
                           router.push(`/materi?kelasId=${selectedClass.id}&mapelId=${selectedMapel.id}`);
                         }}
-                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] rounded-lg transition cursor-pointer"
+                        className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition cursor-pointer"
                       >
                         + Isi Bank TP & Materi Sekarang
                       </button>
@@ -1243,21 +1259,23 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                       <button
                         type="button"
                         onClick={() => setPickerOpen((prev) => !prev)}
-                        className="w-full text-left p-3 border border-amber-500/40 rounded-xl bg-slate-950 text-xs text-white hover:border-amber-400 flex items-start justify-between gap-2 cursor-pointer transition"
+                        className="w-full text-left p-3.5 border border-slate-800 hover:border-amber-500/50 rounded-xl bg-slate-900/90 text-xs text-white flex items-start justify-between gap-3 cursor-pointer transition-all shadow-inner"
                       >
                         {materiPenilaian ? (
-                          <div className="space-y-1 min-w-0 flex-1">
+                          <div className="space-y-1.5 min-w-0 flex-1">
                             {tpCodePenilaian ? (
                               <>
-                                <div className="flex flex-wrap items-center gap-1.5 font-bold">
+                                <div className="flex flex-wrap items-center gap-2 font-bold">
                                   {(() => {
                                     const selectedTp = realTpOptions.find((t) => t.kodeTp === tpCodePenilaian && t.materi === materiPenilaian);
                                     return (
                                       <>
-                                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded text-[10px] font-mono shrink-0">
+                                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] shrink-0 font-bold">
                                           🎯 TP Spesifik [Sem {selectedTp?.semester === 1 ? "Ganjil" : "Genap"}]
                                         </span>
-                                        <span className="text-amber-300 font-mono font-bold">{tpCodePenilaian}</span>
+                                        <span className="px-2 py-0.5 bg-slate-800 text-amber-400 font-mono font-bold rounded text-[11px]">
+                                          {tpCodePenilaian}
+                                        </span>
                                         <span className="text-white font-semibold">• {materiPenilaian}</span>
                                       </>
                                     );
@@ -1266,15 +1284,15 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                                 {(() => {
                                   const selectedTp = realTpOptions.find((t) => t.kodeTp === tpCodePenilaian && t.materi === materiPenilaian);
                                   return selectedTp?.deskripsi ? (
-                                    <p className="text-slate-400 text-[11px] leading-relaxed whitespace-normal break-words">
+                                    <p className="text-slate-400 text-xs leading-relaxed whitespace-normal break-words pl-0.5">
                                       {selectedTp.deskripsi}
                                     </p>
                                   ) : null;
                                 })()}
                               </>
                             ) : (
-                              <div className="flex flex-wrap items-center gap-1.5 font-bold">
-                                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded text-[10px] shrink-0">
+                              <div className="flex flex-wrap items-center gap-2 font-bold">
+                                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] shrink-0 font-bold">
                                   📚 Lingkup Materi / Bab
                                 </span>
                                 <span className="text-white font-bold">{materiPenilaian}</span>
@@ -1282,18 +1300,18 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                             )}
                           </div>
                         ) : (
-                          <span className="text-slate-400">-- Klik untuk Pilih Lingkup Materi / Bab atau TP --</span>
+                          <span className="text-slate-400 font-medium">-- Klik untuk Pilih Lingkup Materi / Bab atau TP --</span>
                         )}
                         <ChevronDown className={`w-4 h-4 text-amber-400 shrink-0 mt-0.5 transition-transform ${pickerOpen ? "rotate-180" : ""}`} />
                       </button>
 
                       {/* Dropdown Options Popup Container with Auto Text Wrapping */}
                       {pickerOpen && (
-                        <div className="mt-2 max-h-64 overflow-y-auto space-y-2 p-1.5 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl animate-in fade-in duration-150 z-20">
+                        <div className="mt-2 max-h-64 overflow-y-auto space-y-2 p-2 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-150 z-30">
                           {/* SECTION 1: LINGKUP MATERI / BAB */}
                           {uniqueBabList.length > 0 && (
                             <div className="space-y-1">
-                              <div className="px-2 py-1 text-[10px] font-bold text-amber-400 uppercase tracking-wider bg-amber-950/40 rounded">
+                              <div className="px-2.5 py-1 text-[10px] font-bold text-amber-400 uppercase tracking-wider bg-amber-950/60 border border-amber-800/40 rounded-lg">
                                 📚 Lingkup Materi / Bab (Nilai Per Bab)
                               </div>
                               {uniqueBabList.map((babTitle) => {
@@ -1306,10 +1324,10 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                                       setTpCodePenilaian("");
                                       setPickerOpen(false);
                                     }}
-                                    className={`p-2.5 rounded-lg text-xs cursor-pointer transition text-left font-bold ${
+                                    className={`p-3 rounded-xl text-xs cursor-pointer transition text-left font-bold border ${
                                       isSelected
-                                        ? "bg-amber-500/20 border border-amber-500/40 text-amber-300"
-                                        : "hover:bg-slate-900 text-slate-200 hover:text-white"
+                                        ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
+                                        : "border-transparent hover:bg-slate-800/80 hover:border-slate-700 text-slate-200 hover:text-white"
                                     }`}
                                   >
                                     Bab: {babTitle}
@@ -1321,8 +1339,8 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
 
                           {/* SECTION 2: TP SPESIFIK */}
                           {realTpOptions.length > 0 && (
-                            <div className="space-y-1 pt-1 border-t border-slate-800">
-                              <div className="px-2 py-1 text-[10px] font-bold text-sky-400 uppercase tracking-wider bg-sky-950/40 rounded">
+                            <div className="space-y-1 pt-1.5 border-t border-slate-800">
+                              <div className="px-2.5 py-1 text-[10px] font-bold text-sky-400 uppercase tracking-wider bg-sky-950/60 border border-sky-800/40 rounded-lg">
                                 🎯 TP Spesifik (Nilai Per TP)
                               </div>
                               {realTpOptions.map((t) => {
@@ -1336,21 +1354,21 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                                       if (t.deskripsi) setDeskripsiPenilaian(t.deskripsi);
                                       setPickerOpen(false);
                                     }}
-                                    className={`p-2.5 rounded-lg text-xs cursor-pointer transition space-y-1 text-left ${
+                                    className={`p-3 rounded-xl text-xs cursor-pointer transition space-y-1.5 text-left border ${
                                       isSelected
-                                        ? "bg-sky-500/20 border border-sky-500/40 text-white"
-                                        : "hover:bg-slate-900 text-slate-300 hover:text-white"
+                                        ? "bg-sky-500/15 border-sky-500/50 text-white"
+                                        : "border-transparent hover:bg-slate-800/80 hover:border-slate-700 text-slate-300 hover:text-white"
                                     }`}
                                   >
                                     <div className="flex flex-wrap items-center gap-1.5 font-bold">
-                                      <span className="px-1.5 py-0.5 bg-sky-500/20 text-sky-300 rounded text-[9px] font-mono">
+                                      <span className="px-1.5 py-0.5 bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded text-[9px] font-mono">
                                         Sem {t.semester === 1 ? "Ganjil" : "Genap"}
                                       </span>
-                                      <span className="text-sky-300 font-mono">{t.kodeTp}</span>
+                                      <span className="text-sky-300 font-mono font-bold">{t.kodeTp}</span>
                                       <span className="text-white font-semibold">• {t.materi}</span>
                                     </div>
                                     {t.deskripsi && (
-                                      <p className="text-slate-400 text-[11px] leading-relaxed whitespace-normal break-words">
+                                      <p className="text-slate-400 text-xs leading-relaxed whitespace-normal break-words">
                                         {t.deskripsi}
                                       </p>
                                     )}
