@@ -596,9 +596,9 @@ export default function MateriManager({ user }: MateriManagerProps) {
         </div>
       )}
 
-      {/* DIRECT TABEL HIRARKI MATERI & TP */}
-      <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      {/* HEADER CONTROLS CARD FOR DAFTAR MATERI DAN TP */}
+      <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-wider">
               <Layers className="w-4 h-4 text-indigo-400" />
@@ -648,17 +648,18 @@ export default function MateriManager({ user }: MateriManagerProps) {
             </div>
           </div>
         </div>
+      </div>
 
-        {loadingData ? (
-          <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-2">
-            <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
-            <span className="text-xs">Memuat daftar Bank Materi & TP...</span>
-          </div>
-        ) : filteredBabGroups.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-xs bg-slate-950/40 rounded-xl border border-slate-900">
-            Belum ada Lingkup Materi / Bab tersimpan. Silakan tambahkan pada form di atas.
-          </div>
-        ) : (
+      {loadingData ? (
+        <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-2 bg-slate-900/40 border border-slate-800 rounded-2xl">
+          <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+          <span className="text-xs">Memuat daftar Bank Materi & TP...</span>
+        </div>
+      ) : filteredBabGroups.length === 0 ? (
+        <div className="p-8 text-center text-slate-500 text-xs bg-slate-950/40 rounded-2xl border border-slate-900">
+          Belum ada Lingkup Materi / Bab tersimpan. Silakan tambahkan pada form di atas.
+        </div>
+      ) : (
           /* MAIN DIRECT HIERARCHICAL TABLE VIEW */
           <div className="overflow-x-auto border border-slate-800 rounded-2xl bg-slate-950/40 shadow-xl">
             <table className="min-w-full divide-y divide-slate-800 text-xs">
@@ -922,7 +923,6 @@ export default function MateriManager({ user }: MateriManagerProps) {
             </table>
           </div>
         )}
-      </div>
 
       {/* MODAL EDIT NAMA LINGKUP MATERI / BAB */}
       {editingBab && (
