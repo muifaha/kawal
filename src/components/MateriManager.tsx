@@ -83,11 +83,11 @@ export default function MateriManager({ user }: MateriManagerProps) {
   const [selectedMapelFilter, setSelectedMapelFilter] = useState<string>("ALL");
 
   // Form 1: Input Bab / Lingkup Materi Baru
+  const [showAddBabForm, setShowAddBabForm] = useState(false);
   const [newBabTingkat, setNewBabTingkat] = useState<string>("X");
   const [newBabMapelId, setNewBabMapelId] = useState<string>("");
   const [newBabTitle, setNewBabTitle] = useState("");
   const [newBabSemester, setNewBabSemester] = useState<number>(1);
-  const [newBabInitialTpDeskripsi, setNewBabInitialTpDeskripsi] = useState("");
 
   // Active Expanded Bab for Hierarchy View & Adding TP
   const [activeBabKey, setActiveBabKey] = useState<string | null>(null);
@@ -268,7 +268,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
         tingkatKelas: newBabTingkat,
         materi: formattedBabName,
         kodeTp: "TP 1",
-        deskripsi: newBabInitialTpDeskripsi.trim() || undefined,
+        deskripsi: undefined,
         semester: newBabSemester,
       });
 
@@ -277,7 +277,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
       } else {
         setSuccessMsg(res.message || `Lingkup Materi / ${formattedBabName} berhasil disimpan.`);
         setNewBabTitle("");
-        setNewBabInitialTpDeskripsi("");
+        setShowAddBabForm(false);
         const newGroupKey = `${newBabMapelId}_${newBabTingkat}_${formattedBabName}`;
         setActiveBabKey(newGroupKey);
         setExpandedBabs((prev) => ({ ...prev, [newGroupKey]: true }));
@@ -436,13 +436,24 @@ export default function MateriManager({ user }: MateriManagerProps) {
           </div>
         </div>
 
-        <Link
-          href="/penilaian"
-          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shrink-0 border border-slate-700 shadow-md"
-        >
-          <Award className="w-4 h-4 text-emerald-400" />
-          <span>Ke Menu Penilaian</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setShowAddBabForm((prev) => !prev)}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shrink-0 shadow-lg shadow-indigo-600/20 border border-indigo-500/30"
+          >
+            <FolderPlus className="w-4 h-4" />
+            <span>{showAddBabForm ? "Tutup Form" : "Tambah Lingkup Materi / Bab Baru"}</span>
+          </button>
+
+          <Link
+            href="/penilaian"
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shrink-0 border border-slate-700 shadow-md"
+          >
+            <Award className="w-4 h-4 text-emerald-400" />
+            <span>Ke Menu Penilaian</span>
+          </Link>
+        </div>
       </div>
 
       {/* ALERT NOTIFIKASI */}
@@ -464,144 +475,142 @@ export default function MateriManager({ user }: MateriManagerProps) {
       )}
 
       {/* FORM UTAMA: INPUT LINGKUP MATERI / BAB BARU */}
-      <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
-            <FolderPlus className="w-4 h-4 text-indigo-400" />
-            Tambah Lingkup Materi / Bab Baru *
-          </h3>
-          <span className="text-xs text-slate-400 font-mono">
-            Urutan Otomatis: <strong className="text-indigo-300">Bab {currentNextBabNum}</strong>
-          </span>
-        </div>
+      {showAddBabForm && (
+        <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+              <FolderPlus className="w-4 h-4 text-indigo-400" />
+              Tambah Lingkup Materi / Bab Baru *
+            </h3>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 font-mono">
+                Urutan Otomatis: <strong className="text-indigo-300">Bab {currentNextBabNum}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowAddBabForm(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+                title="Tutup Form"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
 
-        <form onSubmit={handleCreateBab} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* TINGKATAN KELAS */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Tingkatan Kelas *
-              </label>
-              <div className="flex items-center gap-2">
-                {["X", "XI", "XII"].map((t) => (
+          <form onSubmit={handleCreateBab} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* TINGKATAN KELAS */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Tingkatan Kelas *
+                </label>
+                <div className="flex items-center gap-2">
+                  {["X", "XI", "XII"].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setNewBabTingkat(t)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                        newBabTingkat === t
+                          ? "bg-indigo-600 border-indigo-500 text-white shadow"
+                          : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      Kelas {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* MATA PELAJARAN */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Mata Pelajaran *
+                </label>
+                {mapelOptions.length === 0 ? (
+                  <div className="p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-500">
+                    Belum ada mapel terdaftar
+                  </div>
+                ) : (
+                  <select
+                    value={newBabMapelId}
+                    onChange={(e) => setNewBabMapelId(e.target.value)}
+                    className="block w-full px-3.5 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium cursor-pointer"
+                  >
+                    {mapelOptions.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.kode} - {m.nama}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* TARGET SEMESTER */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Target Semester *
+                </label>
+                <div className="flex items-center gap-2">
                   <button
-                    key={t}
                     type="button"
-                    onClick={() => setNewBabTingkat(t)}
+                    onClick={() => setNewBabSemester(1)}
                     className={`flex-1 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                      newBabTingkat === t
-                        ? "bg-indigo-600 border-indigo-500 text-white shadow"
+                      newBabSemester === 1
+                        ? "bg-sky-600 border-sky-500 text-white shadow"
                         : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
                     }`}
                   >
-                    Kelas {t}
+                    Sem 1 (Ganjil)
                   </button>
-                ))}
-              </div>
-            </div>
-
-            {/* MATA PELAJARAN */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Mata Pelajaran *
-              </label>
-              {mapelOptions.length === 0 ? (
-                <div className="p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-500">
-                  Belum ada mapel terdaftar
+                  <button
+                    type="button"
+                    onClick={() => setNewBabSemester(2)}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                      newBabSemester === 2
+                        ? "bg-purple-600 border-purple-500 text-white shadow"
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Sem 2 (Genap)
+                  </button>
                 </div>
-              ) : (
-                <select
-                  value={newBabMapelId}
-                  onChange={(e) => setNewBabMapelId(e.target.value)}
-                  className="block w-full px-3.5 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium cursor-pointer"
-                >
-                  {mapelOptions.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.kode} - {m.nama}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* TARGET SEMESTER */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Target Semester *
-              </label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setNewBabSemester(1)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                    newBabSemester === 1
-                      ? "bg-sky-600 border-sky-500 text-white shadow"
-                      : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Sem 1 (Ganjil)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setNewBabSemester(2)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                    newBabSemester === 2
-                      ? "bg-purple-600 border-purple-500 text-white shadow"
-                      : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Sem 2 (Genap)
-                </button>
               </div>
             </div>
-          </div>
 
-          {/* INPUT NAMA LINGKUP MATERI / BAB */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Lingkup Materi / Bab * <span className="text-[10px] text-indigo-400 font-normal">(Format Terkunci Berurutan)</span>
-            </label>
-            <div className="flex items-center">
-              <span className="px-3.5 py-2.5 bg-slate-800 border border-r-0 border-slate-700 rounded-l-xl text-xs font-bold text-indigo-300 font-mono select-none shrink-0">
-                Bab {currentNextBabNum}
-              </span>
-              <input
-                type="text"
-                required
-                placeholder="Masukkan Judul Bab / Lingkup Materi... (contoh: Revolusi Indonesia)"
-                value={newBabTitle}
-                onChange={(e) => setNewBabTitle(e.target.value)}
-                className="block w-full px-3.5 py-2.5 border border-slate-700 rounded-r-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-              />
+            {/* INPUT NAMA LINGKUP MATERI / BAB */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Lingkup Materi / Bab * <span className="text-[10px] text-indigo-400 font-normal">(Format Terkunci Berurutan)</span>
+              </label>
+              <div className="flex items-center">
+                <span className="px-3.5 py-2.5 bg-slate-800 border border-r-0 border-slate-700 rounded-l-xl text-xs font-bold text-indigo-300 font-mono select-none shrink-0">
+                  Bab {currentNextBabNum}
+                </span>
+                <input
+                  type="text"
+                  required
+                  placeholder="Masukkan Judul Bab / Lingkup Materi... (contoh: Revolusi Indonesia)"
+                  value={newBabTitle}
+                  onChange={(e) => setNewBabTitle(e.target.value)}
+                  className="block w-full px-3.5 py-2.5 border border-slate-700 rounded-r-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* DESKRIPSI TP PERTAMA (OPTIONAL) */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Deskripsi Tujuan Pembelajaran (TP 1) Awal (Opsional)
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Contoh: Peserta didik mampu menganalisis kronologi diplomasi..."
-              value={newBabInitialTpDeskripsi}
-              onChange={(e) => setNewBabInitialTpDeskripsi(e.target.value)}
-              className="block w-full px-3.5 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div className="flex justify-end pt-1">
-            <button
-              type="submit"
-              disabled={isPending}
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-lg"
-            >
-              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              Simpan Lingkup Materi / Bab Baru
-            </button>
-          </div>
-        </form>
-      </div>
+            <div className="flex justify-end pt-1">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-lg"
+              >
+                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                Simpan Lingkup Materi / Bab Baru
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* DIRECT TABEL HIRARKI MATERI & TP */}
       <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-4">
