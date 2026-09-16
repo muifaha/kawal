@@ -806,16 +806,6 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
           {!selectedClass ? (
             /* STEP 1: Pilih Kelas */
             <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <School className="w-5 h-5 text-indigo-400" />
-                  Daftar Kelas Guru Mengajar
-                </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Pilih kelas tempat Anda mengajar untuk menambah atau mengelola nilai mata pelajaran.
-                </p>
-              </div>
-
               {loadingClasses ? (
                 <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-2 bg-slate-900/40 border border-slate-900 rounded-2xl">
                   <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
