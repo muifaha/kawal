@@ -823,7 +823,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                                       className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer shadow"
                                     >
                                       {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                      Simpan TP ke {group.materi}
+                                      Simpan TP
                                     </button>
                                   </div>
                                 </div>
