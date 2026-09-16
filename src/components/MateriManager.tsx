@@ -6,20 +6,27 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   BookOpen,
   ChevronRight,
+  ChevronDown,
   Plus,
   Trash2,
+  Edit2,
   Loader2,
   ArrowLeft,
   Layers,
   Search,
   Award,
-  Filter,
+  Check,
+  X,
+  FolderPlus,
 } from "lucide-react";
 import {
   getTeacherClassesAndSubjectsAction,
   getTujuanPembelajaranListAction,
   createTujuanPembelajaranAction,
   deleteTujuanPembelajaranAction,
+  updateTujuanPembelajaranAction,
+  updateLingkupMateriAction,
+  deleteLingkupMateriAction,
 } from "@/app/actions/penilaian";
 
 interface MapelItem {
@@ -32,6 +39,15 @@ interface ClassItem {
   id: string;
   nama: string;
   mapels: MapelItem[];
+}
+
+interface TpItem {
+  id: string;
+  materi: string;
+  kodeTp: string;
+  deskripsi: string | null;
+  semester: number;
+  tingkatKelas: string;
 }
 
 interface MateriManagerProps {
@@ -56,51 +72,54 @@ export default function MateriManager({ user }: MateriManagerProps) {
   const [selectedMapel, setSelectedMapel] = useState<MapelItem | null>(null);
 
   // Bank TP & Materi State
-  const [tpList, setTpList] = useState<
-    Array<{
-      id: string;
-      materi: string;
-      kodeTp: string;
-      deskripsi: string | null;
-      semester: number;
-      tingkatKelas: string;
-    }>
-  >([]);
+  const [tpList, setTpList] = useState<TpItem[]>([]);
   const [tingkatKelas, setTingkatKelas] = useState<string>("X");
   const [activeSemester, setActiveSemester] = useState<number>(1);
   const [selectedSemesterTab, setSelectedSemesterTab] = useState<number>(0); // 0 = Semua, 1 = Ganjil, 2 = Genap
   const [loadingTp, setLoadingTp] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [newTpMateri, setNewTpMateri] = useState("");
-  const [newTpKode, setNewTpKode] = useState("1");
+  // Form 1: Input Bab / Lingkup Materi Baru
+  const [newBabNumber, setNewBabNumber] = useState<number>(1);
+  const [newBabTitle, setNewBabTitle] = useState("");
+  const [newBabSemester, setNewBabSemester] = useState<number>(1);
+  const [newBabInitialTpDeskripsi, setNewBabInitialTpDeskripsi] = useState("");
+
+  // Active Expanded Bab for Hierarchy View & Adding TP
+  const [activeBab, setActiveBab] = useState<string | null>(null);
+  const [expandedBabs, setExpandedBabs] = useState<Record<string, boolean>>({});
+
+  // Form 2: Input TP Baru bawah Bab Aktif
   const [newTpDeskripsi, setNewTpDeskripsi] = useState("");
-  const [newTpSemester, setNewTpSemester] = useState<number>(1);
+  const [newTpCustomNumber, setNewTpCustomNumber] = useState<string>("1");
+
+  // Edit State for Bab & TP Modals
+  const [editingBab, setEditingBab] = useState<{ oldMateri: string; newTitle: string } | null>(null);
+  const [editingTp, setEditingTp] = useState<{
+    id: string;
+    materi: string;
+    kodeTpNum: string;
+    deskripsi: string;
+    semester: number;
+  } | null>(null);
 
   // Transition & Notification State
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  // Calculate next TP number for selected semester & materi
-  const calculateNextTpNumber = (targetSem: number, targetMateri: string) => {
-    if (!targetMateri.trim()) return 1;
-    const existingInMateri = tpList.filter(
-      (t) => t.semester === targetSem && t.materi.trim().toLowerCase() === targetMateri.trim().toLowerCase()
-    );
-    const numbers = existingInMateri.map((t) => {
-      const match = t.kodeTp.match(/\d+/);
-      return match ? parseInt(match[0], 10) : 0;
-    });
-    const maxNum = numbers.length > 0 ? Math.max(...numbers) : 0;
-    return maxNum + 1;
-  };
+  // Calculate unique list of Bab / Lingkup Materi items
+  const uniqueBabList = Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean)));
 
-  // Auto update newTpKode when newTpSemester or newTpMateri changes
+  // Auto calculate next Bab number
   useEffect(() => {
-    const nextNum = calculateNextTpNumber(newTpSemester, newTpMateri);
-    setNewTpKode(nextNum.toString());
-  }, [newTpSemester, newTpMateri, tpList]);
+    setNewBabNumber(uniqueBabList.length + 1);
+  }, [tpList]);
+
+  // Toggle Expand / Collapse Bab in hierarchy view
+  const toggleExpandBab = (materi: string) => {
+    setExpandedBabs((prev) => ({ ...prev, [materi]: !prev[materi] }));
+  };
 
   // Load teacher classes & mapels on mount
   useEffect(() => {
@@ -146,45 +165,207 @@ export default function MateriManager({ user }: MateriManagerProps) {
       if (res.tingkatKelas) setTingkatKelas(res.tingkatKelas);
       if (res.activeSemester) {
         setActiveSemester(res.activeSemester);
-        setNewTpSemester(res.activeSemester);
+        setNewBabSemester(res.activeSemester);
+      }
+
+      // Auto expand all Babs by default
+      const uniqueMateri = Array.from(new Set(res.data.map((t: TpItem) => t.materi).filter(Boolean)));
+      const expMap: Record<string, boolean> = {};
+      uniqueMateri.forEach((m) => {
+        expMap[m] = true;
+      });
+      setExpandedBabs(expMap);
+
+      if (uniqueMateri.length > 0 && !activeBab) {
+        setActiveBab(uniqueMateri[0]);
       }
     }
     setLoadingTp(false);
   };
 
-  const handleCreateTp = async (e: React.FormEvent) => {
+  // Calculate next TP number for a specific Bab
+  const calculateNextTpNumberForBab = (targetMateri: string) => {
+    if (!targetMateri) return 1;
+    const existingInBab = tpList.filter(
+      (t) => t.materi.trim().toLowerCase() === targetMateri.trim().toLowerCase()
+    );
+    const numbers = existingInBab.map((t) => {
+      const match = t.kodeTp.match(/\d+/);
+      return match ? parseInt(match[0], 10) : 0;
+    });
+    const maxNum = numbers.length > 0 ? Math.max(...numbers) : 0;
+    return maxNum + 1;
+  };
+
+  // 1. Submit Form: Tambah Bab / Lingkup Materi Baru
+  const handleCreateBab = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedClass || !selectedMapel) return;
+    if (!newBabTitle.trim()) {
+      setErrorMsg("Nama Lingkup Materi / Judul Bab wajib diisi.");
+      return;
+    }
     setErrorMsg("");
     setSuccessMsg("");
 
-    const cleanNum = newTpKode.replace(/\D/g, "");
-    const finalKodeTp = cleanNum ? `TP ${cleanNum}` : `TP ${calculateNextTpNumber(newTpSemester, newTpMateri)}`;
+    // Formatted Bab Name: e.g. "Bab 1 - Masa Mempertahankan Kemerdekaan" or user-provided "Bab X"
+    const rawTitle = newBabTitle.trim();
+    const formattedBabName = rawTitle.toLowerCase().startsWith("bab ")
+      ? rawTitle
+      : `Bab ${newBabNumber} - ${rawTitle}`;
+
+    // Default Kode TP 1
+    const defaultKodeTp = "TP 1";
 
     startTransition(async () => {
       const res = await createTujuanPembelajaranAction({
         kelasId: selectedClass.id,
         mapelId: selectedMapel.id,
-        materi: newTpMateri,
-        kodeTp: finalKodeTp,
-        deskripsi: newTpDeskripsi,
-        semester: newTpSemester,
+        materi: formattedBabName,
+        kodeTp: defaultKodeTp,
+        deskripsi: newBabInitialTpDeskripsi.trim() || null || undefined,
+        semester: newBabSemester,
         tingkatKelas: tingkatKelas,
       });
 
       if (res.error) {
         setErrorMsg(res.error);
       } else {
-        setSuccessMsg(res.message || "TP & Materi berhasil disimpan.");
-        setNewTpMateri("");
+        setSuccessMsg(res.message || `Lingkup Materi / ${formattedBabName} berhasil ditambahkan.`);
+        setNewBabTitle("");
+        setNewBabInitialTpDeskripsi("");
+        setActiveBab(formattedBabName);
+        setExpandedBabs((prev) => ({ ...prev, [formattedBabName]: true }));
+        fetchTpList(selectedClass.id, selectedMapel.id);
+      }
+    });
+  };
+
+  // 2. Submit Form: Tambah TP Baru di bawah Bab tertentu
+  const handleCreateTpUnderBab = async (targetBab: string) => {
+    if (!selectedClass || !selectedMapel || !targetBab) return;
+
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    const nextNum = calculateNextTpNumberForBab(targetBab);
+    const cleanNum = newTpCustomNumber.replace(/\D/g, "");
+    const finalKodeTp = cleanNum ? `TP ${cleanNum}` : `TP ${nextNum}`;
+
+    // Get semester from existing Bab entries if any
+    const existingBabEntry = tpList.find((t) => t.materi === targetBab);
+    const babSem = existingBabEntry ? existingBabEntry.semester : activeSemester;
+
+    startTransition(async () => {
+      const res = await createTujuanPembelajaranAction({
+        kelasId: selectedClass.id,
+        mapelId: selectedMapel.id,
+        materi: targetBab,
+        kodeTp: finalKodeTp,
+        deskripsi: newTpDeskripsi.trim() || undefined,
+        semester: babSem,
+        tingkatKelas: tingkatKelas,
+      });
+
+      if (res.error) {
+        setErrorMsg(res.error);
+      } else {
+        setSuccessMsg(res.message || `${finalKodeTp} berhasil ditambahkan ke ${targetBab}.`);
         setNewTpDeskripsi("");
         fetchTpList(selectedClass.id, selectedMapel.id);
       }
     });
   };
 
-  const handleDeleteTp = async (id: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus TP ini dari Bank Data?")) return;
+  // 3. Edit Bab Name
+  const handleUpdateBab = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBab || !selectedClass || !selectedMapel) return;
+    if (!editingBab.newTitle.trim()) {
+      setErrorMsg("Nama Bab baru tidak boleh kosong.");
+      return;
+    }
+
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    startTransition(async () => {
+      const res = await updateLingkupMateriAction({
+        kelasId: selectedClass.id,
+        mapelId: selectedMapel.id,
+        oldMateri: editingBab.oldMateri,
+        newMateri: editingBab.newTitle.trim(),
+        tingkatKelas: tingkatKelas,
+      });
+
+      if (res.error) {
+        setErrorMsg(res.error);
+      } else {
+        setSuccessMsg(res.message || "Nama Bab berhasil diperbarui.");
+        setEditingBab(null);
+        fetchTpList(selectedClass.id, selectedMapel.id);
+      }
+    });
+  };
+
+  // 4. Delete Bab & all its TPs
+  const handleDeleteBab = async (materi: string) => {
+    if (!selectedClass || !selectedMapel) return;
+    if (!confirm(`Apakah Anda yakin ingin menghapus "${materi}" beserta seluruh TP di dalamnya?`)) return;
+
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    startTransition(async () => {
+      const res = await deleteLingkupMateriAction({
+        kelasId: selectedClass.id,
+        mapelId: selectedMapel.id,
+        materi: materi,
+        tingkatKelas: tingkatKelas,
+      });
+
+      if (res.error) {
+        setErrorMsg(res.error);
+      } else {
+        setSuccessMsg(res.message || "Lingkup Materi / Bab berhasil dihapus.");
+        fetchTpList(selectedClass.id, selectedMapel.id);
+      }
+    });
+  };
+
+  // 5. Edit TP Item
+  const handleUpdateTp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTp) return;
+
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    startTransition(async () => {
+      const res = await updateTujuanPembelajaranAction({
+        id: editingTp.id,
+        kodeTp: editingTp.kodeTpNum,
+        materi: editingTp.materi,
+        deskripsi: editingTp.deskripsi,
+        semester: editingTp.semester,
+      });
+
+      if (res.error) {
+        setErrorMsg(res.error);
+      } else {
+        setSuccessMsg(res.message || "TP berhasil diperbarui.");
+        setEditingTp(null);
+        if (selectedClass && selectedMapel) {
+          fetchTpList(selectedClass.id, selectedMapel.id);
+        }
+      }
+    });
+  };
+
+  // 6. Delete single TP Item
+  const handleDeleteSingleTp = async (id: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus TP ini?")) return;
+
     setErrorMsg("");
     setSuccessMsg("");
 
@@ -201,21 +382,25 @@ export default function MateriManager({ user }: MateriManagerProps) {
     });
   };
 
-  const filteredTpList = tpList.filter((t) => {
-    const matchSem = selectedSemesterTab === 0 || t.semester === selectedSemesterTab;
+  // Filter TP list based on search & semester tab
+  const filteredBabList = uniqueBabList.filter((materi) => {
+    const babsTps = tpList.filter((t) => t.materi === materi);
+    const matchSem =
+      selectedSemesterTab === 0 || babsTps.some((t) => t.semester === selectedSemesterTab);
     const matchSearch =
       !searchQuery.trim() ||
-      t.materi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.kodeTp.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.deskripsi && t.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()));
+      materi.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      babsTps.some(
+        (t) =>
+          t.kodeTp.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (t.deskripsi && t.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
     return matchSem && matchSearch;
   });
 
-  const uniqueMateriList = Array.from(new Set(tpList.map((t) => t.materi).filter(Boolean)));
-
   return (
     <div className="space-y-6">
-      {/* HEADER UTAMA */}
+      {/* HEADER UTAMA HALAMAN MANAJEMEN MATERI */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-slate-900/60 border border-slate-800 rounded-2xl backdrop-blur-xl">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
@@ -224,7 +409,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
           <div>
             <h1 className="text-xl font-bold text-white tracking-tight">Manajemen Materi</h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              Manajemen Bank Tujuan Pembelajaran (TP) & Lingkup Materi Kurikulum Merdeka
+              Kelola Struktur Hirarki Lingkup Materi / Bab & Tujuan Pembelajaran (TP) Kurikulum Merdeka
             </p>
           </div>
         </div>
@@ -232,7 +417,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
         {selectedClass && selectedMapel && (
           <Link
             href={`/penilaian?kelasId=${selectedClass.id}&mapelId=${selectedMapel.id}`}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shrink-0 border border-slate-700"
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shrink-0 border border-slate-700 shadow-md"
           >
             <Award className="w-4 h-4 text-emerald-400" />
             <span>Ke Menu Penilaian</span>
@@ -242,20 +427,24 @@ export default function MateriManager({ user }: MateriManagerProps) {
 
       {/* ALERT NOTIFIKASI */}
       {errorMsg && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs rounded-2xl flex items-center justify-between">
+        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-semibold rounded-2xl flex items-center justify-between">
           <span>⚠️ {errorMsg}</span>
-          <button onClick={() => setErrorMsg("")} className="text-slate-400 hover:text-white">✕</button>
+          <button onClick={() => setErrorMsg("")} className="text-slate-400 hover:text-white">
+            ✕
+          </button>
         </div>
       )}
       {successMsg && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs rounded-2xl flex items-center justify-between">
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-2xl flex items-center justify-between">
           <span>✅ {successMsg}</span>
-          <button onClick={() => setSuccessMsg("")} className="text-slate-400 hover:text-white">✕</button>
+          <button onClick={() => setSuccessMsg("")} className="text-slate-400 hover:text-white">
+            ✕
+          </button>
         </div>
       )}
 
       {loadingClasses ? (
-        <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-3">
+        <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-3 bg-slate-900/40 border border-slate-800 rounded-2xl">
           <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
           <span className="text-xs font-medium">Memuat data kelas & mata pelajaran...</span>
         </div>
@@ -283,7 +472,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-white group-hover:text-indigo-300 transition">
-                        {cls.nama}
+                        Kelas {cls.nama}
                       </h3>
                       <span className="text-[11px] text-slate-400">{cls.mapels.length} Mata Pelajaran</span>
                     </div>
@@ -334,7 +523,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
           </div>
         </div>
       ) : (
-        /* STEP 3: HALAMAN UTAMA MANAJEMEN BANK TP & MATERI (FULL PAGE - NON POP-UP) */
+        /* STEP 3: MANAJEMEN MATERI HIRARKI (TABEL LINGKUP MATERI / BAB & TP) */
         <div className="space-y-6">
           {/* BAR HEADER KELAS & MAPEL */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-slate-900/80 border border-slate-800 rounded-2xl backdrop-blur-xl">
@@ -348,12 +537,12 @@ export default function MateriManager({ user }: MateriManagerProps) {
               </button>
               <div>
                 <div className="flex items-center gap-2 text-xs font-semibold text-indigo-400">
-                  <span>{selectedClass.nama}</span>
+                  <span>Kelas {selectedClass.nama}</span>
                   <span>•</span>
                   <span>{selectedMapel.nama}</span>
                 </div>
                 <h2 className="text-lg font-bold text-white mt-0.5">
-                  Bank Data Tujuan Pembelajaran (TP) & Lingkup Materi
+                  Bank Data Lingkup Materi / Bab & Tujuan Pembelajaran (TP)
                 </h2>
               </div>
             </div>
@@ -374,28 +563,33 @@ export default function MateriManager({ user }: MateriManagerProps) {
             <div className="space-y-1">
               <strong className="text-indigo-300">Otomatis Berbagi Per-Tingkat Kelas ({tingkatKelas}):</strong>
               <p className="text-slate-300 leading-relaxed">
-                Setiap TP & Materi yang Anda tambahkan di bawah ini untuk mapel <strong>{selectedMapel.nama}</strong> cukup diisi 1 kali, dan akan <strong>otomatis berlaku & dapat dipakai di seluruh kelas tingkat {tingkatKelas}</strong> (seperti {selectedClass.nama}) yang Anda ampu.
+                Setiap Lingkup Materi & TP yang Anda tambahkan di bawah ini untuk mapel <strong>{selectedMapel.nama}</strong> cukup diisi 1 kali, dan akan <strong>otomatis berlaku & dapat dipakai di seluruh kelas tingkat {tingkatKelas}</strong> (seperti {selectedClass.nama}) yang Anda ampu.
               </p>
             </div>
           </div>
 
-          {/* FORM TAMBAH TP & MATERI (CARD UTAMA) */}
+          {/* INPUT 1: FORM TAMBAH LINGKUP MATERI / BAB BARU (UTAMA / FIRST STEP) */}
           <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-4">
-            <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
-              <Plus className="w-4 h-4 text-indigo-400" />
-              Tambah TP & Lingkup Materi Baru
-            </h3>
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+                <FolderPlus className="w-4 h-4 text-indigo-400" />
+                1. Input Lingkup Materi / Bab Baru *
+              </h3>
+              <span className="text-xs text-slate-400 font-mono">
+                Urutan Otomatis: <strong className="text-indigo-300">Bab {newBabNumber}</strong>
+              </span>
+            </div>
 
-            <form onSubmit={handleCreateTp} className="space-y-4">
+            <form onSubmit={handleCreateBab} className="space-y-4">
               {/* TARGET SEMESTER */}
               <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800">
                 <span className="text-slate-400 font-semibold">Target Semester:</span>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
-                    name="tpSemester"
-                    checked={newTpSemester === 1}
-                    onChange={() => setNewTpSemester(1)}
+                    name="babSemester"
+                    checked={newBabSemester === 1}
+                    onChange={() => setNewBabSemester(1)}
                     className="text-indigo-600 focus:ring-indigo-500"
                   />
                   <span>
@@ -406,9 +600,9 @@ export default function MateriManager({ user }: MateriManagerProps) {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
-                    name="tpSemester"
-                    checked={newTpSemester === 2}
-                    onChange={() => setNewTpSemester(2)}
+                    name="babSemester"
+                    checked={newBabSemester === 2}
+                    onChange={() => setNewBabSemester(2)}
                     className="text-indigo-600 focus:ring-indigo-500"
                   />
                   <span>
@@ -418,98 +612,39 @@ export default function MateriManager({ user }: MateriManagerProps) {
                 </label>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* LINGKUP MATERI / BAB */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-300">
-                      Lingkup Materi / Bab *
-                    </label>
-                    {uniqueMateriList.length > 0 && (
-                      <span className="text-[10px] text-indigo-400 font-semibold">
-                        {uniqueMateriList.length} materi tersimpan
-                      </span>
-                    )}
-                  </div>
+              {/* INPUT NAMA LINGKUP MATERI / BAB */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Nama Lingkup Materi / Bab * <span className="text-[10px] text-indigo-400 font-normal">(Format Terkunci Berurutan)</span>
+                </label>
+                <div className="flex items-center">
+                  <span className="px-3.5 py-2.5 bg-slate-800 border border-r-0 border-slate-700 rounded-l-xl text-xs font-bold text-indigo-300 font-mono select-none shrink-0">
+                    Bab {newBabNumber}
+                  </span>
                   <input
                     type="text"
                     required
-                    list="existing-materi-list"
-                    placeholder="Ketik atau pilih dari materi yang ada..."
-                    value={newTpMateri}
-                    onChange={(e) => setNewTpMateri(e.target.value)}
-                    className="block w-full px-3.5 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                    placeholder="Masukkan Judul Bab / Lingkup Materi... (contoh: Masa Mempertahankan Kemerdekaan)"
+                    value={newBabTitle}
+                    onChange={(e) => setNewBabTitle(e.target.value)}
+                    className="block w-full px-3.5 py-2.5 border border-slate-700 rounded-r-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
                   />
-                  <datalist id="existing-materi-list">
-                    {uniqueMateriList.map((materi, idx) => (
-                      <option key={idx} value={materi} />
-                    ))}
-                  </datalist>
-
-                  {/* Quick-Select Chips */}
-                  {uniqueMateriList.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                      <span className="text-[10px] text-slate-500 font-medium">Pilih cepat:</span>
-                      {uniqueMateriList.map((materi, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setNewTpMateri(materi)}
-                          className={`px-2.5 py-0.5 text-[10px] rounded-lg border font-medium transition cursor-pointer ${
-                            newTpMateri === materi
-                              ? "bg-indigo-600 text-white border-indigo-500 font-bold shadow"
-                              : "bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white"
-                          }`}
-                        >
-                          {materi}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
-
-                {/* KODE TP */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Kode TP * <span className="text-[10px] text-indigo-400 font-normal">(Otomatis Berurutan)</span>
-                  </label>
-                  <div className="flex items-center">
-                    <span className="px-3.5 py-2 bg-slate-800 border border-r-0 border-slate-700 rounded-l-xl text-xs font-bold text-indigo-300 font-mono select-none">
-                      TP
-                    </span>
-                    <input
-                      type="number"
-                      min={1}
-                      required
-                      placeholder="1"
-                      value={newTpKode}
-                      onChange={(e) => setNewTpKode(e.target.value)}
-                      className="block w-full px-3.5 py-2 border border-slate-700 rounded-r-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono font-bold"
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-500 mt-1.5">
-                    {newTpMateri.trim() ? (
-                      <>
-                        Urutan berikutnya untuk &quot;<strong className="text-indigo-300">{newTpMateri.trim()}</strong>&quot;:{" "}
-                        <strong>TP {calculateNextTpNumber(newTpSemester, newTpMateri)}</strong>
-                      </>
-                    ) : (
-                      <>Otomatis reset ke <strong>TP 1</strong> saat mengisi Lingkup Materi/Bab baru</>
-                    )}
-                  </p>
-                </div>
+                <p className="text-[10px] text-slate-500 mt-1.5">
+                  Sistem otomatis mengunci prefix urutan <strong className="text-indigo-300">Bab {newBabNumber}</strong> (seperti +62 / TP 1). Guru cukup memasukkan judul/nama bab.
+                </p>
               </div>
 
-              {/* DESKRIPSI TP */}
+              {/* DESKRIPSI TP PERTAMA (OPTIONAL) */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Deskripsi Tujuan Pembelajaran (TP) (Opsional)
+                  Deskripsi Tujuan Pembelajaran (TP 1) Awal (Opsional)
                 </label>
                 <textarea
                   rows={2}
                   placeholder="Contoh: Peserta didik mampu menganalisis kronologi diplomasi mempertahankan kemerdekaan..."
-                  value={newTpDeskripsi}
-                  onChange={(e) => setNewTpDeskripsi(e.target.value)}
+                  value={newBabInitialTpDeskripsi}
+                  onChange={(e) => setNewBabInitialTpDeskripsi(e.target.value)}
                   className="block w-full px-3.5 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -521,22 +656,22 @@ export default function MateriManager({ user }: MateriManagerProps) {
                   className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-lg"
                 >
                   {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  Simpan TP ke Bank Data (Tingkat {tingkatKelas})
+                  Simpan Lingkup Materi / Bab Baru (Tingkat {tingkatKelas})
                 </button>
               </div>
             </form>
           </div>
 
-          {/* DATA TABLE TP & MATERI TERSIMPAN */}
+          {/* TABEL HIRARKI: DAFTAR LINGKUP MATERI / BAB & TUJUAN PEMBELAJARAN (TP) */}
           <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
               <div>
                 <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-wider">
                   <Layers className="w-4 h-4 text-indigo-400" />
-                  Daftar TP & Lingkup Materi Tersimpan (Tingkat {tingkatKelas})
+                  Structure Hirarki: Bab & Tujuan Pembelajaran (TP)
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Total {tpList.length} Tujuan Pembelajaran terdaftar
+                  Total {uniqueBabList.length} Lingkup Materi / Bab & {tpList.length} Tujuan Pembelajaran tersimpan
                 </p>
               </div>
 
@@ -546,7 +681,7 @@ export default function MateriManager({ user }: MateriManagerProps) {
                   <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
                   <input
                     type="text"
-                    placeholder="Cari TP atau Materi..."
+                    placeholder="Cari Bab atau TP..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 pr-4 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-56"
@@ -590,62 +725,409 @@ export default function MateriManager({ user }: MateriManagerProps) {
             {loadingTp ? (
               <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-2">
                 <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
-                <span className="text-xs">Memuat daftar Bank TP...</span>
+                <span className="text-xs">Memuat daftar Bank Materi & TP...</span>
               </div>
-            ) : filteredTpList.length === 0 ? (
+            ) : filteredBabList.length === 0 ? (
               <div className="p-8 text-center text-slate-500 text-xs bg-slate-950/40 rounded-xl border border-slate-900">
-                Belum ada TP & Materi tersimpan yang sesuai dengan kriteria filter. Silakan tambahkan pada form di atas.
+                Belum ada Lingkup Materi / Bab tersimpan. Silakan tambahkan pada form di atas.
               </div>
             ) : (
-              <div className="overflow-x-auto border border-slate-800 rounded-xl">
-                <table className="min-w-full divide-y divide-slate-800 text-xs">
-                  <thead>
-                    <tr className="bg-slate-950/80 text-left font-semibold text-slate-400 uppercase tracking-wider">
-                      <th className="p-3.5 w-28">Semester</th>
-                      <th className="p-3.5 w-28">Kode TP</th>
-                      <th className="p-3.5 min-w-[200px]">Lingkup Materi / Bab</th>
-                      <th className="p-3.5 min-w-[300px]">Deskripsi Tujuan Pembelajaran (TP)</th>
-                      <th className="p-3.5 w-16 text-center">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60 bg-slate-950/30">
-                    {filteredTpList.map((t) => (
-                      <tr key={t.id} className="hover:bg-slate-800/40 transition">
-                        <td className="p-3.5 font-mono">
-                          <span
-                            className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${
-                              t.semester === 1
-                                ? "bg-sky-500/10 text-sky-300 border border-sky-500/20"
-                                : "bg-purple-500/10 text-purple-300 border border-purple-500/20"
+              /* LIST HIRARKI BAB & TP */
+              <div className="space-y-4">
+                {filteredBabList.map((materiName, babIdx) => {
+                  const babsTps = tpList.filter((t) => t.materi === materiName);
+                  const isExpanded = expandedBabs[materiName] !== false; // default expanded
+                  const isCurrentActiveBab = activeBab === materiName;
+
+                  const semSample = babsTps[0]?.semester || 1;
+
+                  return (
+                    <div
+                      key={materiName}
+                      className="border border-slate-800 rounded-2xl bg-slate-950/40 overflow-hidden transition-all shadow-md"
+                    >
+                      {/* HEADER BAB (PARENT ROW) */}
+                      <div className="p-4 bg-slate-900/80 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => toggleExpandBab(materiName)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer shrink-0"
+                            title={isExpanded ? "Sembunyikan TP" : "Tampilkan TP"}
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="w-4 h-4 text-indigo-400" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-slate-400" />
+                            )}
+                          </button>
+
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2 font-mono">
+                              <span className="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-md font-bold text-xs">
+                                No {babIdx + 1}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  semSample === 1
+                                    ? "bg-sky-500/10 text-sky-300 border border-sky-500/20"
+                                    : "bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                                }`}
+                              >
+                                Sem {semSample === 1 ? "1 (Ganjil)" : "2 (Genap)"}
+                              </span>
+                              <span className="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 rounded-md font-bold text-[11px]">
+                                {babsTps.length} TP Tersimpan
+                              </span>
+                            </div>
+                            <h4 className="text-base font-bold text-white mt-1">{materiName}</h4>
+                          </div>
+                        </div>
+
+                        {/* TOMBOL AKSI BAB (EDIT, HAPUS, TAMBAH TP) */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveBab(materiName);
+                              if (!isExpanded) toggleExpandBab(materiName);
+                            }}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                              isCurrentActiveBab && isExpanded
+                                ? "bg-indigo-600 text-white shadow"
+                                : "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
                             }`}
                           >
-                            Sem {t.semester === 1 ? "1 (Ganjil)" : "2 (Genap)"}
-                          </span>
-                        </td>
-                        <td className="p-3.5 font-mono">
-                          <span className="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-md font-bold">
-                            {t.kodeTp}
-                          </span>
-                        </td>
-                        <td className="p-3.5 font-bold text-white">{t.materi}</td>
-                        <td className="p-3.5 text-slate-300 leading-relaxed">
-                          {t.deskripsi || <span className="text-slate-600 italic">- Tidak ada deskripsi -</span>}
-                        </td>
-                        <td className="p-3.5 text-center">
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>+ Input TP di Bab Ini</span>
+                          </button>
+
                           <button
-                            onClick={() => handleDeleteTp(t.id)}
-                            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
-                            title="Hapus TP"
+                            type="button"
+                            onClick={() => setEditingBab({ oldMateri: materiName, newTitle: materiName })}
+                            className="p-2 text-slate-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-xl transition cursor-pointer border border-transparent hover:border-amber-500/20"
+                            title="Edit Nama Bab"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteBab(materiName)}
+                            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition cursor-pointer border border-transparent hover:border-rose-500/20"
+                            title="Hapus Bab beserta seluruh TP"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+
+                      {/* SUB-SECTION HIRARKI: INPUT TP & TABEL TP BAWAH BAB */}
+                      {isExpanded && (
+                        <div className="p-4 space-y-4 bg-slate-950/60">
+                          {/* FORM INPUT TP BAWAH BAB TERPILIH */}
+                          {isCurrentActiveBab ? (
+                            <div className="p-4 bg-slate-900/90 border border-indigo-500/30 rounded-xl space-y-3 shadow-md animate-in fade-in duration-150">
+                              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                                <h5 className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-2">
+                                  <Plus className="w-3.5 h-3.5 text-indigo-400" />
+                                  Input TP Baru untuk <strong className="text-white">{materiName}</strong>
+                                </h5>
+                                <span className="text-[11px] font-mono text-indigo-400 font-bold">
+                                  Urutan Berukutnya: TP {calculateNextTpNumberForBab(materiName)}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                  <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                                    Kode TP * <span className="text-[10px] text-indigo-400">(Terkunci Berurutan)</span>
+                                  </label>
+                                  <div className="flex items-center">
+                                    <span className="px-3 py-1.5 bg-slate-800 border border-r-0 border-slate-700 rounded-l-lg text-xs font-bold text-indigo-300 font-mono select-none">
+                                      TP
+                                    </span>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      value={newTpCustomNumber || calculateNextTpNumberForBab(materiName)}
+                                      onChange={(e) => setNewTpCustomNumber(e.target.value)}
+                                      className="block w-full px-3 py-1.5 border border-slate-700 rounded-r-lg bg-slate-950 text-xs text-white font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                  <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                                    Deskripsi Tujuan Pembelajaran (TP) *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    required
+                                    placeholder="Contoh: Peserta didik mampu mengidentifikasi nilai-nilai Pancasila..."
+                                    value={newTpDeskripsi}
+                                    onChange={(e) => setNewTpDeskripsi(e.target.value)}
+                                    className="block w-full px-3 py-1.5 border border-slate-800 rounded-lg bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="flex justify-end gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCreateTpUnderBab(materiName)}
+                                  disabled={isPending || !newTpDeskripsi.trim()}
+                                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer shadow"
+                                >
+                                  {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                  Simpan TP ke {materiName}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between p-2.5 bg-slate-900/40 border border-slate-800 rounded-xl text-xs">
+                              <span className="text-slate-400">
+                                Klik tombol <strong>+ Input TP di Bab Ini</strong> untuk menambah TP baru ke bab ini.
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setActiveBab(materiName)}
+                                className="px-3 py-1 bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 text-[11px] font-bold rounded-lg transition cursor-pointer"
+                              >
+                                + Input TP Baru
+                              </button>
+                            </div>
+                          )}
+
+                          {/* TABEL CHILD: DAFTAR TP DI BAWAH BAB INI */}
+                          {babsTps.length === 0 ? (
+                            <div className="p-4 text-center text-slate-500 text-xs bg-slate-900/30 rounded-xl border border-slate-800 italic">
+                              Belum ada TP terdaftar untuk bab ini. Silakan input TP di atas.
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto border border-slate-800 rounded-xl">
+                              <table className="min-w-full divide-y divide-slate-800 text-xs">
+                                <thead>
+                                  <tr className="bg-slate-900/90 text-left font-semibold text-slate-400 uppercase tracking-wider">
+                                    <th className="p-3 w-16 text-center">No</th>
+                                    <th className="p-3 w-28">Kode TP</th>
+                                    <th className="p-3 min-w-[300px]">Deskripsi Tujuan Pembelajaran (TP)</th>
+                                    <th className="p-3 w-28">Semester</th>
+                                    <th className="p-3 w-24 text-center">Aksi</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-800/60 bg-slate-950/20">
+                                  {babsTps.map((tp, tpIdx) => (
+                                    <tr key={tp.id} className="hover:bg-slate-800/40 transition">
+                                      <td className="p-3 text-center font-mono text-slate-500">{tpIdx + 1}</td>
+                                      <td className="p-3 font-mono">
+                                        <span className="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-md font-bold">
+                                          {tp.kodeTp}
+                                        </span>
+                                      </td>
+                                      <td className="p-3 text-slate-200 leading-relaxed font-medium">
+                                        {tp.deskripsi || <span className="text-slate-600 italic">- Belum ada deskripsi TP -</span>}
+                                      </td>
+                                      <td className="p-3 font-mono">
+                                        <span
+                                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                            tp.semester === 1
+                                              ? "bg-sky-500/10 text-sky-300 border border-sky-500/20"
+                                              : "bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                                          }`}
+                                        >
+                                          Sem {tp.semester === 1 ? "1" : "2"}
+                                        </span>
+                                      </td>
+                                      <td className="p-3 text-center">
+                                        <div className="flex items-center justify-center gap-1">
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              setEditingTp({
+                                                id: tp.id,
+                                                materi: tp.materi,
+                                                kodeTpNum: tp.kodeTp.replace(/\D/g, "") || "1",
+                                                deskripsi: tp.deskripsi || "",
+                                                semester: tp.semester,
+                                              })
+                                            }
+                                            className="p-1.5 text-slate-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-lg transition cursor-pointer"
+                                            title="Edit TP"
+                                          >
+                                            <Edit2 className="w-3.5 h-3.5" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteSingleTp(tp.id)}
+                                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
+                                            title="Hapus TP"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT NAMA LINGKUP MATERI / BAB */}
+      {editingBab && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Edit2 className="w-4 h-4 text-amber-400" />
+                Edit Nama Lingkup Materi / Bab
+              </h3>
+              <button
+                onClick={() => setEditingBab(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateBab} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">
+                  Nama Bab Lama:
+                </label>
+                <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-400 font-mono">
+                  {editingBab.oldMateri}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Nama Bab Baru: *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingBab.newTitle}
+                  onChange={(e) => setEditingBab({ ...editingBab, newTitle: e.target.value })}
+                  className="block w-full px-3.5 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingBab(null)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shadow"
+                >
+                  {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT TUJUAN PEMBELAJARAN (TP) */}
+      {editingTp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Edit2 className="w-4 h-4 text-indigo-400" />
+                Edit Tujuan Pembelajaran (TP)
+              </h3>
+              <button
+                onClick={() => setEditingTp(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateTp} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Kode TP *
+                  </label>
+                  <div className="flex items-center">
+                    <span className="px-3 py-2 bg-slate-800 border border-r-0 border-slate-700 rounded-l-xl text-xs font-bold text-indigo-300 font-mono select-none">
+                      TP
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      required
+                      value={editingTp.kodeTpNum}
+                      onChange={(e) => setEditingTp({ ...editingTp, kodeTpNum: e.target.value })}
+                      className="block w-full px-3 py-2 border border-slate-700 rounded-r-xl bg-slate-950 text-xs text-white font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Target Semester
+                  </label>
+                  <select
+                    value={editingTp.semester}
+                    onChange={(e) => setEditingTp({ ...editingTp, semester: parseInt(e.target.value, 10) })}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                  >
+                    <option value={1}>Semester 1 (Ganjil)</option>
+                    <option value={2}>Semester 2 (Genap)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Deskripsi Tujuan Pembelajaran (TP)
+                </label>
+                <textarea
+                  rows={3}
+                  value={editingTp.deskripsi}
+                  onChange={(e) => setEditingTp({ ...editingTp, deskripsi: e.target.value })}
+                  className="block w-full px-3.5 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingTp(null)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shadow"
+                >
+                  {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  Simpan Perubahan TP
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

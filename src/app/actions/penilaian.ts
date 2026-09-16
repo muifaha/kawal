@@ -617,12 +617,153 @@ export async function deleteTujuanPembelajaranAction(id: string) {
 
   try {
     await prisma.tujuanPembelajaran.delete({ where: { id } });
+    revalidatePath("/materi");
+    revalidatePath("/penilaian");
     revalidatePath("/jadwal");
     revalidatePath("/dashboard");
-    return { success: true, message: "TP & Materi berhasil dihapus." };
+    return { success: true, message: "TP berhasil dihapus." };
   } catch (error: any) {
     console.error("deleteTujuanPembelajaranAction error:", error);
-    return { error: error.message || "Gagal menghapus TP & Materi." };
+    return { error: error.message || "Gagal menghapus TP." };
+  }
+}
+
+export async function updateTujuanPembelajaranAction(payload: {
+  id: string;
+  kodeTp: string;
+  materi: string;
+  deskripsi?: string;
+  semester?: number;
+}) {
+  const user = await getSessionUser();
+  if (!user || (user.role !== "GURU" && user.role !== "WALAS" && user.role !== "WAKA")) {
+    return { error: "Akses ditolak." };
+  }
+
+  if (!payload.id || !payload.kodeTp || !payload.materi) {
+    return { error: "ID, Kode TP, dan Lingkup Materi wajib diisi." };
+  }
+
+  try {
+    const inputMatch = payload.kodeTp.match(/\d+/);
+    const inputNum = inputMatch ? parseInt(inputMatch[0], 10) : NaN;
+    if (isNaN(inputNum) || inputNum <= 0) {
+      return { error: "Kode TP harus berupa angka (contoh: 1, 2, 3)." };
+    }
+    const formattedKodeTp = `TP ${inputNum}`;
+
+    const updated = await prisma.tujuanPembelajaran.update({
+      where: { id: payload.id },
+      data: {
+        kodeTp: formattedKodeTp,
+        materi: payload.materi.trim(),
+        deskripsi: payload.deskripsi?.trim() || null,
+        ...(payload.semester ? { semester: payload.semester } : {}),
+      },
+    });
+
+    revalidatePath("/materi");
+    revalidatePath("/penilaian");
+    revalidatePath("/jadwal");
+
+    return { success: true, message: `${formattedKodeTp} berhasil diperbarui.`, data: updated };
+  } catch (error: any) {
+    console.error("updateTujuanPembelajaranAction error:", error);
+    return { error: error.message || "Gagal memperbarui TP." };
+  }
+}
+
+export async function updateLingkupMateriAction(payload: {
+  kelasId: string;
+  mapelId: string;
+  oldMateri: string;
+  newMateri: string;
+  tingkatKelas?: string;
+}) {
+  const user = await getSessionUser();
+  if (!user || (user.role !== "GURU" && user.role !== "WALAS" && user.role !== "WAKA")) {
+    return { error: "Akses ditolak." };
+  }
+
+  if (!payload.oldMateri || !payload.newMateri) {
+    return { error: "Nama Bab lama dan baru wajib diisi." };
+  }
+
+  try {
+    let tingkat = payload.tingkatKelas;
+    if (!tingkat && payload.kelasId) {
+      const targetKelas = await prisma.kelas.findUnique({
+        where: { id: payload.kelasId },
+        select: { nama: true },
+      });
+      tingkat = targetKelas ? extractTingkatKelas(targetKelas.nama) : "X";
+    }
+
+    await prisma.tujuanPembelajaran.updateMany({
+      where: {
+        mapelId: payload.mapelId,
+        materi: payload.oldMateri.trim(),
+        ...(tingkat ? { tingkatKelas: tingkat } : {}),
+        ...(user.role === "WAKA" ? {} : { guruId: user.id }),
+      },
+      data: {
+        materi: payload.newMateri.trim(),
+      },
+    });
+
+    revalidatePath("/materi");
+    revalidatePath("/penilaian");
+    revalidatePath("/jadwal");
+
+    return { success: true, message: `Lingkup Materi / Bab berhasil diperbarui ke "${payload.newMateri.trim()}".` };
+  } catch (error: any) {
+    console.error("updateLingkupMateriAction error:", error);
+    return { error: error.message || "Gagal memperbarui Lingkup Materi." };
+  }
+}
+
+export async function deleteLingkupMateriAction(payload: {
+  kelasId: string;
+  mapelId: string;
+  materi: string;
+  tingkatKelas?: string;
+}) {
+  const user = await getSessionUser();
+  if (!user || (user.role !== "GURU" && user.role !== "WALAS" && user.role !== "WAKA")) {
+    return { error: "Akses ditolak." };
+  }
+
+  if (!payload.materi) {
+    return { error: "Lingkup Materi / Bab wajib diisi." };
+  }
+
+  try {
+    let tingkat = payload.tingkatKelas;
+    if (!tingkat && payload.kelasId) {
+      const targetKelas = await prisma.kelas.findUnique({
+        where: { id: payload.kelasId },
+        select: { nama: true },
+      });
+      tingkat = targetKelas ? extractTingkatKelas(targetKelas.nama) : "X";
+    }
+
+    await prisma.tujuanPembelajaran.deleteMany({
+      where: {
+        mapelId: payload.mapelId,
+        materi: payload.materi.trim(),
+        ...(tingkat ? { tingkatKelas: tingkat } : {}),
+        ...(user.role === "WAKA" ? {} : { guruId: user.id }),
+      },
+    });
+
+    revalidatePath("/materi");
+    revalidatePath("/penilaian");
+    revalidatePath("/jadwal");
+
+    return { success: true, message: `Lingkup Materi / Bab "${payload.materi}" beserta seluruh TP di dalamnya berhasil dihapus.` };
+  } catch (error: any) {
+    console.error("deleteLingkupMateriAction error:", error);
+    return { error: error.message || "Gagal menghapus Lingkup Materi." };
   }
 }
 
