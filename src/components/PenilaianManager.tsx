@@ -1535,7 +1535,7 @@ function PenilaianListDashboard({
             className="px-4 py-2.5 bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"
           >
             <Layers className="w-4 h-4 text-indigo-400" />
-            Bank TP & Materi ({tpListCount})
+            Bank Materi ({tpListCount})
           </button>
 
           <button
@@ -1543,7 +1543,7 @@ function PenilaianListDashboard({
             className="px-4 py-2.5 bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600/30 text-xs font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0"
           >
             <Calculator className="w-4 h-4 text-emerald-400" />
-            Rekap Rapor Kurikulum Merdeka
+            Rekap Nilai
           </button>
 
           <button
