@@ -13,13 +13,16 @@ export default async function PelanggaranPage() {
     redirect("/login");
   }
 
-  // 1. Ambil Kategori Pelanggaran (Parent & Child, Kecuali Kategori sistem MIGRASI)
-  const categories = await prisma.kategoriPelanggaran.findMany({
+  // 1. Ambil Kategori Pelanggaran Aktif (Parent & Child, Kecuali Kategori sistem MIGRASI)
+  const rawCategories = await prisma.kategoriPelanggaran.findMany({
     where: {
       NOT: { nama: "MIGRASI" },
     },
     include: {
       details: {
+        where: {
+          isActive: true,
+        },
         orderBy: {
           nama: "asc",
         },
@@ -29,6 +32,9 @@ export default async function PelanggaranPage() {
       nama: "asc",
     },
   });
+
+  // Filter kategori yang memiliki minimal 1 poin pelanggaran aktif
+  const categories = rawCategories.filter((cat) => cat.details.length > 0);
 
   // 2. Ambil seluruh Kelas dan Siswa Aktif untuk dilaporkan
   const dbClasses = await prisma.kelas.findMany({

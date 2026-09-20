@@ -18,13 +18,16 @@ export default async function ApprovalPage() {
     redirect("/dashboard?error=unauthorized");
   }
 
-  // Ambil Kategori Pelanggaran (Parent & Child, Kecuali Kategori sistem MIGRASI)
-  const categories = await prisma.kategoriPelanggaran.findMany({
+  // Ambil Kategori Pelanggaran Aktif (Parent & Child, Kecuali Kategori sistem MIGRASI)
+  const rawCategories = await prisma.kategoriPelanggaran.findMany({
     where: {
       NOT: { nama: "MIGRASI" },
     },
     include: {
       details: {
+        where: {
+          isActive: true,
+        },
         orderBy: {
           nama: "asc",
         },
@@ -34,6 +37,8 @@ export default async function ApprovalPage() {
       nama: "asc",
     },
   });
+
+  const categories = rawCategories.filter((cat) => cat.details.length > 0);
 
   // Ambil semua laporan pelanggaran yang berstatus PENDING
   // Urutkan berdasarkan tanggal terlama (asc) agar diproses sesuai urutan masuk

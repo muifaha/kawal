@@ -56,15 +56,16 @@ export async function reportViolationAction(
   }
 
   try {
+    const violationDetail = await prisma.detailPelanggaran.findUnique({
+      where: { id: violationDetailId },
+      include: { kategori: true },
+    });
+    if (!violationDetail || !violationDetail.isActive) {
+      return { error: "Jenis pelanggaran tidak ditemukan atau telah dinonaktifkan." };
+    }
+
     // Constraint check for OSIS role
     if (user.role === "OSIS") {
-      const violationDetail = await prisma.detailPelanggaran.findUnique({
-        where: { id: violationDetailId },
-        include: { kategori: true },
-      });
-      if (!violationDetail) {
-        return { error: "Jenis pelanggaran tidak ditemukan." };
-      }
       const isUpacara =
         violationDetail.nama.toLowerCase().includes("upacara") ||
         violationDetail.kategori.nama.toLowerCase().includes("upacara");
