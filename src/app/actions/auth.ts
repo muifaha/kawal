@@ -3,6 +3,7 @@
 import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
+import { getUploadDir } from "@/lib/uploadHelper";
 import { prisma } from "@/lib/prisma";
 import { setSession, clearSession, getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -142,10 +143,7 @@ export async function updateProfileAction(
         const buffer = Buffer.from(rawBase64, "base64");
         const ext = ttdData.includes("image/webp") ? ".webp" : ".png";
         const filename = `ttd_${sessionUser.id}_${Date.now()}${ext}`;
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "ttd");
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
+        const uploadDir = getUploadDir("ttd");
         fs.writeFileSync(path.join(uploadDir, filename), buffer);
         updateData.ttd = `/uploads/ttd/${filename}`;
       } else {

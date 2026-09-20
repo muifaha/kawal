@@ -6,6 +6,7 @@ import { getTodayWibStr } from "@/lib/dateUtils";
 import { revalidatePath } from "next/cache";
 import path from "path";
 import fs from "fs";
+import { getUploadDir } from "@/lib/uploadHelper";
 import * as XLSX from "xlsx";
 import bcrypt from "bcryptjs";
 
@@ -261,11 +262,7 @@ export async function saveJurnalAction(formData: FormData) {
         const buffer = Buffer.from(bytes);
         const filename = `jurnal_${Date.now()}_${i}_${fileObj.name.replace(/\s+/g, "_")}`;
 
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "jurnal");
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
+        const uploadDir = getUploadDir("jurnal");
         const fullPath = path.join(uploadDir, filename);
         fs.writeFileSync(fullPath, buffer);
         fotoUrls.push(`/uploads/jurnal/${filename}`);
@@ -276,11 +273,7 @@ export async function saveJurnalAction(formData: FormData) {
         const ext = base64Data.includes("image/webp") ? ".webp" : ".png";
         const filename = `jurnal_${Date.now()}_${i}${ext}`;
 
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "jurnal");
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
+        const uploadDir = getUploadDir("jurnal");
         const fullPath = path.join(uploadDir, filename);
         fs.writeFileSync(fullPath, buffer);
         fotoUrls.push(`/uploads/jurnal/${filename}`);
@@ -492,11 +485,7 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
         const buffer = Buffer.from(bytes);
         const filename = `jurnal_kegiatan_${Date.now()}_${i}_${fileObj.name.replace(/\s+/g, "_")}`;
 
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "jurnal");
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
+        const uploadDir = getUploadDir("jurnal");
         const fullPath = path.join(uploadDir, filename);
         fs.writeFileSync(fullPath, buffer);
         fotoUrls.push(`/uploads/jurnal/${filename}`);
@@ -507,11 +496,7 @@ export async function createCustomActivityJurnalAction(formData: FormData) {
         const ext = base64Data.includes("image/webp") ? ".webp" : ".png";
         const filename = `jurnal_kegiatan_${Date.now()}_${i}${ext}`;
 
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "jurnal");
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
+        const uploadDir = getUploadDir("jurnal");
         const fullPath = path.join(uploadDir, filename);
         fs.writeFileSync(fullPath, buffer);
         fotoUrls.push(`/uploads/jurnal/${filename}`);

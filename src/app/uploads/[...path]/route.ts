@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { getUploadBaseDir } from "@/lib/uploadHelper";
 
 export async function GET(
   request: NextRequest,
@@ -9,10 +10,11 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const filePathParts = resolvedParams.path;
-    const filePath = path.join(process.cwd(), "public", "uploads", ...filePathParts);
+    const baseDir = getUploadBaseDir();
+    const filePath = path.join(baseDir, ...filePathParts);
 
     // Security check: prevent directory traversal attacks
-    const relative = path.relative(path.join(process.cwd(), "public", "uploads"), filePath);
+    const relative = path.relative(baseDir, filePath);
     if (relative.startsWith("..") || path.isAbsolute(relative)) {
       return new NextResponse("Forbidden", { status: 403 });
     }
