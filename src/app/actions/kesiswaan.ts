@@ -1183,6 +1183,39 @@ export async function saveSettingsAction(formData: FormData) {
       );
     }
 
+    const kepsekName = formData.get("kepsek_name") as string;
+    if (kepsekName !== null) {
+      updates.push(
+        prisma.appSetting.upsert({
+          where: { key: "kepsek_name" },
+          update: { value: kepsekName },
+          create: { key: "kepsek_name", value: kepsekName },
+        })
+      );
+    }
+
+    const kepsekNip = formData.get("kepsek_nip") as string;
+    if (kepsekNip !== null) {
+      updates.push(
+        prisma.appSetting.upsert({
+          where: { key: "kepsek_nip" },
+          update: { value: kepsekNip },
+          create: { key: "kepsek_nip", value: kepsekNip },
+        })
+      );
+    }
+
+    const schoolAddress = formData.get("school_address") as string;
+    if (schoolAddress !== null) {
+      updates.push(
+        prisma.appSetting.upsert({
+          where: { key: "school_address" },
+          update: { value: schoolAddress },
+          create: { key: "school_address", value: schoolAddress },
+        })
+      );
+    }
+
     const printPaperSize = formData.get("print_paper_size") as string;
     if (printPaperSize) {
       updates.push(
@@ -1210,6 +1243,27 @@ export async function saveSettingsAction(formData: FormData) {
           where: { key: "school_logo" },
           update: { value: logoUrl },
           create: { key: "school_logo", value: logoUrl },
+        })
+      );
+    }
+
+    const provinceLogoFile = formData.get("province_logo_file") as File | null;
+    if (provinceLogoFile && provinceLogoFile.size > 0) {
+      const buffer = Buffer.from(await provinceLogoFile.arrayBuffer());
+      const ext = path.extname(provinceLogoFile.name) || ".png";
+      const filename = `province_logo_${Date.now()}${ext}`;
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      fs.writeFileSync(path.join(uploadDir, filename), buffer);
+      const logoUrl = `/uploads/${filename}`;
+
+      updates.push(
+        prisma.appSetting.upsert({
+          where: { key: "province_logo" },
+          update: { value: logoUrl },
+          create: { key: "province_logo", value: logoUrl },
         })
       );
     }

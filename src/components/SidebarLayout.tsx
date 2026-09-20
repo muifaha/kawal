@@ -29,6 +29,7 @@ import {
   FileText,
   Award,
   BookOpen,
+  Printer,
 } from "lucide-react";
 
 interface SidebarLayoutProps {
@@ -276,6 +277,12 @@ export default function SidebarLayout({ children, user }: SidebarLayoutProps) {
       name: "Manajemen Materi",
       href: "/materi",
       icon: BookOpen,
+      roles: ["WAKA", "WALAS", "GURU"],
+    },
+    {
+      name: "Cetak Administrasi",
+      href: "/administrasi",
+      icon: Printer,
       roles: ["WAKA", "WALAS", "GURU"],
     },
     {

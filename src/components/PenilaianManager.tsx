@@ -6,6 +6,7 @@ import {
   getTeacherClassesAndSubjectsAction,
   getPenilaianKelasListAction,
   createPenilaianKelasAction,
+  updatePenilaianKelasAction,
   deletePenilaianKelasAction,
   getPenilaianDetailAndStudentsAction,
   savePenilaianSiswaAction,
@@ -22,6 +23,7 @@ import {
   Calendar,
   FileText,
   Trash2,
+  Pencil,
   Save,
   CheckCircle2,
   AlertCircle,
@@ -37,6 +39,7 @@ import {
   Layers,
   FileSpreadsheet,
   Target,
+  X,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -107,6 +110,17 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
   const [tanggalPenilaian, setTanggalPenilaian] = useState(() => getTodayWibStr());
   const [deskripsiPenilaian, setDeskripsiPenilaian] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Form State - Edit Penilaian Header
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingPenilaianId, setEditingPenilaianId] = useState<string | null>(null);
+  const [editNamaPenilaian, setEditNamaPenilaian] = useState("");
+  const [editJenisPenilaian, setEditJenisPenilaian] = useState<"FORMATIF" | "SUMATIF" | "PAS_UAS">("FORMATIF");
+  const [editMateriPenilaian, setEditMateriPenilaian] = useState("");
+  const [editTpCodePenilaian, setEditTpCodePenilaian] = useState("");
+  const [editTanggalPenilaian, setEditTanggalPenilaian] = useState("");
+  const [editDeskripsiPenilaian, setEditDeskripsiPenilaian] = useState("");
+  const [editPickerOpen, setEditPickerOpen] = useState(false);
 
   // Grade Entry State - Selected Penilaian Header
   const [activePenilaianId, setActivePenilaianId] = useState<string | null>(null);
@@ -401,6 +415,69 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
     });
   };
 
+  // Open Edit Modal for Penilaian Header
+  const handleOpenEditModal = (
+    item: { id: string; namaPenilaian: string; jenisPenilaian?: string; materi?: string; tpCode?: string; tanggal: string; deskripsi?: string },
+    e?: React.MouseEvent
+  ) => {
+    if (e) e.stopPropagation();
+    setEditingPenilaianId(item.id);
+    setEditNamaPenilaian(item.namaPenilaian);
+    setEditJenisPenilaian((item.jenisPenilaian as any) || "FORMATIF");
+    setEditMateriPenilaian(item.materi || "");
+    setEditTpCodePenilaian(item.tpCode || "");
+
+    // Parse tanggal if needed into YYYY-MM-DD for date input
+    let formattedDate = item.tanggal;
+    if (item.tanggal && item.tanggal.includes("/")) {
+      const parts = item.tanggal.split("/");
+      if (parts.length === 3) {
+        formattedDate = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+      }
+    }
+    setEditTanggalPenilaian(formattedDate || getTodayWibStr());
+    setEditDeskripsiPenilaian(item.deskripsi || "");
+    setEditPickerOpen(false);
+    setShowEditModal(true);
+  };
+
+  // Update Penilaian Header
+  const handleUpdatePenilaian = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPenilaianId) return;
+
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    startTransition(async () => {
+      const res = await updatePenilaianKelasAction({
+        id: editingPenilaianId,
+        namaPenilaian: editNamaPenilaian,
+        jenisPenilaian: editJenisPenilaian,
+        materi: editMateriPenilaian,
+        tpCode: editTpCodePenilaian,
+        tanggal: editTanggalPenilaian,
+        deskripsi: editDeskripsiPenilaian,
+      });
+
+      if (res.error) {
+        setErrorMsg(res.error);
+      } else {
+        setSuccessMsg(res.message || "Data penilaian berhasil diperbarui.");
+        setShowEditModal(false);
+        if (selectedClass && selectedMapel) {
+          fetchPenilaianList(selectedClass.id, selectedMapel.id);
+        }
+        if (activePenilaianId === editingPenilaianId) {
+          const detailRes = await getPenilaianDetailAndStudentsAction(editingPenilaianId);
+          if (detailRes.success && detailRes.header) {
+            setActivePenilaianInfo(detailRes.header);
+          }
+        }
+      }
+    });
+  };
+
   // Delete Penilaian Header
   const handleDeletePenilaian = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -565,7 +642,17 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
                     </span>
                   )}
                 </div>
-                <h3 className="text-lg font-bold text-white mt-0.5">{activePenilaianInfo.namaPenilaian}</h3>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <h3 className="text-lg font-bold text-white">{activePenilaianInfo.namaPenilaian}</h3>
+                  <button
+                    onClick={() => handleOpenEditModal(activePenilaianInfo)}
+                    className="px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700 text-indigo-300 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                    title="Edit Detail Penilaian"
+                  >
+                    <Pencil className="w-3.5 h-3.5 text-indigo-400" />
+                    Edit Detail
+                  </button>
+                </div>
                 {(activePenilaianInfo.materi || activePenilaianInfo.tpCode) && (
                   <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 mt-1 font-mono">
                     {activePenilaianInfo.materi && <span>Materi: {activePenilaianInfo.materi}</span>}
@@ -916,6 +1003,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
               onBack={() => setSelectedMapel(null)}
               onAddClick={() => setShowAddModal(true)}
               onOpenEntry={handleOpenGradeEntry}
+              onEditHeader={handleOpenEditModal}
               onDeleteHeader={handleDeletePenilaian}
               onOpenRekap={fetchRekapRapor}
               onOpenTpManage={() => router.push(`/materi?kelasId=${selectedClass.id}&mapelId=${selectedMapel.id}`)}
@@ -993,6 +1081,7 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
               onBack={() => setSelectedMapel(null)}
               onAddClick={() => setShowAddModal(true)}
               onOpenEntry={handleOpenGradeEntry}
+              onEditHeader={handleOpenEditModal}
               onDeleteHeader={handleDeletePenilaian}
               onOpenRekap={fetchRekapRapor}
               onOpenTpManage={() => router.push(`/materi?kelasId=${selectedClass.id}&mapelId=${selectedMapel.id}`)}
@@ -1476,6 +1565,316 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
           </div>
         </div>
       )}
+
+      {/* MODAL: EDIT DETAIL PENILAIAN */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
+          <div className="w-full max-w-lg p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl space-y-5 my-8">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-2xl">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Edit Detail Penilaian</h3>
+                  <p className="text-xs text-slate-400">
+                    Ubah data isian seperti jenis, lingkup materi, TP, nama, atau tanggal penilaian.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdatePenilaian} className="space-y-4">
+              {/* 1. JENIS PENILAIAN */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Jenis Penilaian *
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditJenisPenilaian("FORMATIF")}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
+                      editJenisPenilaian === "FORMATIF"
+                        ? "bg-sky-500/20 border-sky-500 text-sky-300 shadow-md"
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
+                    }`}
+                  >
+                    <span>Formatif</span>
+                    <span className="text-[10px] font-normal opacity-80">(Proses Harian)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditJenisPenilaian("SUMATIF")}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
+                      editJenisPenilaian === "SUMATIF"
+                        ? "bg-amber-500/20 border-amber-500 text-amber-300 shadow-md"
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
+                    }`}
+                  >
+                    <span>Sumatif</span>
+                    <span className="text-[10px] font-normal opacity-80">(TP / Materi)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditJenisPenilaian("PAS_UAS");
+                      setEditNamaPenilaian(activeSemester === 1 ? "Asesmen Akhir Semester" : "Asesmen Akhir Tahun");
+                    }}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
+                      editJenisPenilaian === "PAS_UAS"
+                        ? "bg-rose-500/20 border-rose-500 text-rose-300 shadow-md"
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
+                    }`}
+                  >
+                    <span>PAS / UAS</span>
+                    <span className="text-[10px] font-normal opacity-80">(Akhir Semester)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. BANK DATA / LINGKUP MATERI & TP (Hanya jika bukan PAS_UAS) */}
+              {editJenisPenilaian !== "PAS_UAS" && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-amber-400 uppercase tracking-wider">
+                      Lingkup Materi & Tujuan Pembelajaran (TP) *
+                    </label>
+                    {selectedClass && selectedMapel && (
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/materi?kelasId=${selectedClass.id}&mapelId=${selectedMapel.id}`)}
+                        className="text-[11px] text-indigo-400 hover:underline flex items-center gap-1"
+                      >
+                        <Plus className="w-3 h-3" /> Kelola Bank Materi
+                      </button>
+                    )}
+                  </div>
+
+                  {tpList.length === 0 ? (
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300 space-y-1">
+                      <p className="font-bold">⚠️ Belum Ada Bank Materi / TP</p>
+                      <p className="text-[11px]">
+                        Anda dapat menambah Lingkup Materi dan TP terlebih dahulu agar penilaian terstruktur.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      {/* Trigger Button with text wrapping */}
+                      <button
+                        type="button"
+                        onClick={() => setEditPickerOpen((prev) => !prev)}
+                        className="w-full text-left p-3.5 border border-slate-800 hover:border-amber-500/50 rounded-xl bg-slate-900/90 text-xs text-white flex items-start justify-between gap-3 cursor-pointer transition-all shadow-inner"
+                      >
+                        {editMateriPenilaian ? (
+                          <div className="space-y-1.5 min-w-0 flex-1">
+                            {editTpCodePenilaian ? (
+                              <>
+                                <div className="flex flex-wrap items-center gap-2 font-bold">
+                                  {(() => {
+                                    const selectedTp = realTpOptions.find((t) => t.kodeTp === editTpCodePenilaian && t.materi === editMateriPenilaian);
+                                    return (
+                                      <>
+                                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] shrink-0 font-bold">
+                                          🎯 TP Spesifik [Sem {selectedTp?.semester === 1 ? "Ganjil" : "Genap"}]
+                                        </span>
+                                        <span className="px-2 py-0.5 bg-slate-800 text-amber-400 font-mono font-bold rounded text-[11px]">
+                                          {editTpCodePenilaian}
+                                        </span>
+                                        <span className="text-white font-semibold">• {editMateriPenilaian}</span>
+                                      </>
+                                    );
+                                  })()}
+                                </div>
+                                {(() => {
+                                  const selectedTp = realTpOptions.find((t) => t.kodeTp === editTpCodePenilaian && t.materi === editMateriPenilaian);
+                                  return selectedTp?.deskripsi ? (
+                                    <p className="text-slate-400 text-xs leading-relaxed whitespace-normal break-words pl-0.5">
+                                      {selectedTp.deskripsi}
+                                    </p>
+                                  ) : null;
+                                })()}
+                              </>
+                            ) : (
+                              <div className="flex flex-wrap items-center gap-2 font-bold">
+                                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] shrink-0 font-bold">
+                                  📚 Lingkup Materi / Bab
+                                </span>
+                                <span className="text-white font-bold">{editMateriPenilaian}</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 font-medium">-- Klik untuk Pilih Lingkup Materi / Bab atau TP --</span>
+                        )}
+                        <ChevronDown className={`w-4 h-4 text-amber-400 shrink-0 mt-0.5 transition-transform ${editPickerOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {/* Dropdown Options Popup */}
+                      {editPickerOpen && (
+                        <div className="mt-2 max-h-64 overflow-y-auto space-y-2 p-2 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-150 z-30">
+                          {/* SECTION 1: LINGKUP MATERI / BAB */}
+                          {uniqueBabList.length > 0 && (
+                            <div className="space-y-1">
+                              <div className="px-2.5 py-1 text-[10px] font-bold text-amber-400 uppercase tracking-wider bg-amber-950/60 border border-amber-800/40 rounded-lg">
+                                📚 Lingkup Materi / Bab (Nilai Per Bab)
+                              </div>
+                              {uniqueBabList.map((babTitle) => {
+                                const isSelected = editMateriPenilaian === babTitle && !editTpCodePenilaian;
+                                return (
+                                  <div
+                                    key={`edit-bab-${babTitle}`}
+                                    onClick={() => {
+                                      setEditMateriPenilaian(babTitle);
+                                      setEditTpCodePenilaian("");
+                                      setEditPickerOpen(false);
+                                    }}
+                                    className={`p-3 rounded-xl text-xs cursor-pointer transition text-left font-bold border ${
+                                      isSelected
+                                        ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
+                                        : "border-transparent hover:bg-slate-800/80 hover:border-slate-700 text-slate-200 hover:text-white"
+                                    }`}
+                                  >
+                                    Bab: {babTitle}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* SECTION 2: TP SPESIFIK */}
+                          {realTpOptions.length > 0 && (
+                            <div className="space-y-1 pt-1.5 border-t border-slate-800">
+                              <div className="px-2.5 py-1 text-[10px] font-bold text-sky-400 uppercase tracking-wider bg-sky-950/60 border border-sky-800/40 rounded-lg">
+                                🎯 TP Spesifik (Nilai Per TP)
+                              </div>
+                              {realTpOptions.map((t) => {
+                                const isSelected = editTpCodePenilaian === t.kodeTp && editMateriPenilaian === t.materi;
+                                return (
+                                  <div
+                                    key={`edit-tp-${t.id}`}
+                                    onClick={() => {
+                                      setEditMateriPenilaian(t.materi);
+                                      setEditTpCodePenilaian(t.kodeTp);
+                                      if (t.deskripsi) setEditDeskripsiPenilaian(t.deskripsi);
+                                      setEditPickerOpen(false);
+                                    }}
+                                    className={`p-3 rounded-xl text-xs cursor-pointer transition space-y-1.5 text-left border ${
+                                      isSelected
+                                        ? "bg-sky-500/15 border-sky-500/50 text-white"
+                                        : "border-transparent hover:bg-slate-800/80 hover:border-slate-700 text-slate-300 hover:text-white"
+                                    }`}
+                                  >
+                                    <div className="flex flex-wrap items-center gap-1.5 font-bold">
+                                      <span className="px-1.5 py-0.5 bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded text-[9px] font-mono">
+                                        Sem {t.semester === 1 ? "Ganjil" : "Genap"}
+                                      </span>
+                                      <span className="text-sky-300 font-mono font-bold">{t.kodeTp}</span>
+                                      <span className="text-white font-semibold">• {t.materi}</span>
+                                    </div>
+                                    {t.deskripsi && (
+                                      <p className="text-slate-400 text-xs leading-relaxed whitespace-normal break-words">
+                                        {t.deskripsi}
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 3. FIELD DETAIL PENILAIAN */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Nama Penilaian *
+                </label>
+                {editJenisPenilaian === "PAS_UAS" ? (
+                  <select
+                    value={editNamaPenilaian || (activeSemester === 1 ? "Asesmen Akhir Semester" : "Asesmen Akhir Tahun")}
+                    onChange={(e) => setEditNamaPenilaian(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-rose-500 font-bold cursor-pointer"
+                  >
+                    <option value="Asesmen Akhir Semester">Asesmen Akhir Semester (Semester Ganjil)</option>
+                    <option value="Asesmen Akhir Tahun">Asesmen Akhir Tahun (Semester Genap)</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ketik nama penilaian (contoh: Formatif 1 / Quiz Bab 1)..."
+                    value={editNamaPenilaian}
+                    onChange={(e) => setEditNamaPenilaian(e.target.value)}
+                    className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Tanggal Penilaian *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={editTanggalPenilaian}
+                  onChange={(e) => setEditTanggalPenilaian(e.target.value)}
+                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Deskripsi / Keterangan (Opsional)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Tuliskan catatan atau instruksi penilaian..."
+                  value={editDeskripsiPenilaian}
+                  onChange={(e) => setEditDeskripsiPenilaian(e.target.value)}
+                  className="block w-full px-3 py-2 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 border border-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    isPending ||
+                    (editJenisPenilaian === "FORMATIF" && (!editTpCodePenilaian || !editMateriPenilaian)) ||
+                    (editJenisPenilaian === "SUMATIF" && (!editMateriPenilaian && !editTpCodePenilaian)) ||
+                    !editNamaPenilaian.trim()
+                  }
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-lg"
+                >
+                  {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1489,6 +1888,7 @@ function PenilaianListDashboard({
   onBack,
   onAddClick,
   onOpenEntry,
+  onEditHeader,
   onDeleteHeader,
   onOpenRekap,
   onOpenTpManage,
@@ -1501,6 +1901,7 @@ function PenilaianListDashboard({
   onBack: () => void;
   onAddClick: () => void;
   onOpenEntry: (id: string) => void;
+  onEditHeader: (item: PenilaianHeader, e: React.MouseEvent) => void;
   onDeleteHeader: (id: string, e: React.MouseEvent) => void;
   onOpenRekap: () => void;
   onOpenTpManage: () => void;
@@ -1598,6 +1999,13 @@ function PenilaianListDashboard({
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-mono text-slate-500">{item.tanggal}</span>
+                      <button
+                        onClick={(e) => onEditHeader(item, e)}
+                        className="p-1 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition cursor-pointer"
+                        title="Edit Detail Penilaian"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={(e) => onDeleteHeader(item.id, e)}
                         className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"

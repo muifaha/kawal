@@ -155,6 +155,52 @@ export async function createPenilaianKelasAction(payload: {
   }
 }
 
+export async function updatePenilaianKelasAction(payload: {
+  id: string;
+  namaPenilaian: string;
+  jenisPenilaian?: string;
+  materi?: string;
+  tpCode?: string;
+  tanggal: string;
+  deskripsi?: string;
+}) {
+  const user = await getSessionUser();
+  if (!user || (user.role !== "GURU" && user.role !== "WALAS" && user.role !== "WAKA")) {
+    return { error: "Akses ditolak." };
+  }
+
+  if (!payload.id || !payload.namaPenilaian || !payload.tanggal) {
+    return { error: "ID Penilaian, Nama Penilaian, dan Tanggal wajib diisi." };
+  }
+
+  try {
+    const updatedPenilaian = await prisma.penilaianKelas.update({
+      where: { id: payload.id },
+      data: {
+        namaPenilaian: payload.namaPenilaian.trim(),
+        jenisPenilaian: payload.jenisPenilaian || "FORMATIF",
+        materi: payload.materi?.trim() || null,
+        tpCode: payload.tpCode?.trim() || null,
+        tanggal: new Date(payload.tanggal),
+        deskripsi: payload.deskripsi?.trim() || null,
+      },
+    });
+
+    revalidatePath("/penilaian");
+    revalidatePath("/jadwal");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      message: "Data penilaian berhasil diperbarui.",
+      data: updatedPenilaian,
+    };
+  } catch (error: any) {
+    console.error("updatePenilaianKelasAction error:", error);
+    return { error: error.message || "Gagal memperbarui data penilaian." };
+  }
+}
+
 export async function deletePenilaianKelasAction(id: string) {
   const user = await getSessionUser();
   if (!user) return { error: "Akses ditolak." };

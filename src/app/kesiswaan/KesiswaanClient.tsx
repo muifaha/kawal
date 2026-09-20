@@ -2326,7 +2326,7 @@ export default function KesiswaanClient({
             Konfigurasi nama instansi sekolah, logo resmi, nama penanggung jawab kesiswaan, dan letterhead/kop surat untuk dokumen resmi.
           </p>
           <form onSubmit={handleSaveSettings} encType="multipart/form-data" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                   Nama Sekolah / Instansi
@@ -2351,6 +2351,22 @@ export default function KesiswaanClient({
                   className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
                 />
               </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Alamat Lengkap Sekolah / Instansi
+              </label>
+              <input
+                name="school_address"
+                type="text"
+                placeholder="Contoh: Jl. Pt. YKK Mahkota, Pasir Jaya, Kec. Jatiuwung, Kota Tangerang, Banten 15135"
+                defaultValue={settings.school_address || ""}
+                className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                   Logo Sekolah / Instansi (Unggah Gambar)
@@ -2358,7 +2374,7 @@ export default function KesiswaanClient({
                 <div className="flex items-center gap-4">
                   {settings.school_logo && (
                     <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
-                      <img src={settings.school_logo} alt="Logo" className="max-w-full max-h-full object-contain" />
+                      <img src={settings.school_logo} alt="Logo Sekolah" className="max-w-full max-h-full object-contain" />
                     </div>
                   )}
                   <input
@@ -2368,6 +2384,52 @@ export default function KesiswaanClient({
                     className="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-slate-200 hover:file:bg-slate-800"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Logo Provinsi / Dinas (Unggah Gambar)
+                </label>
+                <div className="flex items-center gap-4">
+                  {settings.province_logo && (
+                    <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                      <img src={settings.province_logo} alt="Logo Provinsi" className="max-w-full max-h-full object-contain" />
+                    </div>
+                  )}
+                  <input
+                    name="province_logo_file"
+                    type="file"
+                    accept="image/*"
+                    className="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-slate-200 hover:file:bg-slate-800"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Nama Kepala Sekolah
+                </label>
+                <input
+                  name="kepsek_name"
+                  type="text"
+                  placeholder="Contoh: Dr. H. Ahmad Fauzi, M.Pd."
+                  defaultValue={settings.kepsek_name || ""}
+                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  NIP Kepala Sekolah
+                </label>
+                <input
+                  name="kepsek_nip"
+                  type="text"
+                  placeholder="Contoh: 196803121994031005"
+                  defaultValue={settings.kepsek_nip || ""}
+                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+                />
               </div>
             </div>
 

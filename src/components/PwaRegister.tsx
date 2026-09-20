@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { Download, Smartphone, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export default function PwaRegister() {
+  const pathname = usePathname();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
 
@@ -80,10 +82,10 @@ export default function PwaRegister() {
     setShowInstallBanner(false);
   };
 
-  if (!showInstallBanner) return null;
+  if (!showInstallBanner || pathname?.includes("/cetak")) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:max-w-sm z-50 animate-in slide-in-from-bottom-5 duration-300">
+    <div className="no-print print:hidden fixed bottom-4 right-4 left-4 sm:left-auto sm:max-w-sm z-50 animate-in slide-in-from-bottom-5 duration-300">
       <div className="p-4 bg-slate-900/95 border border-emerald-500/30 backdrop-blur-md rounded-2xl shadow-2xl space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
