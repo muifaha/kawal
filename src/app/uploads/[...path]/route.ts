@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { getUploadBaseDir } from "@/lib/uploadHelper";
 
 export async function GET(
   request: NextRequest,
@@ -10,21 +9,37 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const filePathParts = resolvedParams.path;
-    const baseDir = getUploadBaseDir();
-    const filePath = path.join(baseDir, ...filePathParts);
 
-    // Security check: prevent directory traversal attacks
-    const relative = path.relative(baseDir, filePath);
-    if (relative.startsWith("..") || path.isAbsolute(relative)) {
-      return new NextResponse("Forbidden", { status: 403 });
+    const candidateDirs: string[] = [];
+    if (process.env.UPLOAD_DIR) {
+      candidateDirs.push(path.resolve(process.env.UPLOAD_DIR));
+    }
+    candidateDirs.push(path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads"));
+    candidateDirs.push(path.join(/*turbopackIgnore: true*/ process.cwd(), "public", "uploads"));
+
+    let targetFilePath: string | null = null;
+    let baseDirUsed: string | null = null;
+
+    for (const dir of candidateDirs) {
+      const candidate = path.join(dir, ...filePathParts);
+      // Security check: prevent directory traversal attacks
+      const relative = path.relative(dir, candidate);
+      if (relative.startsWith("..") || path.isAbsolute(relative)) {
+        continue;
+      }
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+        targetFilePath = candidate;
+        baseDirUsed = dir;
+        break;
+      }
     }
 
-    if (!fs.existsSync(filePath)) {
+    if (!targetFilePath) {
       return new NextResponse("Not Found", { status: 404 });
     }
 
-    const fileBuffer = fs.readFileSync(filePath);
-    const ext = path.extname(filePath).toLowerCase();
+    const fileBuffer = fs.readFileSync(targetFilePath);
+    const ext = path.extname(targetFilePath).toLowerCase();
 
     let contentType = "application/octet-stream";
     if (ext === ".png") contentType = "image/png";
