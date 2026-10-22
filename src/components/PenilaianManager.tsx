@@ -199,13 +199,6 @@ export default function PenilaianManager({ user }: PenilaianManagerProps) {
       const res = await getTeacherClassesAndSubjectsAction();
       if (res.success && res.data) {
         setClassList(res.data);
-        if (res.data.length === 1) {
-          const singleClass = res.data[0];
-          setSelectedClass(singleClass);
-          if (singleClass.mapels.length === 1) {
-            setSelectedMapel(singleClass.mapels[0]);
-          }
-        }
       }
       setLoadingClasses(false);
     }
@@ -896,11 +889,7 @@ export default function PenilaianManager({ user }: PenilaianManagerProps) {
                     onChange={(e) => {
                       const cls = classList.find((c) => c.id === e.target.value) || null;
                       setSelectedClass(cls);
-                      if (cls && cls.mapels.length === 1) {
-                        setSelectedMapel(cls.mapels[0]);
-                      } else {
-                        setSelectedMapel(null);
-                      }
+                      setSelectedMapel(null);
                     }}
                     disabled={loadingClasses}
                     className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none transition disabled:opacity-50"
