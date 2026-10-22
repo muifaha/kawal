@@ -40,6 +40,7 @@ import {
   FileSpreadsheet,
   Target,
   X,
+  Search,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -1906,8 +1907,33 @@ function PenilaianListDashboard({
   onOpenRekap: () => void;
   onOpenTpManage: () => void;
 }) {
+  const [filterJenis, setFilterJenis] = useState<"ALL" | "FORMATIF" | "SUMATIF" | "PAS_UAS">("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const countAll = penilaianList.length;
+  const countFormatif = penilaianList.filter((p) => (p.jenisPenilaian || "FORMATIF") === "FORMATIF").length;
+  const countSumatif = penilaianList.filter((p) => p.jenisPenilaian === "SUMATIF").length;
+  const countPasUas = penilaianList.filter((p) => p.jenisPenilaian === "PAS_UAS").length;
+
+  const filteredList = penilaianList.filter((item) => {
+    const jenis = item.jenisPenilaian || "FORMATIF";
+    if (filterJenis !== "ALL" && jenis !== filterJenis) {
+      return false;
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchNama = item.namaPenilaian?.toLowerCase().includes(q);
+      const matchMateri = item.materi?.toLowerCase().includes(q);
+      const matchTp = item.tpCode?.toLowerCase().includes(q);
+      const matchDeskripsi = item.deskripsi?.toLowerCase().includes(q);
+      return Boolean(matchNama || matchMateri || matchTp || matchDeskripsi);
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-6">
+      {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-slate-900/60 border border-slate-800 rounded-2xl backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
@@ -1977,70 +2003,274 @@ function PenilaianListDashboard({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {penilaianList.map((item) => {
-            const jenis = item.jenisPenilaian || "FORMATIF";
-            return (
-              <div
-                key={item.id}
-                onClick={() => onOpenEntry(item.id)}
-                className="p-5 bg-slate-900/40 border border-slate-800 hover:border-indigo-500/50 rounded-2xl transition-all cursor-pointer group flex flex-col justify-between gap-4"
+        <div className="space-y-4">
+          {/* Filter Pills & Search Box */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* Category Tabs */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-900/60 border border-slate-800 rounded-xl overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setFilterJenis("ALL")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                  filterJenis === "ALL"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                }`}
               >
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold ${
-                      jenis === "FORMATIF"
-                        ? "bg-sky-500/10 border-sky-500/20 text-sky-400"
-                        : jenis === "SUMATIF"
-                        ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
-                        : "bg-rose-500/10 border-rose-500/20 text-rose-400"
-                    }`}>
-                      {jenis === "FORMATIF" ? "Formatif (Proses)" : jenis === "SUMATIF" ? "Sumatif (TP/Materi)" : "PAS / UAS"}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-slate-500">{item.tanggal}</span>
-                      <button
-                        onClick={(e) => onEditHeader(item, e)}
-                        className="p-1 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition cursor-pointer"
-                        title="Edit Detail Penilaian"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => onDeleteHeader(item.id, e)}
-                        className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
-                        title="Hapus Penilaian"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <h4 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">
-                    {item.namaPenilaian}
-                  </h4>
-                  {(item.materi || item.tpCode) && (
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-400">
-                      {item.materi && <span className="bg-slate-800/60 px-2 py-0.5 rounded text-slate-300">{item.materi}</span>}
-                      {item.tpCode && <span className="bg-indigo-500/10 text-indigo-300 px-2 py-0.5 rounded">{item.tpCode}</span>}
-                    </div>
-                  )}
-                  {item.deskripsi && (
-                    <p className="text-xs text-slate-400 line-clamp-2">{item.deskripsi}</p>
-                  )}
-                </div>
+                Semua
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                    filterJenis === "ALL" ? "bg-white/20 text-white" : "bg-slate-800 text-slate-400"
+                  }`}
+                >
+                  {countAll}
+                </span>
+              </button>
 
-                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-slate-500" />
-                    {item.totalTerisi} Siswa Dinilai
-                  </span>
-                  <span className="font-bold text-indigo-400 group-hover:underline flex items-center gap-1">
-                    Input Nilai →
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+              <button
+                type="button"
+                onClick={() => setFilterJenis("FORMATIF")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                  filterJenis === "FORMATIF"
+                    ? "bg-sky-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                }`}
+              >
+                Formatif (Proses)
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                    filterJenis === "FORMATIF" ? "bg-white/20 text-white" : "bg-slate-800 text-slate-400"
+                  }`}
+                >
+                  {countFormatif}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterJenis("SUMATIF")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                  filterJenis === "SUMATIF"
+                    ? "bg-amber-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                }`}
+              >
+                Sumatif (TP/Materi)
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                    filterJenis === "SUMATIF" ? "bg-white/20 text-white" : "bg-slate-800 text-slate-400"
+                  }`}
+                >
+                  {countSumatif}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterJenis("PAS_UAS")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                  filterJenis === "PAS_UAS"
+                    ? "bg-rose-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                }`}
+              >
+                PAS / UAS
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                    filterJenis === "PAS_UAS" ? "bg-white/20 text-white" : "bg-slate-800 text-slate-400"
+                  }`}
+                >
+                  {countPasUas}
+                </span>
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative min-w-[240px] sm:w-72">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari asesmen, TP, materi..."
+                className="w-full bg-slate-900/60 border border-slate-800 focus:border-indigo-500 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 outline-none transition"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-0.5 rounded cursor-pointer"
+                  title="Hapus pencarian"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Assessment Table View */}
+          <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur-xl">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-800 text-xs">
+                <thead className="bg-slate-950/70 text-slate-400 font-semibold uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3.5 px-4 text-center w-12">No</th>
+                    <th className="py-3.5 px-4 text-left w-36">Kategori</th>
+                    <th className="py-3.5 px-4 text-left min-w-[160px] max-w-[240px]">TP / Materi</th>
+                    <th className="py-3.5 px-4 text-left min-w-[220px]">Nama Penilaian</th>
+                    <th className="py-3.5 px-4 text-left w-28">Tanggal</th>
+                    <th className="py-3.5 px-4 text-center w-36">Kelengkapan</th>
+                    <th className="py-3.5 px-4 text-right w-40">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                  {filteredList.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Search className="w-7 h-7 text-slate-600" />
+                          <p className="text-xs font-medium text-slate-300">
+                            Tidak ada penilaian yang sesuai dengan kriteria filter atau pencarian.
+                          </p>
+                          {(filterJenis !== "ALL" || searchQuery) && (
+                            <button
+                              onClick={() => {
+                                setFilterJenis("ALL");
+                                setSearchQuery("");
+                              }}
+                              className="mt-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-indigo-300 rounded-lg transition cursor-pointer font-medium"
+                            >
+                              Reset Filter & Pencarian
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredList.map((item, index) => {
+                      const jenis = item.jenisPenilaian || "FORMATIF";
+                      return (
+                        <tr
+                          key={item.id}
+                          onClick={() => onOpenEntry(item.id)}
+                          className="hover:bg-slate-800/40 transition group cursor-pointer"
+                        >
+                          <td className="py-3.5 px-4 text-center font-mono text-slate-500 text-xs">
+                            {index + 1}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span
+                              className={`inline-block px-2.5 py-1 rounded-lg border text-[10px] font-bold ${
+                                jenis === "FORMATIF"
+                                  ? "bg-sky-500/10 border-sky-500/20 text-sky-400"
+                                  : jenis === "SUMATIF"
+                                  ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                                  : "bg-rose-500/10 border-rose-500/20 text-rose-400"
+                              }`}
+                            >
+                              {jenis === "FORMATIF"
+                                ? "Formatif"
+                                : jenis === "SUMATIF"
+                                ? "Sumatif"
+                                : "PAS / UAS"}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="flex flex-col gap-1 items-start">
+                              {item.tpCode && (
+                                <span className="font-mono text-[10px] font-bold text-indigo-300 bg-indigo-500/15 border border-indigo-500/25 px-1.5 py-0.5 rounded">
+                                  {item.tpCode}
+                                </span>
+                              )}
+                              {item.materi ? (
+                                <span className="text-slate-200 font-medium line-clamp-2" title={item.materi}>
+                                  {item.materi}
+                                </span>
+                              ) : !item.tpCode ? (
+                                <span className="text-slate-600 italic">-</span>
+                              ) : null}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-white group-hover:text-indigo-300 transition-colors">
+                              {item.namaPenilaian}
+                            </div>
+                            {item.deskripsi && (
+                              <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5" title={item.deskripsi}>
+                                {item.deskripsi}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-slate-400 whitespace-nowrap">
+                            {item.tanggal}
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${
+                                (item.totalTerisi || 0) > 0
+                                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                                  : "bg-slate-800/80 border-slate-700/60 text-slate-400"
+                              }`}
+                            >
+                              <Users className="w-3.5 h-3.5 shrink-0" />
+                              {item.totalTerisi || 0} Siswa
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div
+                              className="flex items-center justify-end gap-1.5"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onClick={() => onOpenEntry(item.id)}
+                                className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition flex items-center gap-1 shadow-sm cursor-pointer"
+                                title="Input Nilai Siswa"
+                              >
+                                Nilai
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={(e) => onEditHeader(item, e)}
+                                className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition cursor-pointer"
+                                title="Edit Detail Penilaian"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => onDeleteHeader(item.id, e)}
+                                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
+                                title="Hapus Penilaian"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer summary */}
+            <div className="px-4 py-3 bg-slate-950/40 border-t border-slate-800 text-xs text-slate-500 flex items-center justify-between">
+              <span>
+                Menampilkan <strong className="text-slate-300">{filteredList.length}</strong> dari{" "}
+                <strong className="text-slate-300">{penilaianList.length}</strong> penilaian
+              </span>
+              {(filterJenis !== "ALL" || searchQuery) && (
+                <button
+                  onClick={() => {
+                    setFilterJenis("ALL");
+                    setSearchQuery("");
+                  }}
+                  className="text-xs text-indigo-400 hover:underline cursor-pointer font-medium"
+                >
+                  Reset Filter
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
