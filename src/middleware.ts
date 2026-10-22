@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   "/api/jurnal/rencana-aksi",
   "/api/jurnal/cetak-pdf",
   "/jurnal/cetak",
+  "/api/settings",
 ];
 
 export function middleware(request: NextRequest) {
@@ -26,6 +27,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/api/public_data") ||
     pathname.startsWith("/api/rencana-aksi") ||
     pathname.startsWith("/api/jurnal/") ||
+    pathname.startsWith("/api/settings") ||
     pathname.startsWith("/jurnal/cetak") ||
     pathname.startsWith("/alumni") ||
     pathname.startsWith("/ppid") ||

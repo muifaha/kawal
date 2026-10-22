@@ -78,9 +78,24 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
 export async function setSession(user: SessionUser) {
   const token = signToken(user);
   const cookieStore = await cookies();
+
+  // Otomatis deteksi HTTPS agar cookie tidak ditolak browser saat diakses lewat HTTP IP/LAN
+  let isSecure = false;
+  if (process.env.DISABLE_COOKIE_SECURE !== "true") {
+    try {
+      const { headers } = await import("next/headers");
+      const headerList = await headers();
+      const proto = headerList.get("x-forwarded-proto");
+      const referer = headerList.get("referer") || "";
+      isSecure = proto === "https" || referer.startsWith("https://");
+    } catch {
+      isSecure = false;
+    }
+  }
+
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production" && process.env.DISABLE_COOKIE_SECURE !== "true",
+    secure: isSecure,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24, // 1 hari
