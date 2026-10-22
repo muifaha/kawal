@@ -17,7 +17,7 @@ export default function PenilaianClient({ user }: PenilaianClientProps) {
   return (
     <SidebarLayout user={user}>
       <div className="space-y-6">
-        <PenilaianManager user={user} defaultMode="KELAS" />
+        <PenilaianManager user={user} />
       </div>
     </SidebarLayout>
   );

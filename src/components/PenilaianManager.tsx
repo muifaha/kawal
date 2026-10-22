@@ -87,9 +87,8 @@ interface PenilaianManagerProps {
 
 import { useRouter } from "next/navigation";
 
-export default function PenilaianManager({ user, defaultMode = "KELAS" }: PenilaianManagerProps) {
+export default function PenilaianManager({ user }: PenilaianManagerProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"KELAS" | "PENILAIAN">(defaultMode);
 
   const [classList, setClassList] = useState<ClassItem[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
@@ -200,6 +199,13 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
       const res = await getTeacherClassesAndSubjectsAction();
       if (res.success && res.data) {
         setClassList(res.data);
+        if (res.data.length === 1) {
+          const singleClass = res.data[0];
+          setSelectedClass(singleClass);
+          if (singleClass.mapels.length === 1) {
+            setSelectedMapel(singleClass.mapels[0]);
+          }
+        }
       }
       setLoadingClasses(false);
     }
@@ -540,54 +546,13 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
   return (
     <div className="space-y-6">
       {/* HEADER UTAMA HALAMAN PENILAIAN */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white text-balance">
-            Penilaian Siswa
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Input & Manajemen Penilaian Formatif, Sumatif, PAS/UAS, dan Rekapitulasi Nilai Rapor Kurikulum Merdeka
-          </p>
-        </div>
-
-        {/* Tab Penilaian (Mode Alur Kelas vs Pilih Langsung) */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-950/80 border border-slate-800/80 rounded-xl shrink-0">
-          <button
-            onClick={() => {
-              setActiveTab("KELAS");
-              setSelectedClass(null);
-              setSelectedMapel(null);
-              setActivePenilaianId(null);
-              setShowRekapRapor(false);
-            }}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === "KELAS"
-                ? "bg-indigo-600 text-white shadow-lg"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <School className="w-3.5 h-3.5" />
-            Alur Kelas Saya
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab("PENILAIAN");
-              setSelectedClass(null);
-              setSelectedMapel(null);
-              setActivePenilaianId(null);
-              setShowRekapRapor(false);
-            }}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === "PENILAIAN"
-                ? "bg-indigo-600 text-white shadow-lg"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            Pilih Langsung
-          </button>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white text-balance">
+          Penilaian Siswa
+        </h1>
+        <p className="text-sm text-slate-400 mt-1">
+          Input & Manajemen Penilaian Formatif, Sumatif, PAS/UAS, dan Rekapitulasi Nilai Rapor Kurikulum Merdeka
+        </p>
       </div>
 
       {/* Messages */}
@@ -906,173 +871,102 @@ export default function PenilaianManager({ user, defaultMode = "KELAS" }: Penila
             </div>
           )}
         </div>
-      ) : activeTab === "KELAS" ? (
-        /* TAB 1: KELAS SAYA FLOW */
-        <div className="space-y-6">
-          {!selectedClass ? (
-            /* STEP 1: Pilih Kelas */
-            <div className="space-y-4">
-              {loadingClasses ? (
-                <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-2 bg-slate-900/40 border border-slate-900 rounded-2xl">
-                  <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
-                  <span className="text-xs">Memuat kelas mengajar...</span>
-                </div>
-              ) : classList.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 bg-slate-900/40 border border-slate-900 rounded-2xl">
-                  Belum ada kelas mengajar yang terdaftar untuk Anda.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {classList.map((cls) => (
-                    <div
-                      key={cls.id}
-                      onClick={() => setSelectedClass(cls)}
-                      className="p-5 bg-slate-900/40 border border-slate-800 hover:border-indigo-500/50 rounded-2xl transition-all cursor-pointer group flex items-center justify-between gap-4"
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 font-bold group-hover:scale-105 transition-transform">
-                          <School className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h4 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">
-                            Kelas {cls.nama}
-                          </h4>
-                          <p className="text-xs text-slate-400 mt-0.5">
-                            {cls.mapels.length} Mata Pelajaran Diajar
-                          </p>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-white transition-colors" />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : !selectedMapel ? (
-            /* STEP 2: Pilih Mapel di Kelas */
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setSelectedClass(null)}
-                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white transition cursor-pointer"
-                  title="Kembali ke Daftar Kelas"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-                <div>
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-indigo-400" />
-                    Mata Pelajaran di Kelas {selectedClass.nama}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Pilih mata pelajaran yang Anda ajar di kelas ini.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {selectedClass.mapels.map((mp) => (
-                  <div
-                    key={mp.id}
-                    onClick={() => setSelectedMapel(mp)}
-                    className="p-5 bg-slate-900/40 border border-slate-800 hover:border-emerald-500/50 rounded-2xl transition-all cursor-pointer group flex items-center justify-between gap-4"
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 font-bold group-hover:scale-105 transition-transform">
-                        <BookOpen className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase">{mp.kode}</span>
-                        <h4 className="text-base font-bold text-white group-hover:text-emerald-300 transition-colors">
-                          {mp.nama}
-                        </h4>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-white transition-colors" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            /* STEP 3: Daftar Penilaian untuk (selectedClass, selectedMapel) */
-            <PenilaianListDashboard
-              selectedClass={selectedClass}
-              selectedMapel={selectedMapel}
-              penilaianList={penilaianList}
-              loadingPenilaian={loadingPenilaian}
-              tpListCount={tpList.length}
-              onBack={() => setSelectedMapel(null)}
-              onAddClick={() => setShowAddModal(true)}
-              onOpenEntry={handleOpenGradeEntry}
-              onEditHeader={handleOpenEditModal}
-              onDeleteHeader={handleDeletePenilaian}
-              onOpenRekap={fetchRekapRapor}
-              onOpenTpManage={() => router.push(`/materi?kelasId=${selectedClass.id}&mapelId=${selectedMapel.id}`)}
-            />
-          )}
-        </div>
       ) : (
-        /* TAB 2: PENILAIAN SISWA DIRECT SELECTION */
+        /* DIRECT SELECTION FLOW (PILIH LANGSUNG KELAS & MAPEL) */
         <div className="space-y-6">
-          <div className="p-6 bg-slate-900/40 border border-slate-900 rounded-2xl space-y-4">
-            <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Award className="w-5 h-5 text-indigo-400" />
-                Pilih Kelas & Mata Pelajaran
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Pilih kelas dan mata pelajaran untuk membuat atau menginput nilai siswa.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Pilih Kelas
-                </label>
-                <select
-                  value={selectedClass?.id || ""}
-                  onChange={(e) => {
-                    const cls = classList.find((c) => c.id === e.target.value) || null;
-                    setSelectedClass(cls);
-                    setSelectedMapel(null);
-                  }}
-                  className="block w-full px-3 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">-- Pilih Kelas --</option>
-                  {classList.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      Kelas {c.nama}
-                    </option>
-                  ))}
-                </select>
+          <div className="p-4 sm:p-5 bg-slate-900/60 border border-slate-800 rounded-2xl backdrop-blur-xl">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                  <Sliders className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Filter Kelas & Mata Pelajaran</h3>
+                  <p className="text-xs text-slate-400">Pilih langsung kelas dan mata pelajaran yang Anda ampu</p>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Pilih Mata Pelajaran
-                </label>
-                <select
-                  value={selectedMapel?.id || ""}
-                  disabled={!selectedClass}
-                  onChange={(e) => {
-                    const mp = selectedClass?.mapels.find((m) => m.id === e.target.value) || null;
-                    setSelectedMapel(mp);
-                  }}
-                  className="block w-full px-3 py-2.5 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-                >
-                  <option value="">-- Pilih Mata Pelajaran --</option>
-                  {selectedClass?.mapels.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.kode} - {m.nama}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto lg:min-w-[480px]">
+                <div>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Pilih Kelas
+                  </label>
+                  <select
+                    value={selectedClass?.id || ""}
+                    onChange={(e) => {
+                      const cls = classList.find((c) => c.id === e.target.value) || null;
+                      setSelectedClass(cls);
+                      if (cls && cls.mapels.length === 1) {
+                        setSelectedMapel(cls.mapels[0]);
+                      } else {
+                        setSelectedMapel(null);
+                      }
+                    }}
+                    disabled={loadingClasses}
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none transition disabled:opacity-50"
+                  >
+                    <option value="">-- Pilih Kelas --</option>
+                    {classList.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        Kelas {c.nama} ({c.mapels.length} Mapel)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Pilih Mata Pelajaran
+                  </label>
+                  <select
+                    value={selectedMapel?.id || ""}
+                    disabled={!selectedClass || loadingClasses}
+                    onChange={(e) => {
+                      const mp = selectedClass?.mapels.find((m) => m.id === e.target.value) || null;
+                      setSelectedMapel(mp);
+                    }}
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">
+                      {!selectedClass ? "-- Pilih Kelas Dahulu --" : "-- Pilih Mata Pelajaran --"}
                     </option>
-                  ))}
-                </select>
+                    {selectedClass?.mapels.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.kode} - {m.nama}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
 
-          {selectedClass && selectedMapel && (
+          {loadingClasses ? (
+            <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-2 bg-slate-900/40 border border-slate-900 rounded-2xl">
+              <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+              <span className="text-xs">Memuat data kelas mengajar...</span>
+            </div>
+          ) : classList.length === 0 ? (
+            <div className="p-10 text-center space-y-3 bg-slate-900/40 border border-slate-900 rounded-2xl">
+              <AlertCircle className="w-10 h-10 text-amber-500 mx-auto" />
+              <h4 className="text-sm font-bold text-white">Tidak Ada Kelas Mengajar</h4>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                Akun Anda belum memiliki penugasan kelas atau mata pelajaran. Silakan hubungi waka/admin kurikulum.
+              </p>
+            </div>
+          ) : !selectedClass || !selectedMapel ? (
+            <div className="p-12 text-center bg-slate-900/40 border border-slate-900 rounded-2xl space-y-3">
+              <Award className="w-10 h-10 text-slate-600 mx-auto" />
+              <h4 className="text-sm font-bold text-white">
+                {!selectedClass ? "Silakan Pilih Kelas" : "Silakan Pilih Mata Pelajaran"}
+              </h4>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                {!selectedClass
+                  ? "Pilih kelas pada pilihan di atas untuk menampilkan daftar penilaian dan menginput nilai siswa."
+                  : `Pilih mata pelajaran yang Anda ampu di Kelas ${selectedClass.nama} pada pilihan di atas.`}
+              </p>
+            </div>
+          ) : (
             <PenilaianListDashboard
               selectedClass={selectedClass}
               selectedMapel={selectedMapel}
