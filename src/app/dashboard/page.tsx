@@ -60,8 +60,18 @@ export default async function DashboardPage() {
       },
     });
 
+    const dbHolidays = await prisma.hariLibur.findMany({
+      orderBy: { tanggal: "asc" },
+    });
+    const holidays = dbHolidays.map((h) => ({
+      date: formatDateWib(h.tanggal),
+      keterangan: h.keterangan,
+      jenjang: h.jenjang || "ALL",
+    }));
+
+    const isClassHoliday = assignedClass ? checkClassHoliday(todayStr, assignedClass.nama, holidays, settings).isHoliday : false;
     const isSubmittedToday = (assignedClass?.siswaKelas.length || 0) > 0;
-    const classesNotSubmittedToday = (!isSubmittedToday && assignedClass)
+    const classesNotSubmittedToday = (!isSubmittedToday && assignedClass && !isClassHoliday)
       ? [{ id: assignedClass.id, nama: assignedClass.nama, walasNama: "-" }]
       : [];
 
@@ -133,7 +143,7 @@ export default async function DashboardPage() {
         attendanceRecap={[]}
         violationRecap={[]}
         dailyAttendance={[]}
-        holidays={[]}
+        holidays={holidays}
         topAbsentClasses={[]}
         topAlphaStudents={[]}
         topViolationClasses={[]}
@@ -187,14 +197,69 @@ export default async function DashboardPage() {
 
     const targetDate = new Date(`${todayStr}T00:00:00.000Z`);
 
-    const allClasses = await prisma.kelas.findMany({
-      where: { tahunAjaran: { isActive: true } },
-      select: {
-        id: true,
-        nama: true,
-        walas: { select: { nama: true } },
-      },
-    });
+    const [allClasses, todayAbsentRecords, recordedAbsensi, dbHolidays] = await Promise.all([
+      prisma.kelas.findMany({
+        where: { tahunAjaran: { isActive: true } },
+        select: {
+          id: true,
+          nama: true,
+          walas: { select: { nama: true } },
+        },
+      }),
+      prisma.absensi.findMany({
+        where: {
+          tanggal: targetDate,
+          status: { in: ["S", "I", "A", "D"] },
+          siswa: {
+            riwayatKelas: {
+              some: { tahunAjaran: { isActive: true } },
+            },
+          },
+        },
+        include: {
+          siswa: {
+            include: {
+              riwayatKelas: {
+                where: { tahunAjaran: { isActive: true } },
+                include: { kelas: true },
+              },
+            },
+          },
+        },
+        orderBy: {
+          siswa: { nama: "asc" },
+        },
+      }),
+      prisma.absensi.findMany({
+        where: {
+          tanggal: targetDate,
+          siswa: {
+            riwayatKelas: {
+              some: { tahunAjaran: { isActive: true } },
+            },
+          },
+        },
+        select: {
+          siswa: {
+            select: {
+              riwayatKelas: {
+                where: { tahunAjaran: { isActive: true } },
+                select: { kelasId: true },
+              },
+            },
+          },
+        },
+      }),
+      prisma.hariLibur.findMany({
+        orderBy: { tanggal: "asc" },
+      }),
+    ]);
+
+    const holidays = dbHolidays.map((h) => ({
+      date: formatDateWib(h.tanggal),
+      keterangan: h.keterangan,
+      jenjang: h.jenjang || "ALL",
+    }));
 
     const getGradeRank = (className: string) => {
       const upper = className.toUpperCase().trim();
@@ -209,31 +274,6 @@ export default async function DashboardPage() {
       const rankB = getGradeRank(b.nama);
       if (rankA !== rankB) return rankA - rankB;
       return a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: "base" });
-    });
-
-    const todayAbsentRecords = await prisma.absensi.findMany({
-      where: {
-        tanggal: targetDate,
-        status: { in: ["S", "I", "A", "D"] },
-        siswa: {
-          riwayatKelas: {
-            some: { tahunAjaran: { isActive: true } },
-          },
-        },
-      },
-      include: {
-        siswa: {
-          include: {
-            riwayatKelas: {
-              where: { tahunAjaran: { isActive: true } },
-              include: { kelas: true },
-            },
-          },
-        },
-      },
-      orderBy: {
-        siswa: { nama: "asc" },
-      },
     });
 
     const piketAbsentStudents = todayAbsentRecords.map((r) => {
@@ -251,27 +291,6 @@ export default async function DashboardPage() {
       };
     });
 
-    const recordedAbsensi = await prisma.absensi.findMany({
-      where: {
-        tanggal: targetDate,
-        siswa: {
-          riwayatKelas: {
-            some: { tahunAjaran: { isActive: true } },
-          },
-        },
-      },
-      select: {
-        siswa: {
-          select: {
-            riwayatKelas: {
-              where: { tahunAjaran: { isActive: true } },
-              select: { kelasId: true },
-            },
-          },
-        },
-      },
-    });
-
     const recordedClassIds = new Set<string>();
     recordedAbsensi.forEach((a) => {
       a.siswa.riwayatKelas.forEach((rk) => {
@@ -279,9 +298,19 @@ export default async function DashboardPage() {
       });
     });
 
-    const classesNotSubmittedToday = allClasses
-      .filter((c) => !recordedClassIds.has(c.id))
-      .map((c) => ({ id: c.id, nama: c.nama, walasNama: c.walas?.nama || "-" }));
+    const todayDayOfWeek = new Date(`${todayStr}T12:00:00Z`).getUTCDay();
+    const isWeekend = (todayDayOfWeek === 6 && settings["libur_sabtu"] === "true") || (todayDayOfWeek === 0 && settings["libur_minggu"] !== "false");
+
+    const classesNotSubmittedToday = isWeekend
+      ? []
+      : allClasses
+          .filter((c) => {
+            if (recordedClassIds.has(c.id)) return false;
+            const holidayCheck = checkClassHoliday(todayStr, c.nama, holidays, settings);
+            if (holidayCheck.isHoliday) return false;
+            return true;
+          })
+          .map((c) => ({ id: c.id, nama: c.nama, walasNama: c.walas?.nama || "-" }));
 
     return (
       <DashboardClient
@@ -295,7 +324,7 @@ export default async function DashboardPage() {
         attendanceRecap={[]}
         violationRecap={[]}
         dailyAttendance={[]}
-        holidays={[]}
+        holidays={holidays}
         topAbsentClasses={[]}
         topAlphaStudents={[]}
         topViolationClasses={[]}
@@ -369,7 +398,7 @@ export default async function DashboardPage() {
         attendanceRecap={[]}
         violationRecap={[]}
         dailyAttendance={[]}
-        holidays={[]}
+        holidays={guruHolidays}
         topAbsentClasses={[]}
         topAlphaStudents={[]}
         topViolationClasses={[]}
@@ -769,16 +798,11 @@ export default async function DashboardPage() {
   const dbHolidays = await prisma.hariLibur.findMany({
     orderBy: { tanggal: "asc" },
   });
-  const holidays = dbHolidays.map((h) => {
-    const year = h.tanggal.getFullYear();
-    const month = String(h.tanggal.getMonth() + 1).padStart(2, "0");
-    const day = String(h.tanggal.getDate()).padStart(2, "0");
-    return {
-      date: `${year}-${month}-${day}`,
-      keterangan: h.keterangan,
-      jenjang: h.jenjang || "ALL",
-    };
-  });
+  const holidays = dbHolidays.map((h) => ({
+    date: formatDateWib(h.tanggal),
+    keterangan: h.keterangan,
+    jenjang: h.jenjang || "ALL",
+  }));
 
   // 8. Kelas Paling Banyak Tidak Hadir Hari Ini
   const todayAbsences = await prisma.absensi.findMany({
@@ -1307,13 +1331,13 @@ export default async function DashboardPage() {
     for (const dateStrItem of pastDatesToCheck) {
       const recordedClassIds = dateToClassMap.get(dateStrItem) || new Set<string>();
 
-      const missingClasses = allActiveClassesPast
-        .filter((c) => {
-          if (recordedClassIds.has(c.id)) return false;
-          const holidayCheck = checkClassHoliday(dateStrItem, c.nama, holidays, settings);
-          if (holidayCheck.isHoliday) return false;
-          return true;
-        })
+      const effectiveClassesOnDate = allActiveClassesPast.filter((c) => {
+        const holidayCheck = checkClassHoliday(dateStrItem, c.nama, holidays, settings);
+        return !holidayCheck.isHoliday;
+      });
+
+      const missingClasses = effectiveClassesOnDate
+        .filter((c) => !recordedClassIds.has(c.id))
         .map((c) => ({
           id: c.id,
           nama: c.nama,
@@ -1333,7 +1357,7 @@ export default async function DashboardPage() {
           dateStr: dateStrItem,
           dateFormatted: formattedDateLabel,
           unsubmittedCount: missingClasses.length,
-          totalClasses: allActiveClassesPast.length,
+          totalClasses: effectiveClassesOnDate.length,
           classes: missingClasses,
         });
       }

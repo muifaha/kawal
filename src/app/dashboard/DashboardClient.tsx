@@ -62,6 +62,7 @@ import { toggleCensorViolationAction } from "@/app/actions/violation";
 import { calculateAttendanceRate } from "@/lib/attendanceUtils";
 import * as XLSX from "xlsx";
 import WakaAnalyticsCharts from "./WakaAnalyticsCharts";
+import { checkClassHoliday } from "@/lib/holidayUtils";
 
 interface UserInfo {
   id: string;
@@ -2061,6 +2062,7 @@ export default function DashboardClient({
                   <option value="D">Dispensasi (D)</option>
                   <option value="HADIR_SEMUA">Hadir Semua (Nihil)</option>
                   <option value="BELUM_MENGISI">Belum Mengisi</option>
+                  <option value="LIBUR">Hari Libur</option>
                 </select>
               </div>
 
@@ -2090,13 +2092,16 @@ export default function DashboardClient({
 
             // Build complete class status list
             const allClassesWithStatus = classes.map((c) => {
+              const holidayInfo = checkClassHoliday(todayWibStr, c.nama, holidays, settings);
               const isNotSubmitted = notSubmittedClassIdSet.has(c.id) || notSubmittedClassNameSet.has(c.nama);
               const absentForClass = piketList.filter(
                 (s) => s.kelasId === c.id || s.kelasNama === c.nama
               );
 
-              let statusType: "BELUM_MENGISI" | "HADIR_SEMUA" | "ADA_TIDAK_HADIR" = "HADIR_SEMUA";
-              if (isNotSubmitted) {
+              let statusType: "BELUM_MENGISI" | "HADIR_SEMUA" | "ADA_TIDAK_HADIR" | "LIBUR" = "HADIR_SEMUA";
+              if (holidayInfo.isHoliday) {
+                statusType = "LIBUR";
+              } else if (isNotSubmitted) {
                 statusType = "BELUM_MENGISI";
               } else if (absentForClass.length > 0) {
                 statusType = "ADA_TIDAK_HADIR";
@@ -2107,6 +2112,7 @@ export default function DashboardClient({
                 className: c.nama,
                 statusType,
                 absentStudents: absentForClass,
+                holidayName: holidayInfo.name,
               };
             });
 
@@ -2136,6 +2142,8 @@ export default function DashboardClient({
                   if (c.statusType !== "BELUM_MENGISI") return false;
                 } else if (piketStatusFilter === "HADIR_SEMUA") {
                   if (c.statusType !== "HADIR_SEMUA") return false;
+                } else if (piketStatusFilter === "LIBUR") {
+                  if (c.statusType !== "LIBUR") return false;
                 } else if (["S", "I", "A", "D"].includes(piketStatusFilter)) {
                   if (!c.absentStudents.some((s) => s.status === piketStatusFilter)) return false;
                 }
@@ -2186,7 +2194,9 @@ export default function DashboardClient({
                         <h4 className="text-sm font-bold text-white flex items-center gap-2">
                           <span
                             className={`w-2.5 h-2.5 rounded-full ${
-                              c.statusType === "BELUM_MENGISI"
+                              c.statusType === "LIBUR"
+                                ? "bg-rose-400"
+                                : c.statusType === "BELUM_MENGISI"
                                 ? "bg-amber-400"
                                 : c.statusType === "HADIR_SEMUA"
                                 ? "bg-emerald-400"
@@ -2196,7 +2206,11 @@ export default function DashboardClient({
                           <span>Kelas {c.className}</span>
                         </h4>
 
-                        {c.statusType === "BELUM_MENGISI" ? (
+                        {c.statusType === "LIBUR" ? (
+                          <span className="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-[11px] font-bold text-rose-400">
+                            🏖️ Hari Libur
+                          </span>
+                        ) : c.statusType === "BELUM_MENGISI" ? (
                           <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] font-bold text-amber-400">
                             ⚠️ Belum Mengisi Absensi
                           </span>
@@ -2211,7 +2225,11 @@ export default function DashboardClient({
                         )}
                       </div>
 
-                      {c.statusType === "BELUM_MENGISI" ? (
+                      {c.statusType === "LIBUR" ? (
+                        <p className="text-xs text-rose-300/80 italic py-1">
+                          Kelas ini sedang libur hari ini: {c.holidayName}
+                        </p>
+                      ) : c.statusType === "BELUM_MENGISI" ? (
                         <p className="text-xs text-amber-300/80 italic py-1">
                           Absensi untuk kelas ini belum diinput oleh pengurus/wali kelas hari ini.
                         </p>

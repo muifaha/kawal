@@ -2,6 +2,8 @@
  * Utility functions for handling holidays with grade/jenjang specificity (ALL, X, XI, XII).
  */
 
+import { formatDateWib } from "./dateUtils";
+
 export type GradeLevel = "X" | "XI" | "XII";
 
 /**
@@ -27,10 +29,7 @@ export interface HolidayRecord {
 export function formatHolidayDateStr(dateOrStr: Date | string | undefined): string {
   if (!dateOrStr) return "";
   if (dateOrStr instanceof Date) {
-    const year = dateOrStr.getFullYear();
-    const month = String(dateOrStr.getMonth() + 1).padStart(2, "0");
-    const day = String(dateOrStr.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+    return formatDateWib(dateOrStr);
   }
   return String(dateOrStr).slice(0, 10);
 }

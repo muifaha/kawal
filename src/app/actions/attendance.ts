@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { sendWhatsAppNotification } from "@/lib/whatsapp";
 import { revalidatePath } from "next/cache";
+import { checkClassHoliday } from "@/lib/holidayUtils";
+import { formatDateWib } from "@/lib/dateUtils";
 
 interface AttendanceItem {
   studentId: string;
@@ -573,7 +575,22 @@ export async function sendDailyAttendanceToWAGroupAction() {
 
     const classDetailsText: string[] = [];
 
+    const dbHolidays = await prisma.hariLibur.findMany({
+      orderBy: { tanggal: "asc" },
+    });
+    const holidays = dbHolidays.map((h) => ({
+      date: formatDateWib(h.tanggal),
+      keterangan: h.keterangan,
+      jenjang: h.jenjang || "ALL",
+    }));
+
     dbClasses.forEach((kelasItem) => {
+      const holidayInfo = checkClassHoliday(todayStr, kelasItem.nama, holidays, settings);
+      if (holidayInfo.isHoliday) {
+        classDetailsText.push(`*Kelas ${kelasItem.nama}*: 🏖️ Libur (${holidayInfo.name})`);
+        return;
+      }
+
       const activeStudents = kelasItem.siswaKelas.map((sk) => sk.siswa);
       totalSiswaSemua += activeStudents.length;
 
