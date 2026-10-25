@@ -26,6 +26,7 @@ import {
 } from "@/lib/printUtils";
 import { RENCANA_AKSI_OPTIONS } from "@/lib/rencanaAksiService";
 import { compressImageFile } from "@/lib/imageUtils";
+import { checkClassHoliday } from "@/lib/holidayUtils";
 import {
   Calendar,
   Clock,
@@ -137,6 +138,8 @@ interface JadwalClientProps {
   initialSchedules: ScheduleItem[];
   initialJournals: JournalItem[];
   todaySchedules: ScheduleItem[];
+  holidays?: Array<{ date: string; keterangan: string; jenjang?: string | null }>;
+  settings?: Record<string, string>;
 }
 
 const HARI_MAP: Record<number, string> = {
@@ -169,6 +172,8 @@ export default function JadwalClient({
   initialSchedules,
   initialJournals,
   todaySchedules,
+  holidays = [],
+  settings = {},
 }: JadwalClientProps) {
   const [activeTab, setActiveTab] = useState<string>(
     user.role === "WAKA" ? "jadwal" : "today"
@@ -350,9 +355,11 @@ export default function JadwalClient({
     return todaySchedules.filter((sched) => {
       if (sched.id && todayFilledJadwalIds.has(sched.id)) return false;
       if (todayFilledGuruKeySet.has(`${sched.guruId}_${sched.kelasId}`)) return false;
+      const holidayCheck = checkClassHoliday(todayWibStr, sched.kelas?.nama, holidays, settings);
+      if (holidayCheck.isHoliday) return false;
       return true;
     });
-  }, [todaySchedules, todayFilledJadwalIds, todayFilledGuruKeySet]);
+  }, [todaySchedules, todayFilledJadwalIds, todayFilledGuruKeySet, holidays, settings, todayWibStr]);
 
   const pendingTeachersList = useMemo(() => {
     const map = new Map<
@@ -1626,11 +1633,14 @@ export default function JadwalClient({
               teacherSchedulesForSelectedDate.map((sched) => {
                 const existingJournal = getJournalForScheduleOnSelectedDate(sched);
                 const filled = !!existingJournal;
+                const holidayInfo = checkClassHoliday(selectedTeacherDate, sched.kelas?.nama, holidays, settings);
                 return (
                   <div
                     key={sched.id}
                     className={`p-5 rounded-2xl border transition-all relative overflow-hidden flex flex-col justify-between min-h-[170px] ${
-                      filled
+                      holidayInfo.isHoliday
+                        ? "bg-rose-500/5 border-rose-500/20"
+                        : filled
                         ? "bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-500/40"
                         : "bg-slate-900/40 border-slate-800/80 hover:border-indigo-500/30"
                     }`}
@@ -1642,17 +1652,22 @@ export default function JadwalClient({
                         </span>
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
-                            filled
+                            holidayInfo.isHoliday
+                              ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                              : filled
                               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                               : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                           }`}
                         >
-                          {filled ? "Sudah Diisi" : "Belum Diisi"}
+                          {holidayInfo.isHoliday ? "Hari Libur" : filled ? "Sudah Diisi" : "Belum Diisi"}
                         </span>
                       </div>
 
                       <div className="space-y-1">
                         <h4 className="text-base font-bold text-white leading-tight">{sched.mapel.nama}</h4>
+                        {holidayInfo.isHoliday && (
+                          <p className="text-[11px] text-rose-400 font-semibold">{holidayInfo.name}</p>
+                        )}
                         <div className="text-slate-400 text-xs flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5 text-indigo-400" />
                           <span>{getTimeString(sched.hari, sched.jamMulai, sched.jamSelesai)}</span>
@@ -1684,6 +1699,14 @@ export default function JadwalClient({
                             </Link>
                           </div>
                         </div>
+                      ) : holidayInfo.isHoliday ? (
+                        <Link
+                          href={`/jadwal/jurnal/isi?jadwalId=${sched.id}&tanggal=${selectedTeacherDate}`}
+                          className="w-full inline-flex items-center justify-center gap-1.5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 hover:text-white rounded-xl transition-all cursor-pointer"
+                        >
+                          <ClipboardList className="w-4 h-4" />
+                          Isi Jurnal (Opsional)
+                        </Link>
                       ) : (
                         <Link
                           href={`/jadwal/jurnal/isi?jadwalId=${sched.id}&tanggal=${selectedTeacherDate}`}

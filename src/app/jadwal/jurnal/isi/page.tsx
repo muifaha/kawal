@@ -1,6 +1,8 @@
 import React from "react";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDateWib } from "@/lib/dateUtils";
+import { checkClassHoliday } from "@/lib/holidayUtils";
 import SidebarLayout from "@/components/SidebarLayout";
 import { redirect } from "next/navigation";
 import IsiJurnalClient from "./IsiJurnalClient";
@@ -196,6 +198,21 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
     day: "2-digit",
   }).format(targetDate);
 
+  const settingsList = await prisma.appSetting.findMany();
+  const settings: Record<string, string> = {};
+  settingsList.forEach((s) => {
+    settings[s.key] = s.value;
+  });
+
+  const dbHolidays = await prisma.hariLibur.findMany();
+  const holidays = dbHolidays.map((h) => ({
+    date: formatDateWib(h.tanggal),
+    keterangan: h.keterangan,
+    jenjang: h.jenjang || "ALL",
+  }));
+
+  const holidayInfo = checkClassHoliday(targetDateStr, jadwalData.kelasNama, holidays, settings);
+
   return (
     <SidebarLayout user={user}>
       <div className="mb-6">
@@ -215,6 +232,7 @@ export default async function IsiJurnalPage({ searchParams }: PageProps) {
         students={students}
         existingJurnal={existingJurnalData}
         targetDateStr={targetDateStr}
+        holidayInfo={holidayInfo}
       />
     </SidebarLayout>
   );

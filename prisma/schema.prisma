@@ -306,9 +306,12 @@ model Absensi {
 
 model HariLibur {
   id          String   @id @default(uuid())
-  tanggal     DateTime @unique @db.Date // Tanggal libur
+  tanggal     DateTime @db.Date // Tanggal libur
   keterangan  String   // Contoh: "Hari Raya Idul Fitri", "Tidak Efektif"
+  jenjang     String   @default("ALL") // "ALL", "X", "XI", "XII"
   createdAt   DateTime @default(now())
+
+  @@unique([tanggal, jenjang])
 }
 
 model AppSetting {

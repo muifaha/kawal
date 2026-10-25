@@ -60,9 +60,10 @@ interface IsiJurnalClientProps {
     absensi: Array<{ siswaId: string; status: string }>;
   } | null;
   targetDateStr?: string;
+  holidayInfo?: { isHoliday: boolean; name: string; jenjang?: string };
 }
 
-export default function IsiJurnalClient({ user, jadwal, students, existingJurnal, targetDateStr }: IsiJurnalClientProps) {
+export default function IsiJurnalClient({ user, jadwal, students, existingJurnal, targetDateStr, holidayInfo }: IsiJurnalClientProps) {
   const router = useRouter();
 
   const formattedDateLabel = useMemo(() => {
@@ -410,6 +411,15 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
         <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm rounded-2xl flex items-start gap-3">
           <Check className="w-5 h-5 shrink-0 mt-0.5" />
           <span>{actionSuccess}</span>
+        </div>
+      )}
+
+      {holidayInfo?.isHoliday && (
+        <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm rounded-2xl flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 shrink-0 text-amber-400" />
+          <div>
+            <span className="font-bold">Pemberitahuan Hari Libur:</span> Kelas ini tercatat sedang libur ({holidayInfo.name}). Pengisian jurnal mengajar bersifat opsional.
+          </div>
         </div>
       )}
 

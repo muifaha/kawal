@@ -75,11 +75,12 @@ export default async function AbsensiPage({
     settings[s.key] = s.value;
   });
 
-  // Ambil daftar hari libur nasional
+  // Ambil daftar hari libur
   const dbHolidays = await prisma.hariLibur.findMany();
   const holidays = dbHolidays.map((h) => ({
     date: formatDateWib(h.tanggal),
     keterangan: h.keterangan,
+    jenjang: h.jenjang || "ALL",
   }));
 
   return (

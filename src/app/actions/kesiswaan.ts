@@ -527,6 +527,10 @@ export async function createHolidayAction(formData: FormData) {
     await assertWaka();
     const dateInput = formData.get("tanggal") as string;
     const keterangan = formData.get("keterangan") as string;
+    const rawJenjang = (formData.get("jenjang") as string) || "ALL";
+    const jenjang = ["ALL", "X", "XI", "XII"].includes(rawJenjang.toUpperCase())
+      ? rawJenjang.toUpperCase()
+      : "ALL";
 
     if (!dateInput || !keterangan) {
       return { error: "Tanggal dan Keterangan wajib diisi." };
@@ -538,16 +542,21 @@ export async function createHolidayAction(formData: FormData) {
       data: {
         tanggal,
         keterangan,
+        jenjang,
       },
     });
 
     revalidatePath("/kesiswaan");
     revalidatePath("/dashboard");
-    return { success: true, message: `Hari libur *${keterangan}* berhasil ditambahkan.` };
+    revalidatePath("/absensi");
+    revalidatePath("/rekap-absensi");
+    revalidatePath("/jadwal");
+    const jenjangLabel = jenjang === "ALL" ? "Semua Jenjang" : `Khusus Kelas ${jenjang}`;
+    return { success: true, message: `Hari libur *${keterangan}* (${jenjangLabel}) berhasil ditambahkan.` };
   } catch (error: any) {
     console.error("Create holiday error:", error);
     if (error.code === "P2002") {
-      return { error: "Tanggal libur tersebut sudah terdaftar." };
+      return { error: "Hari libur untuk tanggal dan jenjang tersebut sudah terdaftar." };
     }
     return { error: error.message || "Gagal menambahkan hari libur." };
   }
@@ -563,6 +572,9 @@ export async function deleteHolidayAction(holidayId: string) {
 
     revalidatePath("/kesiswaan");
     revalidatePath("/dashboard");
+    revalidatePath("/absensi");
+    revalidatePath("/rekap-absensi");
+    revalidatePath("/jadwal");
     return { success: true, message: `Hari libur *${deleted.keterangan}* berhasil dihapus.` };
   } catch (error: any) {
     console.error("Delete holiday error:", error);
@@ -974,6 +986,10 @@ export async function updateHolidayAction(holidayId: string, formData: FormData)
     await assertWaka();
     const dateInput = formData.get("tanggal") as string;
     const keterangan = formData.get("keterangan") as string;
+    const rawJenjang = (formData.get("jenjang") as string) || "ALL";
+    const jenjang = ["ALL", "X", "XI", "XII"].includes(rawJenjang.toUpperCase())
+      ? rawJenjang.toUpperCase()
+      : "ALL";
 
     if (!dateInput || !keterangan) {
       return { error: "Tanggal dan Keterangan wajib diisi." };
@@ -986,14 +1002,22 @@ export async function updateHolidayAction(holidayId: string, formData: FormData)
       data: {
         tanggal,
         keterangan,
+        jenjang,
       },
     });
 
     revalidatePath("/kesiswaan");
     revalidatePath("/dashboard");
-    return { success: true, message: `Hari libur *${keterangan}* berhasil diperbarui.` };
+    revalidatePath("/absensi");
+    revalidatePath("/rekap-absensi");
+    revalidatePath("/jadwal");
+    const jenjangLabel = jenjang === "ALL" ? "Semua Jenjang" : `Khusus Kelas ${jenjang}`;
+    return { success: true, message: `Hari libur *${keterangan}* (${jenjangLabel}) berhasil diperbarui.` };
   } catch (error: any) {
     console.error("Update holiday error:", error);
+    if (error.code === "P2002") {
+      return { error: "Hari libur untuk tanggal dan jenjang tersebut sudah terdaftar." };
+    }
     return { error: error.message || "Gagal memperbarui hari libur." };
   }
 }

@@ -22,6 +22,7 @@ import {
   UserX,
   Printer,
   Upload,
+  Calendar,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -211,6 +212,8 @@ interface TodayScheduleItem {
   jamSelesai: number;
   filled: boolean;
   jurnalId?: string;
+  isHoliday?: boolean;
+  holidayReason?: string;
 }
 
 interface PeriodItem {
@@ -2622,7 +2625,9 @@ export default function DashboardClient({
                           <div
                             key={sched.id}
                             className={`p-4 rounded-xl border flex flex-col justify-between min-h-[150px] ${
-                              sched.filled
+                              sched.isHoliday
+                                ? "bg-rose-500/5 border-rose-500/20"
+                                : sched.filled
                                 ? "bg-emerald-500/5 border-emerald-500/20"
                                 : "bg-slate-950/40 border-slate-800"
                             }`}
@@ -2634,15 +2639,22 @@ export default function DashboardClient({
                                 </span>
                                 <span
                                   className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold border ${
-                                    sched.filled
+                                    sched.isHoliday
+                                      ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                      : sched.filled
                                       ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                                       : "bg-amber-500/10 text-amber-400 border-amber-500/20"
                                   }`}
                                 >
-                                  {sched.filled ? "Selesai" : "Belum Diisi"}
+                                  {sched.isHoliday ? "Hari Libur" : sched.filled ? "Selesai" : "Belum Diisi"}
                                 </span>
                               </div>
                               <h4 className="text-sm font-bold text-white leading-tight mb-1">{sched.mapelNama}</h4>
+                              {sched.isHoliday && sched.holidayReason && (
+                                <p className="text-[11px] text-rose-400 font-medium mb-1 line-clamp-1" title={sched.holidayReason}>
+                                  {sched.holidayReason}
+                                </p>
+                              )}
                               <div className="text-slate-400 text-xs flex items-center gap-1">
                                 <Clock className="w-3.5 h-3.5 text-indigo-400" />
                                 <span>{getTimeStringDashboard(sched.hari, sched.jamMulai, sched.jamSelesai)}</span>
@@ -2650,7 +2662,20 @@ export default function DashboardClient({
                             </div>
 
                             <div className="pt-3 border-t border-slate-800/50 mt-3">
-                              {sched.filled ? (
+                              {sched.isHoliday ? (
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-rose-400 font-semibold flex items-center gap-1">
+                                    <Calendar className="w-3.5 h-3.5" />
+                                    Libur
+                                  </span>
+                                  <Link
+                                    href={`/jadwal/jurnal/isi?${sched.jurnalId ? `jurnalId=${sched.jurnalId}&` : ''}jadwalId=${sched.id}&tanggal=${todayWibStr}`}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold rounded-lg transition-all"
+                                  >
+                                    {sched.filled ? "Lihat Jurnal" : "Isi Jurnal (Opsional)"}
+                                  </Link>
+                                </div>
+                              ) : sched.filled ? (
                                 <div className="flex items-center justify-between gap-2">
                                   <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
                                     <Check className="w-3.5 h-3.5" />

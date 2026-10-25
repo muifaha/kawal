@@ -159,6 +159,7 @@ interface HolidayType {
   id: string;
   tanggal: Date;
   keterangan: string;
+  jenjang: string;
 }
 
 interface KesiswaanClientProps {
@@ -1949,6 +1950,21 @@ export default function KesiswaanClient({
                     className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Berlaku Untuk Jenjang
+                  </label>
+                  <select
+                    name="jenjang"
+                    defaultValue={editingHoliday?.jenjang || "ALL"}
+                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  >
+                    <option value="ALL">Semua Jenjang (Semua Kelas)</option>
+                    <option value="X">Khusus Kelas X Saja</option>
+                    <option value="XI">Khusus Kelas XI Saja</option>
+                    <option value="XII">Khusus Kelas XII Saja</option>
+                  </select>
+                </div>
                 <div className="flex gap-2">
                   <button
                     type="submit"
@@ -2033,13 +2049,35 @@ export default function KesiswaanClient({
                     >
                       <div>
                         <h4 className="font-semibold text-white text-sm">{h.keterangan}</h4>
-                        <p className="text-xs text-emerald-400 font-semibold mt-1">
-                          Tanggal: {new Date(h.tanggal).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <p className="text-xs text-emerald-400 font-semibold">
+                            Tanggal: {new Date(h.tanggal).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })}
+                          </p>
+                          {h.jenjang === "X" && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                              Khusus Kelas X
+                            </span>
+                          )}
+                          {h.jenjang === "XI" && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                              Khusus Kelas XI
+                            </span>
+                          )}
+                          {h.jenjang === "XII" && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                              Khusus Kelas XII
+                            </span>
+                          )}
+                          {(!h.jenjang || h.jenjang === "ALL") && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700/50">
+                              Semua Jenjang
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button

@@ -1,6 +1,7 @@
 import React from "react";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDateWib } from "@/lib/dateUtils";
 import SidebarLayout from "@/components/SidebarLayout";
 import { redirect } from "next/navigation";
 import JadwalClient from "./JadwalClient";
@@ -43,6 +44,21 @@ export default async function JadwalPage() {
       { jamKe: "asc" },
     ],
   });
+
+  const settingsList = await prisma.appSetting.findMany();
+  const settings: Record<string, string> = {};
+  settingsList.forEach((s) => {
+    settings[s.key] = s.value;
+  });
+
+  const dbHolidays = await prisma.hariLibur.findMany({
+    orderBy: { tanggal: "asc" },
+  });
+  const holidays = dbHolidays.map((h) => ({
+    date: formatDateWib(h.tanggal),
+    keterangan: h.keterangan,
+    jenjang: h.jenjang || "ALL",
+  }));
 
   // 2. Ambil data jadwal & jurnal sesuai hak akses
   let schedules: any[] = [];
@@ -186,6 +202,8 @@ export default async function JadwalPage() {
         initialSchedules={schedules}
         initialJournals={journals}
         todaySchedules={todaySchedules}
+        holidays={holidays}
+        settings={settings}
       />
     </SidebarLayout>
   );

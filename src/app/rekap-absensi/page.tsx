@@ -59,6 +59,7 @@ export default async function RekapAbsensiPage() {
   const holidays = dbHolidays.map((h) => ({
     date: formatDateWib(h.tanggal),
     keterangan: h.keterangan,
+    jenjang: h.jenjang || "ALL",
   }));
 
   return (

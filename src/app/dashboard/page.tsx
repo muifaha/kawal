@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
 import { calculateAttendanceRate } from "@/lib/attendanceUtils";
 import { getPrestasiListAction } from "@/app/actions/prestasi";
+import { checkClassHoliday } from "@/lib/holidayUtils";
 
 export const revalidate = 0; // Disable caching to ensure real-time statistics
 
@@ -314,7 +315,7 @@ export default async function DashboardPage() {
     const jsDay = dateObj.getUTCDay();
     const dayNumber = jsDay === 0 ? 7 : jsDay;
 
-    const [teacherSchedules, teacherJournalsToday, teacherClasses] = await Promise.all([
+    const [teacherSchedules, teacherJournalsToday, teacherClasses, teacherHolidays] = await Promise.all([
       prisma.jadwalPelajaran.findMany({
         where: { guruId: user.id, hari: dayNumber },
         include: { kelas: true, mapel: true },
@@ -330,10 +331,18 @@ export default async function DashboardPage() {
         select: { id: true, nama: true },
         orderBy: { nama: "asc" },
       }),
+      prisma.hariLibur.findMany(),
     ]);
+
+    const guruHolidays = teacherHolidays.map((h) => ({
+      date: formatDateWib(h.tanggal),
+      keterangan: h.keterangan,
+      jenjang: h.jenjang || "ALL",
+    }));
 
     const todaySchedules = teacherSchedules.map((s) => {
       const filledJournal = teacherJournalsToday.find((j) => j.jadwalId === s.id);
+      const holidayInfo = checkClassHoliday(todayStr, s.kelas.nama, guruHolidays, settings);
       return {
         id: s.id,
         kelasNama: s.kelas.nama,
@@ -343,6 +352,8 @@ export default async function DashboardPage() {
         jamSelesai: s.jamSelesai,
         filled: !!filledJournal,
         jurnalId: filledJournal?.id,
+        isHoliday: holidayInfo.isHoliday,
+        holidayReason: holidayInfo.name,
       };
     });
 
@@ -765,6 +776,7 @@ export default async function DashboardPage() {
     return {
       date: `${year}-${month}-${day}`,
       keterangan: h.keterangan,
+      jenjang: h.jenjang || "ALL",
     };
   });
 
@@ -1077,16 +1089,21 @@ export default async function DashboardPage() {
       orderBy: { jamMulai: "asc" },
     });
 
-    todaySchedules = rawTodaySchedules.map((s) => ({
-      id: s.id,
-      kelasNama: s.kelas.nama,
-      mapelNama: s.mapel.nama,
-      hari: s.hari,
-      jamMulai: s.jamMulai,
-      jamSelesai: s.jamSelesai,
-      filled: s.jurnal.length > 0,
-      jurnalId: s.jurnal.length > 0 ? s.jurnal[0].id : undefined,
-    }));
+    todaySchedules = rawTodaySchedules.map((s) => {
+      const holidayInfo = checkClassHoliday(todayStrForSched, s.kelas.nama, holidays, settings);
+      return {
+        id: s.id,
+        kelasNama: s.kelas.nama,
+        mapelNama: s.mapel.nama,
+        hari: s.hari,
+        jamMulai: s.jamMulai,
+        jamSelesai: s.jamSelesai,
+        filled: s.jurnal.length > 0,
+        jurnalId: s.jurnal.length > 0 ? s.jurnal[0].id : undefined,
+        isHoliday: holidayInfo.isHoliday,
+        holidayReason: holidayInfo.name,
+      };
+    });
 
     const rawTeacherJournals = await prisma.jurnalMengajar.findMany({
       where: { guruId: user.id },
@@ -1126,11 +1143,8 @@ export default async function DashboardPage() {
 
   const todayDayOfWeek = new Date(`${todayStr}T12:00:00Z`).getUTCDay();
   const isWeekend = (todayDayOfWeek === 6 && settings["libur_sabtu"] === "true") || (todayDayOfWeek === 0 && settings["libur_minggu"] !== "false");
-  const isHolidayToday = await prisma.hariLibur.findUnique({
-    where: { tanggal: targetDate },
-  });
 
-  if (!isWeekend && !isHolidayToday) {
+  if (!isWeekend) {
     let checkClassFilter: any = {
       tahunAjaran: { isActive: true },
     };
@@ -1174,7 +1188,13 @@ export default async function DashboardPage() {
       },
     });
 
-    const submittedClasses = classesWithAttendanceCounts
+    // Exclude classes that are on holiday today (all or jenjang specific)
+    const effectiveClasses = classesWithAttendanceCounts.filter((c) => {
+      const holidayCheck = checkClassHoliday(todayStr, c.nama, holidays, settings);
+      return !holidayCheck.isHoliday;
+    });
+
+    const submittedClasses = effectiveClasses
       .filter((c) => c.siswaKelas.length > 0)
       .map((c) => ({
         id: c.id,
@@ -1184,7 +1204,7 @@ export default async function DashboardPage() {
       }))
       .sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
 
-    classesNotSubmittedToday = classesWithAttendanceCounts
+    classesNotSubmittedToday = effectiveClasses
       .filter((c) => c.siswaKelas.length === 0)
       .map((c) => ({
         id: c.id,
@@ -1195,7 +1215,7 @@ export default async function DashboardPage() {
       .sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
 
     var attendanceCompleteness: any = {
-      totalClasses: classesWithAttendanceCounts.length,
+      totalClasses: effectiveClasses.length,
       submittedCount: submittedClasses.length,
       notSubmittedCount: classesNotSubmittedToday.length,
       submittedClasses,
@@ -1238,8 +1258,8 @@ export default async function DashboardPage() {
     const dayOfWeek = new Date(`${iterDateStr}T12:00:00Z`).getUTCDay();
 
     const isWeekendHoliday = (dayOfWeek === 6 && isSabtuLibur) || (dayOfWeek === 0 && isMingguLibur);
-    const isNationalHoliday = holidayDateSet.has(iterDateStr);
-    const isHoliday = isWeekendHoliday || isNationalHoliday;
+    const isAllHoliday = holidays.some((h) => h.date === iterDateStr && (!h.jenjang || h.jenjang === "ALL"));
+    const isHoliday = isWeekendHoliday || isAllHoliday;
 
     if (!isHoliday) {
       pastDatesToCheck.push(iterDateStr);
@@ -1288,7 +1308,12 @@ export default async function DashboardPage() {
       const recordedClassIds = dateToClassMap.get(dateStrItem) || new Set<string>();
 
       const missingClasses = allActiveClassesPast
-        .filter((c) => !recordedClassIds.has(c.id))
+        .filter((c) => {
+          if (recordedClassIds.has(c.id)) return false;
+          const holidayCheck = checkClassHoliday(dateStrItem, c.nama, holidays, settings);
+          if (holidayCheck.isHoliday) return false;
+          return true;
+        })
         .map((c) => ({
           id: c.id,
           nama: c.nama,

@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useTransition } from "react";
+import React, { useState, useEffect, useTransition, useMemo } from "react";
 import {
   getMonthlyAttendanceMatrixAction,
   getSemesterAttendanceMatrixAction,
 } from "@/app/actions/attendance";
 import { CalendarCheck, RefreshCw } from "lucide-react";
 import { formatPoin } from "@/lib/attendanceUtils";
+import { checkClassHoliday } from "@/lib/holidayUtils";
 
 interface ClassOption {
   id: string;
@@ -16,6 +17,7 @@ interface ClassOption {
 interface HolidayItem {
   date: string;
   keterangan: string;
+  jenjang?: string | null;
 }
 
 interface RekapAbsensiClientProps {
@@ -108,25 +110,13 @@ export default function RekapAbsensiClient({
     });
   }, [selectedClassId, matrixMode, selectedMonth, selectedSemester, selectedYear]);
 
+  const selectedClass = useMemo(() => {
+    return classes.find((c) => c.id === selectedClassId);
+  }, [classes, selectedClassId]);
+
   // Check Holiday Info
   const getHolidayInfo = (dateStr: string) => {
-    const holidayMatch = holidays.find((h) => h.date === dateStr);
-    if (holidayMatch) {
-      return { isHoliday: true, name: holidayMatch.keterangan };
-    }
-
-    const dayOfWeek = new Date(`${dateStr}T12:00:00Z`).getUTCDay();
-    const isSabtuLibur = settings?.libur_sabtu === "true";
-    const isMingguLibur = settings?.libur_minggu !== "false";
-
-    if (dayOfWeek === 6 && isSabtuLibur) {
-      return { isHoliday: true, name: "Libur Akhir Pekan (Sabtu)" };
-    }
-    if (dayOfWeek === 0 && isMingguLibur) {
-      return { isHoliday: true, name: "Libur Akhir Pekan (Minggu)" };
-    }
-
-    return { isHoliday: false, name: "" };
+    return checkClassHoliday(dateStr, selectedClass?.nama, holidays, settings);
   };
 
   const showPoinColumn = userRole !== "SEKRETARIS" && userRole !== "WALAS";

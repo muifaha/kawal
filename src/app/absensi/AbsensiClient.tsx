@@ -5,6 +5,7 @@ import { getTodayWibStr } from "@/lib/dateUtils";
 import { saveAttendanceAction, getAttendanceAction } from "@/app/actions/attendance";
 import { AlertCircle, CalendarCheck, CheckCircle, Keyboard, Lock, Pencil, Save, Search, X } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import { checkClassHoliday } from "@/lib/holidayUtils";
 
 interface Siswa {
   id: string;
@@ -21,6 +22,7 @@ interface KelasWithSiswa {
 interface HolidayItem {
   date: string;
   keterangan: string;
+  jenjang?: string | null;
 }
 
 interface AbsensiClientProps {
@@ -70,25 +72,10 @@ export default function AbsensiClient({
   const [isEditUnlocked, setIsEditUnlocked] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const checkIfHoliday = useCallback((dateStr: string) => {
-    const holiday = holidays.find((h) => h.date === dateStr);
-    if (holiday) {
-      return { isHoliday: true, name: holiday.keterangan };
-    }
-
-    const dateObj = new Date(dateStr);
-    const day = dateObj.getDay();
-    if (day === 6 && settings.libur_sabtu === "true") {
-      return { isHoliday: true, name: "Hari Sabtu (Libur Akhir Pekan)" };
-    }
-    if (day === 0 && settings.libur_minggu !== "false") {
-      return { isHoliday: true, name: "Hari Minggu (Libur Akhir Pekan)" };
-    }
-    return { isHoliday: false, name: "" };
-  }, [holidays, settings]);
-
-  const holidayInfo = checkIfHoliday(selectedDate);
   const selectedClass = classes.find((c) => c.id === selectedClassId);
+  const holidayInfo = useMemo(() => {
+    return checkClassHoliday(selectedDate, selectedClass?.nama, holidays, settings);
+  }, [selectedDate, selectedClass?.nama, holidays, settings]);
   const students = selectedClass?.siswa || [];
   const [searchQuery, setSearchQuery] = useState("");
 
