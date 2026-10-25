@@ -7,10 +7,11 @@ import { revalidatePath } from "next/cache";
 import fs from "fs";
 import path from "path";
 import { getUploadDir } from "@/lib/uploadHelper";
+import { isPrestasiRemisi } from "@/lib/remisiUtils";
 
 /**
  * Menerapkan remisi kondisional manual ke siswa (misal Bawa Pohon).
- * Mengurangi poin berdasarkan persentase dari poin berjalan saat ini.
+ * Mengurangi poin berdasarkan persentase atau poin tetap dari poin berjalan saat ini.
  */
 export async function applyConditionalRemisiAction(
   studentId: string,
@@ -35,6 +36,14 @@ export async function applyConditionalRemisiAction(
 
     if (!masterRemisi || masterRemisi.isActive === false) {
       return { error: "Jenis remisi tidak aktif atau tidak ditemukan." };
+    }
+
+    // 1b. Remisi prestasi tidak dapat dilakukan secara manual oleh BK
+    if (isPrestasiRemisi(masterRemisi.nama)) {
+      return {
+        error:
+          "Remisi prestasi tidak dapat dilakukan secara manual oleh BK. Remisi prestasi diproses otomatis saat input prestasi siswa atau silakan hubungi Admin.",
+      };
     }
 
     // 2. Dapatkan data siswa dan hitung poin berjalan saat ini

@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition } from "react";
 import { applyConditionalRemisiAction, runAutomaticRemissionAction } from "@/app/actions/remisi";
+import { isPrestasiRemisi } from "@/lib/remisiUtils";
 import { AlertCircle, CheckCircle, Sparkles, User, Calendar, Search, X, Paperclip, ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/Toast";
 
@@ -76,11 +77,23 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
   const selectedClass = classes.find((c) => c.id === selectedClassId);
   const students = selectedClass?.siswa || [];
 
+  // Cek apakah jenis remisi yang dipilih adalah remisi prestasi
+  const selectedRemisi = masterRemisiList.find((mr) => mr.id === selectedRemisiId);
+  const isSelectedPrestasi = selectedRemisi ? isPrestasiRemisi(selectedRemisi.nama) : false;
+
   // Berikan Remisi Kondisional Manual
   const handleApplyRemisi = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudentId || !selectedRemisiId) {
       setAlert({ type: "error", message: "Siswa dan jenis remisi wajib dipilih." });
+      return;
+    }
+
+    if (isSelectedPrestasi) {
+      setAlert({
+        type: "error",
+        message: "Remisi prestasi harus menghubungi admin. Pengurangan poin prestasi diproses melalui modul Prestasi Siswa.",
+      });
       return;
     }
 
@@ -273,17 +286,42 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
                 <select
                   value={selectedRemisiId}
                   onChange={(e) => setSelectedRemisiId(e.target.value)}
-                  className="w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className={`w-full py-2.5 px-3 border rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 ${
+                    isSelectedPrestasi
+                      ? "border-amber-500/80 focus:ring-amber-500"
+                      : "border-slate-800 focus:ring-emerald-500"
+                  }`}
                 >
                   <option value="">-- Pilih Jenis Remisi --</option>
                   {masterRemisiList
                     .filter((mr) => mr.isActive !== false)
-                    .map((mr) => (
-                      <option key={mr.id} value={mr.id}>
-                        {mr.nama} ({mr.tipePengurangan === "POIN_TETAP" ? `-${mr.poinPengurangan || 0} Poin` : `Potongan ${mr.persentasePengurangan}% Poin`})
-                      </option>
-                    ))}
+                    .map((mr) => {
+                      const isPrestasi = isPrestasiRemisi(mr.nama);
+                      return (
+                        <option key={mr.id} value={mr.id}>
+                          {mr.nama}{" "}
+                          {isPrestasi
+                            ? "⚠️ (Khusus Prestasi - Hubungi Admin)"
+                            : mr.tipePengurangan === "POIN_TETAP"
+                            ? `(-${mr.poinPengurangan || 0} Poin)`
+                            : `(Potongan ${mr.persentasePengurangan}% Poin)`}
+                        </option>
+                      );
+                    })}
                 </select>
+
+                {/* Notifikasi jika memilih Remisi Prestasi */}
+                {isSelectedPrestasi && (
+                  <div className="mt-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/40 flex items-start gap-2.5 text-xs text-amber-300">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-bold text-amber-400">Pemberitahuan: Remisi Prestasi Harus Menghubungi Admin</p>
+                      <p className="text-amber-200/90 leading-relaxed text-[11px]">
+                        Guru BK tidak dapat melakukan pemotongan poin remisi prestasi secara manual di sini. Pengurangan poin prestasi diterapkan secara otomatis saat data kejuaraan siswa dicatat pada menu <strong>Prestasi Siswa</strong>, atau silakan hubungi <strong>Admin / Waka Kesiswaan</strong>.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Upload Bukti Remisi */}
@@ -335,10 +373,18 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isPending || !selectedStudentId || !selectedRemisiId}
-                className="w-full py-3 px-4 border border-transparent rounded-xl text-sm font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                disabled={isPending || !selectedStudentId || !selectedRemisiId || isSelectedPrestasi}
+                className={`w-full py-3 px-4 border rounded-xl text-sm font-bold transition-all ${
+                  isSelectedPrestasi
+                    ? "bg-amber-500/20 text-amber-300 border-amber-500/30 cursor-not-allowed opacity-90"
+                    : "border-transparent text-emerald-950 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                }`}
               >
-                {isPending ? "Memproses Remisi..." : "Berikan Remisi"}
+                {isPending
+                  ? "Memproses Remisi..."
+                  : isSelectedPrestasi
+                  ? "⚠️ Remisi Prestasi Harus Hubungi Admin"
+                  : "Berikan Remisi"}
               </button>
             </form>
           </div>
