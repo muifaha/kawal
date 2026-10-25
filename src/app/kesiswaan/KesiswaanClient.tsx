@@ -31,6 +31,7 @@ import {
   updateCategoryAction,
   deleteCategoryAction,
   toggleDetailPelanggaranActiveAction,
+  toggleMasterRemisiActiveAction,
   duplicateClassStructureAction,
   graduateClassStudentsAction,
   saveSettingsAction,
@@ -147,6 +148,7 @@ interface RemissionType {
   id: string;
   nama: string;
   persentasePengurangan: number;
+  isActive?: boolean;
 }
 
 interface HolidayType {
@@ -726,6 +728,14 @@ export default function KesiswaanClient({
     setAlert(null);
     startTransition(async () => {
       const res = await deleteRemissionItemAction(id);
+      handleAlert(res);
+    });
+  };
+
+  const handleToggleActiveRemission = async (id: string) => {
+    setAlert(null);
+    startTransition(async () => {
+      const res = await toggleMasterRemisiActiveAction(id);
       handleAlert(res);
     });
   };
@@ -1777,41 +1787,74 @@ export default function KesiswaanClient({
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
-                  <th className="py-3.5 px-4 w-2/3">Nama Aksi Remisi</th>
-                  <th className="py-3.5 px-4">Persentase Pengurangan Poin</th>
-                  <th className="py-3.5 px-4 text-center w-28">Aksi</th>
+                  <th className="py-3.5 px-4">Nama Aksi Remisi</th>
+                  <th className="py-3.5 px-4 w-48">Persentase Pengurangan</th>
+                  <th className="py-3.5 px-4 text-center w-28">Status</th>
+                  <th className="py-3.5 px-4 text-center w-32">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
                 {initialRemissions.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-500">Belum ada data jenis remisi.</td>
+                    <td colSpan={5} className="py-8 text-center text-slate-500">Belum ada data jenis remisi.</td>
                   </tr>
                 ) : (
                   (() => {
                     const paginatedRemissions = pageSize === 99999 ? initialRemissions : initialRemissions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
                     return paginatedRemissions.map((r, index) => {
                       const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
+                      const isActive = (r as any).isActive !== false;
                       return (
                         <tr key={r.id} className="hover:bg-slate-900/25 transition-all">
                           <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
-                          <td className="py-3 px-4 font-semibold text-white">{r.nama}</td>
+                          <td className="py-3 px-4 font-semibold text-white">
+                            {r.nama}
+                            {!isActive && (
+                              <span className="ml-2 text-[10px] text-slate-500 italic">(Disembunyikan dari pilihan BK)</span>
+                            )}
+                          </td>
                           <td className="py-3 px-4 text-emerald-400 font-bold">{r.persentasePengurangan}% Poin</td>
                           <td className="py-3 px-4 text-center">
+                            {isActive ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Aktif
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                                Non-Aktif
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
                             <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => handleToggleActiveRemission(r.id)}
+                                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                                  isActive
+                                    ? "text-emerald-400 hover:bg-emerald-500/10"
+                                    : "text-slate-500 hover:bg-slate-800"
+                                }`}
+                                title={isActive ? "Non-aktifkan (Sembunyikan dari pilihan dropdown BK)" : "Aktifkan jenis remisi ini"}
+                              >
+                                {isActive ? (
+                                  <ToggleRight className="w-4 h-4 text-emerald-400" />
+                                ) : (
+                                  <ToggleLeft className="w-4 h-4 text-slate-500" />
+                                )}
+                              </button>
                               <button
                                 onClick={() => {
                                   setEditingRemission(r);
                                   setShowRemissionModal(true);
                                 }}
-                                className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                                className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all cursor-pointer"
                                 title="Edit Remisi"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDeleteRemission(r.id, r.nama)}
-                                className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                                className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all cursor-pointer"
                                 title="Hapus Remisi"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />

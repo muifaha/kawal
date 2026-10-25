@@ -21,6 +21,7 @@ interface MasterRemisi {
   id: string;
   nama: string;
   persentasePengurangan: number;
+  isActive?: boolean;
 }
 
 interface RemisiHistoryItem {
@@ -271,11 +272,13 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
                   className="w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="">-- Pilih Jenis Remisi --</option>
-                  {masterRemisiList.map((mr) => (
-                    <option key={mr.id} value={mr.id}>
-                      {mr.nama} (Potongan {mr.persentasePengurangan}% Poin)
-                    </option>
-                  ))}
+                  {masterRemisiList
+                    .filter((mr) => mr.isActive !== false)
+                    .map((mr) => (
+                      <option key={mr.id} value={mr.id}>
+                        {mr.nama} (Potongan {mr.persentasePengurangan}% Poin)
+                      </option>
+                    ))}
                 </select>
               </div>
 

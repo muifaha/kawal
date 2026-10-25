@@ -457,6 +457,38 @@ export async function deleteRemissionItemAction(remissionId: string) {
   }
 }
 
+export async function toggleMasterRemisiActiveAction(remissionId: string) {
+  try {
+    await assertWaka();
+
+    const existing = await prisma.masterRemisi.findUnique({
+      where: { id: remissionId },
+    });
+    if (!existing) {
+      return { error: "Jenis remisi tidak ditemukan." };
+    }
+
+    const updated = await prisma.masterRemisi.update({
+      where: { id: remissionId },
+      data: { isActive: !existing.isActive },
+    });
+
+    revalidatePath("/kesiswaan");
+    revalidatePath("/remisi");
+    revalidatePath("/dashboard");
+
+    const statusText = updated.isActive ? "diaktifkan" : "dinonaktifkan";
+    return {
+      success: true,
+      message: `Jenis remisi *${updated.nama}* berhasil ${statusText}.`,
+      isActive: updated.isActive,
+    };
+  } catch (error: any) {
+    console.error("Toggle master remisi active error:", error);
+    return { error: error.message || "Gagal mengubah status jenis remisi." };
+  }
+}
+
 // ==========================================
 // 6. MANAJEMEN HARI LIBUR
 // ==========================================

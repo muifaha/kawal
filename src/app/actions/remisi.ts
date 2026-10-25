@@ -32,8 +32,8 @@ export async function applyConditionalRemisiAction(
       where: { id: masterRemisiId },
     });
 
-    if (!masterRemisi) {
-      return { error: "Jenis remisi tidak ditemukan." };
+    if (!masterRemisi || masterRemisi.isActive === false) {
+      return { error: "Jenis remisi tidak aktif atau tidak ditemukan." };
     }
 
     // 2. Dapatkan data siswa dan hitung poin berjalan saat ini

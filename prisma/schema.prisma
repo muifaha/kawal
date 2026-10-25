@@ -262,6 +262,7 @@ model MasterRemisi {
   id                    String            @id @default(uuid())
   nama                  String            @unique // Contoh: Bawa Pohon
   persentasePengurangan Int               // Contoh: 10 (artinya 10%)
+  isActive              Boolean           @default(true)
   transaksi             TransaksiRemisi[]
 }
 
