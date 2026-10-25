@@ -186,9 +186,14 @@ export default function WakaAnalyticsCharts({
 
   // ==================== 2. DATA PELANGGARAN BERDASARKAN JENIS ====================
   const violationStats = useMemo(() => {
-    // Filter pelanggaran sah (bukan REMISI atau PENANGANAN)
+    // Filter pelanggaran sah (bukan REMISI, PENANGANAN, dan kecualikan Data Migrasi)
     let validList = violationRecap.filter(
-      (v) => v.status === "APPROVED" && v.kategoriNama !== "REMISI" && v.kategoriNama !== "PENANGANAN"
+      (v) =>
+        v.status === "APPROVED" &&
+        v.kategoriNama !== "REMISI" &&
+        v.kategoriNama !== "PENANGANAN" &&
+        !v.kategoriNama?.toUpperCase().includes("MIGRASI") &&
+        !v.violationName?.toUpperCase().includes("MIGRASI")
     );
 
     if (cutoffDate) {
@@ -260,11 +265,8 @@ export default function WakaAnalyticsCharts({
       {/* HEADER SECTION ANALISIS EKSEKUTIF */}
       <div className="bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
-            <span>Grafik Kehadiran & Pelanggaran</span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              Dashboard Waka
-            </span>
+          <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+            Grafik Kehadiran & Pelanggaran
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
             Pantau tingkat kehadiran dan distribusi pelanggaran siswa berdasarkan jenisnya.
@@ -645,9 +647,6 @@ export default function WakaAnalyticsCharts({
                             <div className="flex items-center gap-2 shrink-0">
                               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/20">
                                 {cat.count} Kasus ({cat.percentage}%)
-                              </span>
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                                {cat.points} Pts
                               </span>
                             </div>
                           </div>
