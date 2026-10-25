@@ -284,9 +284,13 @@ export async function processAutomaticRemissions(options?: { forceRun?: boolean;
     revalidatePath("/pelanggaran");
   }
 
+  const ruleDesc = autoRemisi?.tipePengurangan === "POIN_TETAP"
+    ? `sebesar ${autoRemisi.poinPengurangan || 5} poin`
+    : `sebesar ${(autoRemisi?.persentasePengurangan ?? 10)}%`;
+
   return {
     success: true,
-    message: `Pengecekan remisi otomatis selesai. ${processedCount} siswa berhasil menerima pengurangan poin 10% (karena bersih dari pelanggaran selama 30 hari).`,
+    message: `Pengecekan remisi otomatis selesai. ${processedCount} siswa berhasil menerima pengurangan poin ${ruleDesc} (karena bersih dari pelanggaran selama ${durationDays} hari).`,
     processedCount,
   };
 }
