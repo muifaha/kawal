@@ -60,6 +60,7 @@ import { formatPoin } from "@/lib/attendanceUtils";
 import { toggleCensorViolationAction } from "@/app/actions/violation";
 import { calculateAttendanceRate } from "@/lib/attendanceUtils";
 import * as XLSX from "xlsx";
+import WakaAnalyticsCharts from "./WakaAnalyticsCharts";
 
 interface UserInfo {
   id: string;
@@ -108,7 +109,7 @@ interface StudentRanking {
   points: number;
 }
 
-interface AttendanceRecapItem {
+export interface AttendanceRecapItem {
   studentId: string;
   nama: string;
   nis: string;
@@ -122,7 +123,7 @@ interface AttendanceRecapItem {
   netPoints?: number;
 }
 
-interface ViolationRecapItem {
+export interface ViolationRecapItem {
   id: string;
   studentName: string;
   studentNis: string;
@@ -137,7 +138,7 @@ interface ViolationRecapItem {
   isCensored: boolean;
 }
 
-interface DailyAttendanceItem {
+export interface DailyAttendanceItem {
   studentId: string;
   date: string;
   status: string;
@@ -2572,6 +2573,17 @@ export default function DashboardClient({
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Dashboard Grafik & Analisis Eksekutif khusus WAKA */}
+          {user.role === "WAKA" && (
+            <WakaAnalyticsCharts
+              attendanceRecap={attendanceRecap}
+              dailyAttendance={dailyAttendance}
+              violationRecap={violationRecap}
+              classes={classes}
+              totalSiswa={stats.totalSiswa}
+            />
           )}
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
