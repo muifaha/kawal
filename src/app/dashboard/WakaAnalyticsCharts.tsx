@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from "react";
 import {
-  BarChart3,
   PieChart,
   TrendingUp,
   AlertTriangle,
@@ -259,22 +258,17 @@ export default function WakaAnalyticsCharts({
   return (
     <div className="space-y-6">
       {/* HEADER SECTION ANALISIS EKSEKUTIF */}
-      <div className="bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-            <BarChart3 className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
-              <span>Analisis Visual Kehadiran & Pelanggaran</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                Dashboard Waka
-              </span>
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Grafik terpadu pemantauan tingkat kehadiran dan distribusi pelanggaran siswa berdasarkan jenisnya.
-            </p>
-          </div>
+      <div className="bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            <span>Grafik Kehadiran & Pelanggaran</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              Dashboard Waka
+            </span>
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Pantau tingkat kehadiran dan distribusi pelanggaran siswa berdasarkan jenisnya.
+          </p>
         </div>
 
         {/* Filter Rentang Waktu */}
@@ -284,7 +278,7 @@ export default function WakaAnalyticsCharts({
             onClick={() => setTimeFilter("all")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               timeFilter === "all"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                ? "bg-indigo-600 text-white"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -295,7 +289,7 @@ export default function WakaAnalyticsCharts({
             onClick={() => setTimeFilter("30d")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               timeFilter === "30d"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                ? "bg-indigo-600 text-white"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -306,7 +300,7 @@ export default function WakaAnalyticsCharts({
             onClick={() => setTimeFilter("7d")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               timeFilter === "7d"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                ? "bg-indigo-600 text-white"
                 : "text-slate-400 hover:text-white"
             }`}
           >
