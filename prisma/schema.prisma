@@ -263,6 +263,8 @@ model MasterRemisi {
   nama                  String            @unique // Contoh: Bawa Pohon
   persentasePengurangan Int               // Contoh: 10 (artinya 10%)
   isActive              Boolean           @default(true)
+  jenis                 String            @default("KONDISIONAL") // "KONDISIONAL" atau "OTOMATIS"
+  hariTanpaPelanggaran  Int?              @default(30) // Masa bersih pelanggaran untuk remisi otomatis
   transaksi             TransaksiRemisi[]
 }
 

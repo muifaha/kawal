@@ -135,6 +135,25 @@ export async function processAutomaticRemissions(options?: { forceRun?: boolean;
     }
   }
 
+  // Dapatkan konfigurasi Master Remisi Otomatis dari database
+  const autoRemisi = await prisma.masterRemisi.findFirst({
+    where: { jenis: "OTOMATIS" },
+  });
+
+  // Jika aturan remisi otomatis dinonaktifkan oleh admin, catat pemeriksaan dan hentikan eksekusi
+  if (autoRemisi && autoRemisi.isActive === false) {
+    await prisma.appSetting.upsert({
+      where: { key: "last_automatic_remission_check" },
+      update: { value: todayStr },
+      create: { key: "last_automatic_remission_check", value: todayStr },
+    });
+    return { success: true, processedCount: 0, message: "Remisi otomatis sedang dinonaktifkan." };
+  }
+
+  const durationDays = autoRemisi?.hariTanpaPelanggaran && autoRemisi.hariTanpaPelanggaran > 0 ? autoRemisi.hariTanpaPelanggaran : 30;
+  const reductionPercent = (autoRemisi?.persentasePengurangan ?? 10) / 100;
+  const autoRemisiId = autoRemisi?.id || null;
+
   // 2. Ambil seluruh siswa aktif yang memiliki sekurang-kurangnya 1 pelanggaran APPROVED
   const activeStudents = await prisma.siswa.findMany({
     where: {
@@ -203,14 +222,14 @@ export async function processAutomaticRemissions(options?: { forceRun?: boolean;
     let currentBaseline = lastViolationDate > lastRemissionDate ? lastViolationDate : lastRemissionDate;
     let runningPoints = currentPoints;
 
-    // Iterasi per kelipatan 30 hari yang sudah lengkap terlewat hingga hari ini
+    // Iterasi per siklus masa bersih pelanggaran (misal tiap 30 hari) yang sudah lengkap terlewat
     while (runningPoints > 0) {
-      const nextTargetDate = new Date(currentBaseline.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const nextTargetDate = new Date(currentBaseline.getTime() + durationDays * 24 * 60 * 60 * 1000);
       if (nextTargetDate > today) {
         break;
       }
 
-      const pointsToReduce = Math.max(0.1, Math.round(runningPoints * 0.1 * 100) / 100);
+      const pointsToReduce = Math.max(0.1, Math.round(runningPoints * reductionPercent * 100) / 100);
       const actualDeduction = Math.min(runningPoints, pointsToReduce);
 
       transactions.push(
@@ -218,6 +237,7 @@ export async function processAutomaticRemissions(options?: { forceRun?: boolean;
           data: {
             siswaId: student.id,
             jenis: "OTOMATIS",
+            masterRemisiId: autoRemisiId,
             poinDikurangi: actualDeduction,
             tanggal: nextTargetDate,
             ...(options?.approverId ? { approverId: options.approverId } : {}),

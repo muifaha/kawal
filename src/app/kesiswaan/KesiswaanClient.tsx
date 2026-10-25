@@ -149,6 +149,8 @@ interface RemissionType {
   nama: string;
   persentasePengurangan: number;
   isActive?: boolean;
+  jenis?: string;
+  hariTanpaPelanggaran?: number | null;
 }
 
 interface HolidayType {
@@ -226,6 +228,7 @@ export default function KesiswaanClient({
   const [showSiswaModal, setShowSiswaModal] = useState(false);
   const [showViolationModal, setShowViolationModal] = useState(false);
   const [showRemissionModal, setShowRemissionModal] = useState(false);
+  const [modalRemisiJenis, setModalRemisiJenis] = useState<string>("KONDISIONAL");
 
   // Bulk Selection States
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -1751,6 +1754,7 @@ export default function KesiswaanClient({
               <button
                 onClick={() => {
                   setEditingRemission(null);
+                  setModalRemisiJenis("KONDISIONAL");
                   setShowRemissionModal(true);
                 }}
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all cursor-pointer"
@@ -1767,8 +1771,9 @@ export default function KesiswaanClient({
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
-                  <th className="py-3.5 px-4">Nama Aksi Remisi</th>
-                  <th className="py-3.5 px-4 w-48">Persentase Pengurangan</th>
+                  <th className="py-3.5 px-4">Nama Aksi / Aturan Remisi</th>
+                  <th className="py-3.5 px-4 w-44">Tipe & Siklus</th>
+                  <th className="py-3.5 px-4 w-36">Pengurangan</th>
                   <th className="py-3.5 px-4 text-center w-28">Status</th>
                   <th className="py-3.5 px-4 text-center w-32">Aksi</th>
                 </tr>
@@ -1776,7 +1781,7 @@ export default function KesiswaanClient({
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
                 {initialRemissions.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-500">Belum ada data jenis remisi.</td>
+                    <td colSpan={6} className="py-8 text-center text-slate-500">Belum ada data jenis remisi.</td>
                   </tr>
                 ) : (
                   (() => {
@@ -1789,13 +1794,32 @@ export default function KesiswaanClient({
                     return paginatedRemissions.map((r, index) => {
                       const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
                       const isActive = (r as any).isActive !== false;
+                      const isOtomatis = r.jenis === "OTOMATIS";
                       return (
                         <tr key={r.id} className="hover:bg-slate-900/25 transition-all">
                           <td className="py-3 px-4 text-center text-slate-500 font-medium">{absoluteIndex}</td>
-                          <td className="py-3 px-4 font-semibold text-white">
-                            {r.nama}
+                          <td className="py-3 px-4">
+                            <div className="font-semibold text-white flex items-center gap-2">
+                              {r.nama}
+                              {isOtomatis && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                                  Sistem Otomatis
+                                </span>
+                              )}
+                            </div>
                             {!isActive && (
-                              <span className="ml-2 text-[10px] text-slate-500 italic">(Disembunyikan dari pilihan BK)</span>
+                              <p className="text-[10px] text-slate-500 italic mt-0.5">
+                                {isOtomatis ? "(Eksekusi pemotongan otomatis dinonaktifkan)" : "(Disembunyikan dari pilihan BK)"}
+                              </p>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-xs">
+                            {isOtomatis ? (
+                              <span className="text-purple-300 font-medium">
+                                Tiap <strong>{r.hariTanpaPelanggaran || 30} Hari</strong> Bersih
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">Tindakan BK</span>
                             )}
                           </td>
                           <td className="py-3 px-4 text-emerald-400 font-bold">{r.persentasePengurangan}% Poin</td>
@@ -1819,7 +1843,15 @@ export default function KesiswaanClient({
                                     ? "text-emerald-400 hover:bg-emerald-500/10"
                                     : "text-slate-500 hover:bg-slate-800"
                                 }`}
-                                title={isActive ? "Non-aktifkan (Sembunyikan dari pilihan dropdown BK)" : "Aktifkan jenis remisi ini"}
+                                title={
+                                  isOtomatis
+                                    ? isActive
+                                      ? "Non-aktifkan eksekusi remisi otomatis"
+                                      : "Aktifkan eksekusi remisi otomatis"
+                                    : isActive
+                                      ? "Non-aktifkan (Sembunyikan dari pilihan dropdown BK)"
+                                      : "Aktifkan jenis remisi ini"
+                                }
                               >
                                 {isActive ? (
                                   <ToggleRight className="w-4 h-4 text-emerald-400" />
@@ -1830,20 +1862,30 @@ export default function KesiswaanClient({
                               <button
                                 onClick={() => {
                                   setEditingRemission(r);
+                                  setModalRemisiJenis(r.jenis || "KONDISIONAL");
                                   setShowRemissionModal(true);
                                 }}
                                 className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all cursor-pointer"
-                                title="Edit Remisi"
+                                title="Edit Aturan Remisi"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
-                              <button
-                                onClick={() => handleDeleteRemission(r.id, r.nama)}
-                                className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all cursor-pointer"
-                                title="Hapus Remisi"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              {isOtomatis ? (
+                                <span
+                                  className="p-1.5 text-slate-600 rounded-lg cursor-not-allowed"
+                                  title="Remisi otomatis bawaan sistem tidak dapat dihapus, cukup nonaktifkan"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 opacity-30" />
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => handleDeleteRemission(r.id, r.nama)}
+                                  className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all cursor-pointer"
+                                  title="Hapus Remisi"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -2771,24 +2813,109 @@ export default function KesiswaanClient({
             <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 {editingRemission ? <Pencil className="w-4 h-4 text-emerald-400" /> : <PlusCircle className="w-4 h-4 text-emerald-400" />}
-                {editingRemission ? "Edit Kategori Remisi" : "Tambah Kategori Remisi Baru"}
+                {editingRemission
+                  ? editingRemission.jenis === "OTOMATIS"
+                    ? "Edit Konfigurasi Remisi Otomatis"
+                    : "Edit Kategori Remisi"
+                  : "Tambah Kategori Remisi Baru"}
               </h3>
               <button onClick={() => { setShowRemissionModal(false); setEditingRemission(null); }} className="text-slate-400 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form key={editingRemission ? editingRemission.id : "new"} onSubmit={handleRemissionSubmit} className="p-6 space-y-4">
+            <form key={editingRemission ? `${editingRemission.id}-${modalRemisiJenis}` : `new-${modalRemisiJenis}`} onSubmit={handleRemissionSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nama Aksi Remisi</label>
-                <input required name="nama" type="text" defaultValue={editingRemission?.nama || ""} placeholder="Contoh: Membawa pohon pot" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Tipe Remisi</label>
+                <select
+                  name="jenis"
+                  value={modalRemisiJenis}
+                  onChange={(e) => setModalRemisiJenis(e.target.value)}
+                  disabled={editingRemission?.jenis === "OTOMATIS"}
+                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <option value="KONDISIONAL">Kondisional (Tindakan Manual Guru BK)</option>
+                  <option value="OTOMATIS">Otomatis (Evaluasi Bersih Pelanggaran)</option>
+                </select>
+                {editingRemission?.jenis === "OTOMATIS" && (
+                  <input type="hidden" name="jenis" value="OTOMATIS" />
+                )}
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nama Aksi / Aturan Remisi</label>
+                <input
+                  required
+                  name="nama"
+                  type="text"
+                  defaultValue={
+                    editingRemission?.nama ||
+                    (modalRemisiJenis === "OTOMATIS" ? "Remisi Otomatis (Bersih Pelanggaran)" : "")
+                  }
+                  placeholder={
+                    modalRemisiJenis === "OTOMATIS"
+                      ? "Contoh: Remisi Otomatis (Bersih Pelanggaran)"
+                      : "Contoh: Membawa pohon pot"
+                  }
+                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+                />
+              </div>
+
+              {modalRemisiJenis === "OTOMATIS" && (
+                <div>
+                  <label className="block text-xs font-semibold text-purple-300 uppercase tracking-wider mb-2">
+                    Masa Bersih / Bebas Pelanggaran (Hari)
+                  </label>
+                  <input
+                    required
+                    name="hariTanpaPelanggaran"
+                    type="number"
+                    min="1"
+                    max="365"
+                    defaultValue={editingRemission?.hariTanpaPelanggaran || 30}
+                    placeholder="Contoh: 30"
+                    className="block w-full py-2.5 px-3 border border-purple-500/30 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-xs"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Sistem otomatis akan memotong poin siswa jika selama rentang hari ini siswa tidak memiliki catatan pelanggaran baru.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Persentase Pengurangan Poin (%)</label>
-                <input required name="persentase" type="number" min="1" max="100" defaultValue={editingRemission?.persentasePengurangan || ""} placeholder="Contoh: 15 (artinya potong 15%)" className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+                <input
+                  required
+                  name="persentase"
+                  type="number"
+                  min="1"
+                  max="100"
+                  defaultValue={
+                    editingRemission?.persentasePengurangan ??
+                    (modalRemisiJenis === "OTOMATIS" ? 10 : "")
+                  }
+                  placeholder="Contoh: 10 (artinya potong 10%)"
+                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+                />
               </div>
+
               <div className="flex gap-2 pt-2">
-                <button type="submit" disabled={isPending} className="flex-1 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all text-xs cursor-pointer">{isPending ? "Memproses..." : editingRemission ? "Simpan Perubahan" : "Tambahkan Remisi"}</button>
-                <button type="button" onClick={() => { setShowRemissionModal(false); setEditingRemission(null); }} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all text-xs cursor-pointer">Batal</button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="flex-1 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-emerald-950 py-3 rounded-xl font-bold transition-all text-xs cursor-pointer"
+                >
+                  {isPending ? "Memproses..." : editingRemission ? "Simpan Perubahan" : "Tambahkan Remisi"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRemissionModal(false);
+                    setEditingRemission(null);
+                  }}
+                  className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all text-xs cursor-pointer"
+                >
+                  Batal
+                </button>
               </div>
             </form>
           </div>

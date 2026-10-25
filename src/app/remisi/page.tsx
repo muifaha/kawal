@@ -48,9 +48,12 @@ export default async function RemisiPage() {
   }));
   classes.sort((a, b) => a.nama.localeCompare(b.nama, undefined, { numeric: true, sensitivity: 'base' }));
 
-  // 2. Ambil daftar master remisi kondisional (hanya yang aktif)
+  // 2. Ambil daftar master remisi kondisional (hanya yang aktif dan bukan otomatis)
   const masterRemisiList = await prisma.masterRemisi.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      jenis: { not: "OTOMATIS" },
+    },
     orderBy: { nama: "asc" },
   });
 

@@ -80,10 +80,27 @@ export default async function KesiswaanPage() {
     orderBy: { nama: "asc" },
   });
 
-  // 5. Ambil data Master Remisi
-  const masterRemisiList = await prisma.masterRemisi.findMany({
+  // 5. Ambil data Master Remisi (dan inisialisasi default aturan otomatis jika belum ada)
+  let masterRemisiList = await prisma.masterRemisi.findMany({
     orderBy: { nama: "asc" },
   });
+  const hasAuto = masterRemisiList.some((r) => r.jenis === "OTOMATIS");
+  if (!hasAuto) {
+    try {
+      const autoItem = await prisma.masterRemisi.create({
+        data: {
+          nama: "Remisi Otomatis (Bersih Pelanggaran)",
+          persentasePengurangan: 10,
+          hariTanpaPelanggaran: 30,
+          jenis: "OTOMATIS",
+          isActive: true,
+        },
+      });
+      masterRemisiList.push(autoItem);
+    } catch {
+      // Abaikan jika sudah dibuat secara simultan
+    }
+  }
 
   // 6. Ambil data Hari Libur
   const holidayList = await prisma.hariLibur.findMany({

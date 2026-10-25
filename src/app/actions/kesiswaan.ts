@@ -411,8 +411,11 @@ export async function deleteCategoryAction(categoryId: string) {
 export async function createRemissionItemAction(formData: FormData) {
   try {
     await assertWaka();
-    const nama = formData.get("nama") as string;
+    const nama = (formData.get("nama") as string)?.trim();
     const persentase = parseInt(formData.get("persentase") as string, 10);
+    const jenis = (formData.get("jenis") as string) || "KONDISIONAL";
+    const hariStr = formData.get("hariTanpaPelanggaran") as string;
+    const hariTanpaPelanggaran = hariStr ? parseInt(hariStr, 10) : (jenis === "OTOMATIS" ? 30 : null);
 
     if (!nama || isNaN(persentase)) {
       return { error: "Nama remisi dan persentase wajib diisi." };
@@ -422,6 +425,8 @@ export async function createRemissionItemAction(formData: FormData) {
       data: {
         nama,
         persentasePengurangan: persentase,
+        jenis,
+        hariTanpaPelanggaran,
       },
     });
 
@@ -440,6 +445,15 @@ export async function createRemissionItemAction(formData: FormData) {
 export async function deleteRemissionItemAction(remissionId: string) {
   try {
     await assertWaka();
+
+    const existing = await prisma.masterRemisi.findUnique({ where: { id: remissionId } });
+    if (!existing) {
+      return { error: "Jenis remisi tidak ditemukan." };
+    }
+
+    if (existing.jenis === "OTOMATIS") {
+      return { error: "Aturan Remisi Otomatis tidak boleh dihapus. Anda dapat menonaktifkannya jika tidak ingin digunakan." };
+    }
 
     // Hapus transaksi remisi yang merujuk ke master remisi ini
     await prisma.transaksiRemisi.deleteMany({ where: { masterRemisiId: remissionId } });
@@ -899,19 +913,26 @@ export async function updateViolationItemAction(detailId: string, formData: Form
 export async function updateRemissionItemAction(remissionId: string, formData: FormData) {
   try {
     await assertWaka();
-    const nama = formData.get("nama") as string;
+    const nama = (formData.get("nama") as string)?.trim();
     const persentase = parseInt(formData.get("persentase") as string, 10);
+    const jenis = formData.get("jenis") as string | null;
+    const hariStr = formData.get("hariTanpaPelanggaran") as string | null;
+    const hariTanpaPelanggaran = hariStr !== null && hariStr !== "" ? parseInt(hariStr, 10) : null;
 
     if (!nama || isNaN(persentase)) {
       return { error: "Nama remisi dan persentase wajib diisi." };
     }
 
+    const updateData: any = {
+      nama,
+      persentasePengurangan: persentase,
+    };
+    if (jenis) updateData.jenis = jenis;
+    if (hariTanpaPelanggaran !== null) updateData.hariTanpaPelanggaran = hariTanpaPelanggaran;
+
     await prisma.masterRemisi.update({
       where: { id: remissionId },
-      data: {
-        nama,
-        persentasePengurangan: persentase,
-      },
+      data: updateData,
     });
 
     revalidatePath("/kesiswaan");
