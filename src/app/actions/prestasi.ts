@@ -37,8 +37,8 @@ function saveBase64Image(base64Data: string, prefix: string): string | null {
 
 /**
  * Menginput data prestasi siswa (Individu / Tim).
- * Otomatis memberikan remisi 10% dari poin pelanggaran aktif siswa.
- * Aturan: Remisi hanya berlaku 1 kali per jenjang/tingkat kejuaraan untuk setiap siswa.
+ * Otomatis memberikan remisi sesuai bobot poin tingkatan prestasi (Kota/Kab: 10, Prov: 15, Nas/Int: 20, Kec/Sekolah: 5).
+ * Aturan: Remisi otomatis hanya berlaku maksimal 1 kali per siswa per tahun pelajaran.
  */
 export async function reportPrestasiAction(payload: {
   studentIds: string[];
@@ -97,10 +97,88 @@ export async function reportPrestasiAction(payload: {
     if (fotoPiagamPath) buktiArr.push(fotoPiagamPath);
     if (fotoKegiatanPath) buktiArr.push(fotoKegiatanPath);
 
+    // 2. Cari MasterRemisi yang sesuai dengan tingkat prestasi
+    const masterPrestasiList = await prisma.masterRemisi.findMany({
+      where: {
+        nama: { contains: "prestasi", mode: "insensitive" },
+        isActive: true,
+      },
+    });
+
+    const masterPrestasiIds = masterPrestasiList.map((m) => m.id);
+
+    // Pemetaan tingkatan prestasi ke MasterRemisi
+    const matchedMaster = masterPrestasiList.find((m) => {
+      const n = m.nama.toLowerCase();
+      if (tingkat === "KOTA") return n.includes("kota") || n.includes("kabupaten");
+      if (tingkat === "PROVINSI") return n.includes("provinsi");
+      if (tingkat === "NASIONAL") return n.includes("nasional");
+      if (tingkat === "INTERNASIONAL") return n.includes("internasional") || n.includes("nasional");
+      if (tingkat === "KECAMATAN") return n.includes("kecamatan") || n.includes("sekolah");
+      return false;
+    });
+
+    // Poin default sesuai tingkatan jika belum disetel di Master Remisi
+    const defaultPointsMap: Record<string, number> = {
+      KECAMATAN: 5,
+      KOTA: 10,
+      PROVINSI: 15,
+      NASIONAL: 20,
+      INTERNASIONAL: 20,
+    };
+    const fallbackPoint = defaultPointsMap[tingkat] || 10;
+
+    let targetDeductionPoints = fallbackPoint;
+    let isPercentageScheme = false;
+    let targetPercentage = 10;
+
+    if (matchedMaster) {
+      if (matchedMaster.tipePengurangan === "POIN_TETAP") {
+        targetDeductionPoints =
+          matchedMaster.poinPengurangan && matchedMaster.poinPengurangan > 0
+            ? matchedMaster.poinPengurangan
+            : fallbackPoint;
+      } else if (matchedMaster.tipePengurangan === "PERSENTASE") {
+        isPercentageScheme = true;
+        targetPercentage = matchedMaster.persentasePengurangan || 10;
+      }
+    }
+
+    // 3. Tentukan rentang tanggal Tahun Ajaran aktif untuk pembatasan 1x per tahun pelajaran
+    const activeTA = await prisma.tahunAjaran.findFirst({
+      where: { isActive: true },
+    });
+
+    let taStartDate: Date;
+    let taEndDate: Date;
+
+    if (activeTA?.ganjilMulai && activeTA?.genapSelesai) {
+      taStartDate = new Date(activeTA.ganjilMulai);
+      taStartDate.setHours(0, 0, 0, 0);
+      taEndDate = new Date(activeTA.genapSelesai);
+      taEndDate.setHours(23, 59, 59, 999);
+    } else if (activeTA?.nama && activeTA.nama.includes("/")) {
+      const parts = activeTA.nama.trim().split("/");
+      const y1 = parseInt(parts[0], 10);
+      const y2 = parseInt(parts[1], 10);
+      if (!isNaN(y1) && !isNaN(y2)) {
+        taStartDate = new Date(y1, 6, 1, 0, 0, 0, 0);
+        taEndDate = new Date(y2, 5, 30, 23, 59, 59, 999);
+      } else {
+        taStartDate = new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0);
+        taEndDate = new Date(new Date().getFullYear(), 11, 31, 23, 59, 59, 999);
+      }
+    } else {
+      taStartDate = new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0);
+      taEndDate = new Date(new Date().getFullYear(), 11, 31, 23, 59, 59, 999);
+    }
+
     let totalRemissionStudents = 0;
     let totalRemissionPoinSum = 0;
+    let totalSkippedAlreadyUsed = 0;
+    let totalSkippedZeroPoints = 0;
 
-    // 3. Simpan record PrestasiSiswa & Anggota & Remisi 10% (sekali per jenjang per siswa)
+    // 4. Simpan record PrestasiSiswa & Anggota & Eksekusi remisi sesuai batasan 1x per tahun pelajaran
     const newPrestasi = await prisma.$transaction(async (tx) => {
       const record = await tx.prestasiSiswa.create({
         data: {
@@ -140,49 +218,82 @@ export async function reportPrestasiAction(payload: {
         },
       });
 
-      // Proses remisi poin 10% per siswa jika belum pernah klaim remisi di jenjang/tingkat yang sama
+      // Proses remisi poin per siswa (maksimal 1 kali pengurangan per tahun pelajaran)
       for (const sid of studentIds) {
-        // Cek apakah siswa ini sudah pernah mendapatkan prestasi di jenjang/tingkat yang sama
-        const existingLevelPrestasi = await tx.prestasiSiswaAnggota.findFirst({
+        // Cek apakah siswa sudah pernah menerima transaksi remisi prestasi di tahun pelajaran ini
+        const existingRemisiInTA = await tx.transaksiRemisi.findFirst({
+          where: {
+            siswaId: sid,
+            tanggal: {
+              gte: taStartDate,
+              lte: taEndDate,
+            },
+            poinDikurangi: { gt: 0 },
+            OR: [
+              ...(masterPrestasiIds.length > 0 ? [{ masterRemisiId: { in: masterPrestasiIds } }] : []),
+              { masterRemisi: { nama: { contains: "prestasi", mode: "insensitive" } } },
+            ],
+          },
+        });
+
+        // Cek juga apakah siswa sudah terdaftar pada PrestasiSiswa lain di tahun pelajaran ini yang memberikan remisi
+        const existingPrestasiWithRemisiInTA = await tx.prestasiSiswaAnggota.findFirst({
           where: {
             siswaId: sid,
             prestasi: {
-              tingkat: tingkat as TingkatPrestasi,
               id: { not: record.id },
+              waktuPelaksanaan: {
+                gte: taStartDate,
+                lte: taEndDate,
+              },
+              poinRemisi: { gt: 0 },
             },
           },
         });
 
-        // Jika siswa belum pernah mengklaim remisi di jenjang ini, berikan remisi 10% dari poin berjalan saat ini
-        if (!existingLevelPrestasi) {
-          const student = await tx.siswa.findUnique({
-            where: { id: sid },
-            include: {
-              pelanggaran: {
-                where: { status: "APPROVED" },
-                include: { detailPelanggaran: true },
-              },
-              remisi: true,
+        // Jika siswa sudah pernah mengurangi poin prestasi di tahun pelajaran aktif, lewati
+        if (existingRemisiInTA || existingPrestasiWithRemisiInTA) {
+          totalSkippedAlreadyUsed++;
+          continue;
+        }
+
+        // Cek poin pelanggaran aktif siswa saat ini
+        const student = await tx.siswa.findUnique({
+          where: { id: sid },
+          include: {
+            pelanggaran: {
+              where: { status: "APPROVED" },
+              include: { detailPelanggaran: true },
             },
-          });
+            remisi: true,
+          },
+        });
 
-          if (student) {
-            const totalViolations = student.pelanggaran.reduce(
-              (sum, v) => sum + v.detailPelanggaran.poin,
-              0
-            );
-            const totalRemissions = Math.round(student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
-            const currentPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
+        if (student) {
+          const totalViolations = student.pelanggaran.reduce(
+            (sum, v) => sum + v.detailPelanggaran.poin,
+            0
+          );
+          const totalRemissions = Math.round(student.remisi.reduce((sum, r) => sum + r.poinDikurangi, 0) * 100) / 100;
+          const currentPoints = Math.max(0, Math.round((totalViolations - totalRemissions) * 100) / 100);
 
-            if (currentPoints > 0) {
-              // Remisi 10% dari poin berjalan (dibulatkan 2 angka di belakang koma)
-              const pointsToReduce = Math.max(0.1, Math.round(currentPoints * 0.10 * 100) / 100);
+          if (currentPoints > 0) {
+            let pointsToReduce = targetDeductionPoints;
+            if (isPercentageScheme) {
+              pointsToReduce = Math.max(0.1, Math.round(currentPoints * (targetPercentage / 100) * 100) / 100);
+            }
 
+            // Pengurangan tidak melebihi poin berjalan siswa
+            const actualDeduction = Math.min(currentPoints, pointsToReduce);
+            const finalDeduction = Math.round(actualDeduction * 100) / 100;
+
+            if (finalDeduction > 0) {
               await tx.transaksiRemisi.create({
                 data: {
                   siswaId: sid,
                   jenis: "KONDISIONAL",
-                  poinDikurangi: pointsToReduce,
+                  masterRemisiId: matchedMaster?.id || null,
+                  poinDikurangi: finalDeduction,
                   approverId: user.id,
                   tanggal: new Date(`${waktuPelaksanaan}T00:00:00`),
                   bukti: buktiArr,
@@ -190,8 +301,10 @@ export async function reportPrestasiAction(payload: {
               });
 
               totalRemissionStudents++;
-              totalRemissionPoinSum = Math.round((totalRemissionPoinSum + pointsToReduce) * 100) / 100;
+              totalRemissionPoinSum = Math.round((totalRemissionPoinSum + finalDeduction) * 100) / 100;
             }
+          } else {
+            totalSkippedZeroPoints++;
           }
         }
       }
@@ -201,7 +314,7 @@ export async function reportPrestasiAction(payload: {
         await tx.prestasiSiswa.update({
           where: { id: record.id },
           data: {
-            poinRemisi: Math.round((totalRemissionPoinSum / studentIds.length) * 100) / 100,
+            poinRemisi: Math.round((totalRemissionPoinSum / (totalRemissionStudents || 1)) * 100) / 100,
           },
         });
       }
@@ -215,11 +328,40 @@ export async function reportPrestasiAction(payload: {
     revalidatePath("/pelanggaran");
 
     const countText = studentIds.length === 1 ? "1 siswa" : `${studentIds.length} siswa`;
+    const tingkatLabel =
+      tingkat === "KOTA"
+        ? "Kota/Kabupaten"
+        : tingkat === "KECAMATAN"
+        ? "Kecamatan"
+        : tingkat === "PROVINSI"
+        ? "Provinsi"
+        : tingkat === "NASIONAL"
+        ? "Nasional"
+        : tingkat === "INTERNASIONAL"
+        ? "Internasional"
+        : tingkat;
+
+    const deductionLabel = isPercentageScheme
+      ? `${targetPercentage}%`
+      : `${targetDeductionPoints} poin`;
+
     let remissionText = "";
     if (totalRemissionStudents > 0) {
-      remissionText = ` serta remisi poin 10% berhasil diberikan kepada ${totalRemissionStudents} siswa!`;
-    } else {
-      remissionText = " (remisi 10% tidak berlaku karena siswa sudah pernah mendapatkan prestasi di jenjang ini / poin 0).";
+      remissionText = ` serta remisi otomatis -${deductionLabel} (Tingkat ${tingkatLabel}) berhasil diberikan kepada ${totalRemissionStudents} siswa.`;
+    }
+
+    const details: string[] = [];
+    if (totalSkippedAlreadyUsed > 0) {
+      details.push(
+        `${totalSkippedAlreadyUsed} siswa tidak mendapatkan remisi karena sudah pernah menerima pengurangan prestasi di tahun pelajaran ini (maksimal 1x per TP)`
+      );
+    }
+    if (totalSkippedZeroPoints > 0) {
+      details.push(`${totalSkippedZeroPoints} siswa memiliki 0 poin pelanggaran`);
+    }
+
+    if (details.length > 0) {
+      remissionText += ` (${details.join(", ")})`;
     }
 
     return {
@@ -299,14 +441,33 @@ export async function deletePrestasiAction(prestasiId: string) {
   try {
     const existing = await prisma.prestasiSiswa.findUnique({
       where: { id: prestasiId },
+      include: { anggota: true },
     });
 
     if (!existing) {
       return { error: "Data prestasi tidak ditemukan." };
     }
 
-    await prisma.prestasiSiswa.delete({
-      where: { id: prestasiId },
+    await prisma.$transaction(async (tx) => {
+      // Hapus transaksi remisi terkait jika ada bukti piagam/kegiatan prestasi ini
+      const buktiToDelete: string[] = [];
+      if (existing.fotoPiagam) buktiToDelete.push(existing.fotoPiagam);
+      if (existing.fotoKegiatan) buktiToDelete.push(existing.fotoKegiatan);
+
+      const memberIds = existing.anggota.map((a) => a.siswaId);
+
+      if (memberIds.length > 0 && buktiToDelete.length > 0) {
+        await tx.transaksiRemisi.deleteMany({
+          where: {
+            siswaId: { in: memberIds },
+            bukti: { hasSome: buktiToDelete },
+          },
+        });
+      }
+
+      await tx.prestasiSiswa.delete({
+        where: { id: prestasiId },
+      });
     });
 
     revalidatePath("/dashboard");

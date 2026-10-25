@@ -854,12 +854,15 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                   onChange={(e) => setTingkat(e.target.value as any)}
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer font-semibold"
                 >
-                  <option value="KECAMATAN">Tingkat Kecamatan</option>
-                  <option value="KOTA">Tingkat Kota / Kabupaten</option>
-                  <option value="PROVINSI">Tingkat Provinsi</option>
-                  <option value="NASIONAL">Tingkat Nasional</option>
-                  <option value="INTERNASIONAL">Tingkat Internasional</option>
+                  <option value="KECAMATAN">Tingkat Kecamatan / Sekolah (-5 Poin)</option>
+                  <option value="KOTA">Tingkat Kota / Kabupaten (-10 Poin)</option>
+                  <option value="PROVINSI">Tingkat Provinsi (-15 Poin)</option>
+                  <option value="NASIONAL">Tingkat Nasional (-20 Poin)</option>
+                  <option value="INTERNASIONAL">Tingkat Internasional (-20 Poin)</option>
                 </select>
+                <p className="mt-1.5 text-[11px] text-amber-400/90 flex items-center gap-1 font-medium">
+                  <span>💡 Remisi otomatis pengurangan poin pelanggaran berlaku maks. 1x per siswa per tahun pelajaran.</span>
+                </p>
               </div>
             </div>
           </div>
@@ -1297,11 +1300,11 @@ export default function PrestasiClient({ user, classes, initialPrestasiList, def
                     onChange={(e) => setEditTingkat(e.target.value as any)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-semibold cursor-pointer"
                   >
-                    <option value="KECAMATAN">Tingkat Kecamatan</option>
-                    <option value="KOTA">Tingkat Kota / Kabupaten</option>
-                    <option value="PROVINSI">Tingkat Provinsi</option>
-                    <option value="NASIONAL">Tingkat Nasional</option>
-                    <option value="INTERNASIONAL">Tingkat Internasional</option>
+                    <option value="KECAMATAN">Tingkat Kecamatan / Sekolah (-5 Poin)</option>
+                    <option value="KOTA">Tingkat Kota / Kabupaten (-10 Poin)</option>
+                    <option value="PROVINSI">Tingkat Provinsi (-15 Poin)</option>
+                    <option value="NASIONAL">Tingkat Nasional (-20 Poin)</option>
+                    <option value="INTERNASIONAL">Tingkat Internasional (-20 Poin)</option>
                   </select>
                 </div>
               </div>
