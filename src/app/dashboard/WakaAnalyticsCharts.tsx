@@ -545,9 +545,8 @@ export default function WakaAnalyticsCharts({
           </div>
 
           {/* Footer Note */}
-          <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="pt-3 border-t border-slate-800/60 text-[11px] text-slate-500">
             <span>Total Absensi Terhimpun: <strong className="text-slate-300">{attendanceStats.total.toLocaleString("id-ID")}</strong> data</span>
-            <span className="text-emerald-400 font-semibold">Terkoneksi Real-time</span>
           </div>
         </div>
 
@@ -597,28 +596,18 @@ export default function WakaAnalyticsCharts({
 
             {/* Total Metric Highlights */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-slate-950/60 border border-slate-800/70 rounded-xl flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Total Kasus Pelanggaran</span>
-                  <span className="text-lg sm:text-xl font-black text-rose-400 mt-0.5 block">
-                    {violationStats.totalCases.toLocaleString("id-ID")} Kasus
-                  </span>
-                </div>
-                <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center font-bold text-xs">
-                  {violationStats.categoryList.length} Kat.
-                </div>
+              <div className="p-3 bg-slate-950/60 border border-slate-800/70 rounded-xl">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Total Kasus Pelanggaran</span>
+                <span className="text-lg sm:text-xl font-black text-rose-400 mt-0.5 block">
+                  {violationStats.totalCases.toLocaleString("id-ID")} Kasus
+                </span>
               </div>
 
-              <div className="p-3 bg-slate-950/60 border border-slate-800/70 rounded-xl flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Total Akumulasi Poin</span>
-                  <span className="text-lg sm:text-xl font-black text-amber-400 mt-0.5 block">
-                    {violationStats.totalPoints.toLocaleString("id-ID")} Poin
-                  </span>
-                </div>
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-xs">
-                  Pts
-                </div>
+              <div className="p-3 bg-slate-950/60 border border-slate-800/70 rounded-xl">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Total Akumulasi Poin</span>
+                <span className="text-lg sm:text-xl font-black text-amber-400 mt-0.5 block">
+                  {violationStats.totalPoints.toLocaleString("id-ID")} Poin
+                </span>
               </div>
             </div>
 
@@ -731,9 +720,8 @@ export default function WakaAnalyticsCharts({
           </div>
 
           {/* Footer Note */}
-          <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="pt-3 border-t border-slate-800/60 text-[11px] text-slate-500">
             <span>Filter Aktif: <strong className="text-slate-300">{timeFilter === "all" ? "Seluruh Semester" : timeFilter === "30d" ? "30 Hari Terakhir" : "7 Hari Terakhir"}</strong></span>
-            <span className="text-rose-400 font-semibold">Data Pelanggaran Sah</span>
           </div>
         </div>
 
