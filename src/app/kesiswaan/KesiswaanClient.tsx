@@ -1628,32 +1628,6 @@ export default function KesiswaanClient({
             </div>
           </div>
 
-          {/* Categories Management Tags */}
-          {categories.length > 0 && (
-            <div className="flex flex-wrap gap-2 items-center p-3.5 bg-slate-950/40 border border-slate-900 rounded-xl text-xs">
-              <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] mr-2">Kelola Kategori:</span>
-              {categories.map((cat) => (
-                <div key={cat.id} className="inline-flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-300">
-                  <span>{cat.nama}</span>
-                  <button
-                    onClick={() => handleEditCategory(cat.id, cat.nama)}
-                    className="text-emerald-400 hover:text-emerald-300 p-0.5 transition-colors"
-                    title="Edit Nama Kategori"
-                  >
-                    <Pencil className="w-3 h-3" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteCategory(cat.id, cat.nama)}
-                    className="text-rose-400 hover:text-rose-350 p-0.5 transition-colors"
-                    title="Hapus Kategori"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
           <div className="overflow-x-auto border border-slate-800 rounded-xl">
             <table className="min-w-full divide-y divide-slate-900">
               <thead className="bg-slate-950/60 text-slate-400 text-left text-xs font-semibold uppercase tracking-wider">
@@ -1668,9 +1642,15 @@ export default function KesiswaanClient({
               </thead>
               <tbody className="divide-y divide-slate-900/60 text-xs text-slate-300">
                 {(() => {
-                  const allDetails = categories.flatMap((cat) =>
-                    cat.details.map((d) => ({ ...d, categoryId: cat.id, categoryName: cat.nama }))
-                  );
+                  const allDetails = categories
+                    .flatMap((cat) =>
+                      cat.details.map((d) => ({ ...d, categoryId: cat.id, categoryName: cat.nama }))
+                    )
+                    .sort((a, b) => {
+                      const aActive = (a as any).isActive !== false ? 1 : 0;
+                      const bActive = (b as any).isActive !== false ? 1 : 0;
+                      return bActive - aActive; // Aktif di depan, Non-Aktif di paling belakang
+                    });
                   if (allDetails.length === 0) {
                     return (
                       <tr>
@@ -1800,7 +1780,12 @@ export default function KesiswaanClient({
                   </tr>
                 ) : (
                   (() => {
-                    const paginatedRemissions = pageSize === 99999 ? initialRemissions : initialRemissions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+                    const sortedRemissions = [...initialRemissions].sort((a, b) => {
+                      const aActive = (a as any).isActive !== false ? 1 : 0;
+                      const bActive = (b as any).isActive !== false ? 1 : 0;
+                      return bActive - aActive; // Aktif di depan, Non-Aktif di paling belakang
+                    });
+                    const paginatedRemissions = pageSize === 99999 ? sortedRemissions : sortedRemissions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
                     return paginatedRemissions.map((r, index) => {
                       const absoluteIndex = pageSize === 99999 ? index + 1 : (currentPage - 1) * pageSize + index + 1;
                       const isActive = (r as any).isActive !== false;
