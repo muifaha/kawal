@@ -261,7 +261,9 @@ model LaporanPelanggaran {
 model MasterRemisi {
   id                    String            @id @default(uuid())
   nama                  String            @unique // Contoh: Bawa Pohon
-  persentasePengurangan Int               // Contoh: 10 (artinya 10%)
+  tipePengurangan       String            @default("PERSENTASE") // "PERSENTASE" atau "POIN_TETAP"
+  persentasePengurangan Int               @default(0) // Contoh: 10 (artinya 10%) jika tipe PERSENTASE
+  poinPengurangan       Float?            @default(0) // Contoh: 5 atau 10 jika tipe POIN_TETAP
   isActive              Boolean           @default(true)
   jenis                 String            @default("KONDISIONAL") // "KONDISIONAL" atau "OTOMATIS"
   hariTanpaPelanggaran  Int?              @default(30) // Masa bersih pelanggaran untuk remisi otomatis

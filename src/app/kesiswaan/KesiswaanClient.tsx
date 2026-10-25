@@ -147,7 +147,9 @@ interface KategoriType {
 interface RemissionType {
   id: string;
   nama: string;
+  tipePengurangan?: string; // "PERSENTASE" | "POIN_TETAP"
   persentasePengurangan: number;
+  poinPengurangan?: number | null;
   isActive?: boolean;
   jenis?: string;
   hariTanpaPelanggaran?: number | null;
@@ -229,6 +231,7 @@ export default function KesiswaanClient({
   const [showViolationModal, setShowViolationModal] = useState(false);
   const [showRemissionModal, setShowRemissionModal] = useState(false);
   const [modalRemisiJenis, setModalRemisiJenis] = useState<string>("KONDISIONAL");
+  const [modalTipePengurangan, setModalTipePengurangan] = useState<string>("PERSENTASE");
 
   // Bulk Selection States
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -1755,6 +1758,7 @@ export default function KesiswaanClient({
                 onClick={() => {
                   setEditingRemission(null);
                   setModalRemisiJenis("KONDISIONAL");
+                  setModalTipePengurangan("PERSENTASE");
                   setShowRemissionModal(true);
                 }}
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 transition-all cursor-pointer"
@@ -1822,7 +1826,11 @@ export default function KesiswaanClient({
                               <span className="text-slate-400">Tindakan BK</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-emerald-400 font-bold">{r.persentasePengurangan}% Poin</td>
+                          <td className="py-3 px-4 text-emerald-400 font-bold">
+                            {r.tipePengurangan === "POIN_TETAP"
+                              ? `-${r.poinPengurangan || 0} Poin`
+                              : `${r.persentasePengurangan}% Poin`}
+                          </td>
                           <td className="py-3 px-4 text-center">
                             {isActive ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -1863,6 +1871,7 @@ export default function KesiswaanClient({
                                 onClick={() => {
                                   setEditingRemission(r);
                                   setModalRemisiJenis(r.jenis || "KONDISIONAL");
+                                  setModalTipePengurangan(r.tipePengurangan || "PERSENTASE");
                                   setShowRemissionModal(true);
                                 }}
                                 className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all cursor-pointer"
@@ -2823,7 +2832,7 @@ export default function KesiswaanClient({
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form key={editingRemission ? `${editingRemission.id}-${modalRemisiJenis}` : `new-${modalRemisiJenis}`} onSubmit={handleRemissionSubmit} className="p-6 space-y-4">
+            <form key={editingRemission ? `${editingRemission.id}-${modalRemisiJenis}-${modalTipePengurangan}` : `new-${modalRemisiJenis}-${modalTipePengurangan}`} onSubmit={handleRemissionSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Tipe Remisi</label>
                 <select
@@ -2882,21 +2891,72 @@ export default function KesiswaanClient({
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Persentase Pengurangan Poin (%)</label>
-                <input
-                  required
-                  name="persentase"
-                  type="number"
-                  min="1"
-                  max="100"
-                  defaultValue={
-                    editingRemission?.persentasePengurangan ??
-                    (modalRemisiJenis === "OTOMATIS" ? 10 : "")
-                  }
-                  placeholder="Contoh: 10 (artinya potong 10%)"
-                  className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
-                />
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Skema Pengurangan</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setModalTipePengurangan("PERSENTASE")}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      modalTipePengurangan === "PERSENTASE"
+                        ? "bg-emerald-500/20 border-emerald-500 text-emerald-300"
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Persentase (%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalTipePengurangan("POIN_TETAP")}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      modalTipePengurangan === "POIN_TETAP"
+                        ? "bg-emerald-500/20 border-emerald-500 text-emerald-300"
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Poin Tetap (Nominal)
+                  </button>
+                </div>
+                <input type="hidden" name="tipePengurangan" value={modalTipePengurangan} />
               </div>
+
+              {modalTipePengurangan === "PERSENTASE" ? (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Persentase Pengurangan Poin (%)</label>
+                  <input
+                    required
+                    name="persentase"
+                    type="number"
+                    min="1"
+                    max="100"
+                    defaultValue={
+                      editingRemission?.persentasePengurangan ??
+                      (modalRemisiJenis === "OTOMATIS" ? 10 : "")
+                    }
+                    placeholder="Contoh: 10 (artinya potong 10%)"
+                    className="block w-full py-2.5 px-3 border border-slate-800 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Poin yang dikurangi dihitung proporsional dari total poin berjalan siswa saat remisi diberikan.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">Besaran Poin yang Dikurangi</label>
+                  <input
+                    required
+                    name="poinPengurangan"
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    defaultValue={editingRemission?.poinPengurangan || 5}
+                    placeholder="Contoh: 5 atau 10"
+                    className="block w-full py-2.5 px-3 border border-emerald-500/40 rounded-xl bg-slate-950 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Poin pelanggaran siswa akan langsung dikurangi sebesar nominal ini (misal -5 poin atau -10 poin).
+                  </p>
+                </div>
+              )}
 
               <div className="flex gap-2 pt-2">
                 <button

@@ -20,7 +20,9 @@ interface Kelas {
 interface MasterRemisi {
   id: string;
   nama: string;
+  tipePengurangan?: string;
   persentasePengurangan: number;
+  poinPengurangan?: number | null;
   isActive?: boolean;
 }
 
@@ -34,7 +36,9 @@ interface RemisiHistoryItem {
   jenis: string;
   masterRemisi: {
     nama: string;
+    tipePengurangan?: string;
     persentasePengurangan: number;
+    poinPengurangan?: number | null;
   } | null;
   poinDikurangi: number;
   tanggal: Date;
@@ -276,7 +280,7 @@ export default function RemisiClient({ classes, masterRemisiList, initialHistory
                     .filter((mr) => mr.isActive !== false)
                     .map((mr) => (
                       <option key={mr.id} value={mr.id}>
-                        {mr.nama} (Potongan {mr.persentasePengurangan}% Poin)
+                        {mr.nama} ({mr.tipePengurangan === "POIN_TETAP" ? `-${mr.poinPengurangan || 0} Poin` : `Potongan ${mr.persentasePengurangan}% Poin`})
                       </option>
                     ))}
                 </select>

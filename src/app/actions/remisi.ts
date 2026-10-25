@@ -64,11 +64,19 @@ export async function applyConditionalRemisiAction(
       return { error: `Siswa ${student.nama} memiliki 0 poin. Tidak memerlukan remisi.` };
     }
 
-    // 3. Hitung pemotongan poin (persentase dari poin saat ini)
-    const pointsToReduce = Math.max(
-      0.1,
-      Math.round(currentPoints * (masterRemisi.persentasePengurangan / 100) * 100) / 100
-    );
+    // 3. Hitung pemotongan poin (berdasarkan persentase atau poin tetap)
+    let pointsToReduce = 0;
+    if (masterRemisi.tipePengurangan === "POIN_TETAP") {
+      pointsToReduce = masterRemisi.poinPengurangan || 0;
+    } else {
+      const pct = masterRemisi.persentasePengurangan || 0;
+      pointsToReduce = Math.max(0.1, Math.round(currentPoints * (pct / 100) * 100) / 100);
+    }
+
+    const actualDeduction = Math.min(currentPoints, pointsToReduce);
+    if (actualDeduction <= 0) {
+      return { error: "Nilai pengurangan poin harus lebih dari 0." };
+    }
 
     // 3.5 Proses upload file bukti jika ada
     let uploadedBukti: string[] = [];
@@ -94,7 +102,7 @@ export async function applyConditionalRemisiAction(
         siswaId: student.id,
         jenis: "KONDISIONAL",
         masterRemisiId: masterRemisi.id,
-        poinDikurangi: pointsToReduce,
+        poinDikurangi: actualDeduction,
         approverId: user.id,
         bukti: uploadedBukti,
       },
@@ -104,9 +112,13 @@ export async function applyConditionalRemisiAction(
     revalidatePath("/remisi");
     revalidatePath("/pelanggaran");
 
+    const deductionLabel = masterRemisi.tipePengurangan === "POIN_TETAP"
+      ? `-${actualDeduction} poin tetap`
+      : `${actualDeduction} poin (${masterRemisi.persentasePengurangan}%)`;
+
     return {
       success: true,
-      message: `Remisi "${masterRemisi.nama}" berhasil diberikan ke ${student.nama}. Poin dikurangi sebesar ${pointsToReduce} (${masterRemisi.persentasePengurangan}%).`,
+      message: `Remisi "${masterRemisi.nama}" berhasil diberikan ke ${student.nama}. Poin dikurangi sebesar ${deductionLabel}.`,
     };
   } catch (error) {
     console.error("Apply conditional remisi error:", error);
@@ -226,8 +238,14 @@ export async function processAutomaticRemissions(options?: { forceRun?: boolean;
         break;
       }
 
-      const pointsToReduce = Math.max(0.1, Math.round(runningPoints * reductionPercent * 100) / 100);
+      let pointsToReduce = 0;
+      if (autoRemisi?.tipePengurangan === "POIN_TETAP") {
+        pointsToReduce = autoRemisi.poinPengurangan || 5;
+      } else {
+        pointsToReduce = Math.max(0.1, Math.round(runningPoints * reductionPercent * 100) / 100);
+      }
       const actualDeduction = Math.min(runningPoints, pointsToReduce);
+      if (actualDeduction <= 0) break;
 
       transactions.push(
         prisma.transaksiRemisi.create({

@@ -413,27 +413,41 @@ export async function createRemissionItemAction(formData: FormData) {
   try {
     await assertWaka();
     const nama = (formData.get("nama") as string)?.trim();
-    const persentase = parseInt(formData.get("persentase") as string, 10);
+    const tipePengurangan = (formData.get("tipePengurangan") as string) || "PERSENTASE";
+    const persentaseStr = formData.get("persentase") as string;
+    const poinPenguranganStr = formData.get("poinPengurangan") as string;
+    const persentase = persentaseStr ? parseInt(persentaseStr, 10) : 0;
+    const poinPengurangan = poinPenguranganStr ? parseFloat(poinPenguranganStr) : 0;
+
     const jenis = (formData.get("jenis") as string) || "KONDISIONAL";
     const hariStr = formData.get("hariTanpaPelanggaran") as string;
     const hariTanpaPelanggaran = hariStr ? parseInt(hariStr, 10) : (jenis === "OTOMATIS" ? 30 : null);
 
-    if (!nama || isNaN(persentase)) {
-      return { error: "Nama remisi dan persentase wajib diisi." };
+    if (!nama) {
+      return { error: "Nama remisi wajib diisi." };
+    }
+    if (tipePengurangan === "PERSENTASE" && (isNaN(persentase) || persentase <= 0)) {
+      return { error: "Persentase pengurangan poin harus lebih dari 0%." };
+    }
+    if (tipePengurangan === "POIN_TETAP" && (isNaN(poinPengurangan) || poinPengurangan <= 0)) {
+      return { error: "Nominal pengurangan poin tetap harus lebih dari 0 poin." };
     }
 
     await prisma.masterRemisi.create({
       data: {
         nama,
+        tipePengurangan,
         persentasePengurangan: persentase,
+        poinPengurangan,
         jenis,
         hariTanpaPelanggaran,
       },
     });
 
+    const infoLabel = tipePengurangan === "POIN_TETAP" ? `-${poinPengurangan} Poin` : `${persentase}%`;
     revalidatePath("/kesiswaan");
     revalidatePath("/remisi");
-    return { success: true, message: `Jenis remisi *${nama}* (${persentase}%) berhasil dibuat.` };
+    return { success: true, message: `Jenis remisi *${nama}* (${infoLabel}) berhasil dibuat.` };
   } catch (error: any) {
     console.error("Create remission item error:", error);
     if (error.code === "P2002") {
@@ -915,19 +929,29 @@ export async function updateRemissionItemAction(remissionId: string, formData: F
   try {
     await assertWaka();
     const nama = (formData.get("nama") as string)?.trim();
-    const persentase = parseInt(formData.get("persentase") as string, 10);
+    const tipePengurangan = formData.get("tipePengurangan") as string | null;
+    const persentaseStr = formData.get("persentase") as string | null;
+    const poinPenguranganStr = formData.get("poinPengurangan") as string | null;
     const jenis = formData.get("jenis") as string | null;
     const hariStr = formData.get("hariTanpaPelanggaran") as string | null;
     const hariTanpaPelanggaran = hariStr !== null && hariStr !== "" ? parseInt(hariStr, 10) : null;
 
-    if (!nama || isNaN(persentase)) {
-      return { error: "Nama remisi dan persentase wajib diisi." };
+    if (!nama) {
+      return { error: "Nama remisi wajib diisi." };
     }
 
     const updateData: any = {
       nama,
-      persentasePengurangan: persentase,
     };
+    if (tipePengurangan) {
+      updateData.tipePengurangan = tipePengurangan;
+    }
+    if (persentaseStr !== null) {
+      updateData.persentasePengurangan = parseInt(persentaseStr, 10) || 0;
+    }
+    if (poinPenguranganStr !== null) {
+      updateData.poinPengurangan = parseFloat(poinPenguranganStr) || 0;
+    }
     if (jenis) updateData.jenis = jenis;
     if (hariTanpaPelanggaran !== null) updateData.hariTanpaPelanggaran = hariTanpaPelanggaran;
 
