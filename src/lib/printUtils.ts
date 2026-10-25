@@ -547,7 +547,7 @@ export function generateSingleJurnalHtmlSection(jurnal: any, schoolSettings?: Re
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
               ${urls.map((url: string, idx: number) => `
                 <div style="border: 1px solid #ccc; padding: 4px; border-radius: 6px; text-align: center; width: 180px;">
-                  <img src="${url}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 4px;" />
+                  <img src="${url}" onerror="this.onerror=null; this.parentElement.style.display='none';" style="width: 100%; height: 120px; object-fit: cover; border-radius: 4px;" />
                   ${kets[idx] ? `<div style="font-size: 8pt; color: #555; margin-top: 4px; font-style: italic;">${kets[idx]}</div>` : ''}
                 </div>
               `).join('')}

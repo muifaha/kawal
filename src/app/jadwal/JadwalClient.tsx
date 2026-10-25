@@ -2993,6 +2993,9 @@ export default function JadwalClient({
                             src={photoUrl}
                             alt={`Dokumentasi Jurnal Mengajar ${idx + 1}`}
                             className="rounded-lg h-40 w-full object-cover border border-slate-850"
+                            onError={(e) => {
+                              (e.currentTarget.parentElement as HTMLElement)?.style.setProperty("display", "none");
+                            }}
                           />
                           {captions[idx] && (
                             <p className="text-xs text-slate-400 italic px-1 leading-normal">

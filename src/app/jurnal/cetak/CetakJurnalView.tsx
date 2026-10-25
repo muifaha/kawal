@@ -346,6 +346,9 @@ export default function CetakJurnalView({
                                 src={url}
                                 alt={`Foto ${pIdx + 1}`}
                                 className="w-full h-24 object-cover rounded-md mb-1"
+                                onError={(e) => {
+                                  (e.currentTarget.parentElement as HTMLElement)?.style.setProperty("display", "none");
+                                }}
                               />
                               {photoCaptions[pIdx] && (
                                 <span style={{ color: "#64748b" }} className="text-[10px] italic block">
