@@ -6,16 +6,14 @@ import { ViolationStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import fs from "fs";
 import path from "path";
+import { getUploadDir } from "@/lib/uploadHelper";
 
 function saveBase64Image(base64Data: string, prefix: string): string | null {
   try {
     if (!base64Data || typeof base64Data !== "string" || !base64Data.includes(";base64,")) {
       return null;
     }
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    const uploadDir = getUploadDir();
 
     const parts = base64Data.split(";base64,");
     const mimeMatch = parts[0].match(/data:(image\/[a-zA-Z0-9+\-+.]+)/i);

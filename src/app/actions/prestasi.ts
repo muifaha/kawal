@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import fs from "fs";
 import path from "path";
 import { JenisKepesertaan, KategoriPrestasi, TingkatPrestasi } from "@prisma/client";
+import { getUploadDir } from "@/lib/uploadHelper";
 
 const ALLOWED_ROLES = ["PEMBINA_OSIS", "WAKA", "BK", "WALAS", "GURU"];
 
@@ -14,10 +15,7 @@ function saveBase64Image(base64Data: string, prefix: string): string | null {
     if (!base64Data || typeof base64Data !== "string" || !base64Data.includes(";base64,")) {
       return null;
     }
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    const uploadDir = getUploadDir();
 
     const parts = base64Data.split(";base64,");
     const mimeMatch = parts[0].match(/data:(image\/[a-zA-Z0-9+\-+.]+)/i);
@@ -358,11 +356,6 @@ export async function updatePrestasiAction(payload: {
 
     if (!existing) {
       return { error: "Data prestasi tidak ditemukan." };
-    }
-
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
     }
 
     let fotoPiagamPath = existing.fotoPiagam;

@@ -14,8 +14,11 @@ export async function GET(
     if (process.env.UPLOAD_DIR) {
       candidateDirs.push(path.resolve(process.env.UPLOAD_DIR));
     }
+    candidateDirs.push("/var/www/kawal-uploads");
     candidateDirs.push(path.join(/*turbopackIgnore: true*/ process.cwd(), "uploads"));
     candidateDirs.push(path.join(/*turbopackIgnore: true*/ process.cwd(), "public", "uploads"));
+    candidateDirs.push(path.join(/*turbopackIgnore: true*/ process.cwd(), "..", "..", "uploads"));
+    candidateDirs.push(path.join(/*turbopackIgnore: true*/ process.cwd(), "..", "..", "public", "uploads"));
 
     let targetFilePath: string | null = null;
     let baseDirUsed: string | null = null;
