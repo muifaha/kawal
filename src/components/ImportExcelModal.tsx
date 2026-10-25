@@ -88,9 +88,10 @@ export default function ImportExcelModal({
         return {
           filename: "template_remisi.xlsx",
           headers: [
-            ["Nama Remisi", "Persentase Pengurangan"],
-            ["Bawa Pohon untuk Penghijauan", "15"],
-            ["Kerja Bakti Sosial", "10"],
+            ["Nama Remisi", "Skema Pengurangan", "Nilai Pengurangan"],
+            ["Bawa Pohon untuk Penghijauan", "PERSENTASE", "15"],
+            ["Membersihkan Masjid", "POIN_TETAP", "10"],
+            ["Kerja Bakti Sosial", "POIN_TETAP", "5"],
           ],
         };
       case "migrasi_poin":
@@ -277,19 +278,57 @@ export default function ImportExcelModal({
     }
 
     if (entityType === "remissions") {
-      const required = ["nama remisi", "persentase pengurangan"];
-      const missing = required.filter((r) => !headers.includes(r));
-      if (missing.length > 0) {
-        return { error: `Header Excel tidak sesuai. Kolom wajib yang kurang: ${missing.join(", ")}` };
+      const namaIdx = headers.findIndex((h) => h.includes("nama"));
+      if (namaIdx === -1) {
+        return { error: 'Header Excel tidak sesuai. Kolom "Nama Remisi" wajib ada.' };
       }
 
-      const namaIdx = headers.indexOf("nama remisi");
-      const pctIdx = headers.indexOf("persentase pengurangan");
+      const skemaIdx = headers.findIndex((h) => h.includes("skema") || h.includes("tipe"));
+      const nilaiIdx = headers.findIndex((h) => h.includes("nilai") || h.includes("besaran") || h.includes("jumlah"));
+      const pctIdx = headers.findIndex((h) => h.includes("persen") || h.includes("potongan"));
 
-      const mappedRows = cleanRows.map((r) => ({
-        nama: String(r[namaIdx] || "").trim(),
-        persentasePengurangan: Number(r[pctIdx]),
-      }));
+      if (skemaIdx === -1 && nilaiIdx === -1 && pctIdx === -1) {
+        return {
+          error:
+            'Header Excel tidak sesuai. Gunakan kolom "Skema Pengurangan" & "Nilai Pengurangan", atau kolom "Persentase Pengurangan".',
+        };
+      }
+
+      const mappedRows = cleanRows.map((r) => {
+        const rawNama = String(r[namaIdx] || "").trim();
+        let tipePengurangan = "PERSENTASE";
+        let persentasePengurangan = 0;
+        let poinPengurangan = 0;
+
+        if (skemaIdx !== -1 && nilaiIdx !== -1) {
+          const rawSkema = String(r[skemaIdx] || "").toUpperCase().trim();
+          const rawNilai = String(r[nilaiIdx] || "").replace(/[^0-9.,]/g, "").replace(",", ".");
+          const parsedVal = parseFloat(rawNilai) || 0;
+
+          if (rawSkema.includes("TETAP") || rawSkema.includes("POIN") || rawSkema.includes("NOMINAL")) {
+            tipePengurangan = "POIN_TETAP";
+            poinPengurangan = parsedVal;
+          } else {
+            tipePengurangan = "PERSENTASE";
+            persentasePengurangan = Math.round(parsedVal);
+          }
+        } else if (pctIdx !== -1) {
+          const rawPct = String(r[pctIdx] || "").replace(/[^0-9.,]/g, "").replace(",", ".");
+          persentasePengurangan = Math.round(parseFloat(rawPct) || 0);
+          tipePengurangan = "PERSENTASE";
+        } else if (nilaiIdx !== -1) {
+          const rawVal = String(r[nilaiIdx] || "").replace(/[^0-9.,]/g, "").replace(",", ".");
+          persentasePengurangan = Math.round(parseFloat(rawVal) || 0);
+          tipePengurangan = "PERSENTASE";
+        }
+
+        return {
+          nama: rawNama,
+          tipePengurangan,
+          persentasePengurangan,
+          poinPengurangan,
+        };
+      });
       return { mappedRows };
     }
 

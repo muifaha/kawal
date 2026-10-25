@@ -437,7 +437,9 @@ export async function importViolationsAction(rows: ViolationImportRow[]) {
 // 5. IMPORT REMISI
 export interface RemissionImportRow {
   nama: string;
+  tipePengurangan?: string;
   persentasePengurangan: number;
+  poinPengurangan?: number;
 }
 
 export async function importRemissionsAction(rows: RemissionImportRow[]) {
@@ -448,16 +450,27 @@ export async function importRemissionsAction(rows: RemissionImportRow[]) {
     const remissionsToCreate = [];
 
     for (const row of rows) {
-      const { nama, persentasePengurangan } = row;
-      const parsedPercent = Number(persentasePengurangan);
+      const { nama, tipePengurangan, persentasePengurangan, poinPengurangan } = row;
+      const tipe = tipePengurangan === "POIN_TETAP" ? "POIN_TETAP" : "PERSENTASE";
+      const parsedPercent = Number(persentasePengurangan) || 0;
+      const parsedPoin = Number(poinPengurangan) || 0;
 
-      if (!nama || isNaN(parsedPercent)) {
-        return { error: `Baris "${nama || 'Tanpa Nama'}" tidak valid. Nama Remisi dan Persentase wajib diisi.` };
+      if (!nama) {
+        return { error: `Ada baris remisi yang tidak memiliki Nama.` };
+      }
+
+      if (tipe === "PERSENTASE" && parsedPercent <= 0) {
+        return { error: `Baris "${nama}": persentase harus lebih dari 0%.` };
+      }
+      if (tipe === "POIN_TETAP" && parsedPoin <= 0) {
+        return { error: `Baris "${nama}": nilai poin tetap harus lebih dari 0 poin.` };
       }
 
       remissionsToCreate.push({
         nama,
+        tipePengurangan: tipe,
         persentasePengurangan: parsedPercent,
+        poinPengurangan: parsedPoin,
       });
     }
 
@@ -466,8 +479,17 @@ export async function importRemissionsAction(rows: RemissionImportRow[]) {
       remissionsToCreate.map((r) =>
         prisma.masterRemisi.upsert({
           where: { nama: r.nama },
-          update: { persentasePengurangan: r.persentasePengurangan },
-          create: { nama: r.nama, persentasePengurangan: r.persentasePengurangan },
+          update: {
+            tipePengurangan: r.tipePengurangan,
+            persentasePengurangan: r.persentasePengurangan,
+            poinPengurangan: r.poinPengurangan,
+          },
+          create: {
+            nama: r.nama,
+            tipePengurangan: r.tipePengurangan,
+            persentasePengurangan: r.persentasePengurangan,
+            poinPengurangan: r.poinPengurangan,
+          },
         })
       )
     );
