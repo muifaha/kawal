@@ -8,7 +8,15 @@ import JadwalClient from "./JadwalClient";
 
 export const revalidate = 0;
 
-export default async function JadwalPage() {
+interface PageProps {
+  searchParams: Promise<{
+    tanggal?: string;
+    tab?: string;
+  }>;
+}
+
+export default async function JadwalPage({ searchParams }: PageProps) {
+  const { tanggal, tab } = (await searchParams) || {};
   const user = await getSessionUser();
   if (!user) {
     redirect("/login");
@@ -204,6 +212,8 @@ export default async function JadwalPage() {
         todaySchedules={todaySchedules}
         holidays={holidays}
         settings={settings}
+        initialDate={tanggal && /^\d{4}-\d{2}-\d{2}$/.test(tanggal) ? tanggal : undefined}
+        initialTab={tab}
       />
     </SidebarLayout>
   );

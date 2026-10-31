@@ -140,6 +140,8 @@ interface JadwalClientProps {
   todaySchedules: ScheduleItem[];
   holidays?: Array<{ date: string; keterangan: string; jenjang?: string | null }>;
   settings?: Record<string, string>;
+  initialDate?: string;
+  initialTab?: string;
 }
 
 const HARI_MAP: Record<number, string> = {
@@ -174,10 +176,13 @@ export default function JadwalClient({
   todaySchedules,
   holidays = [],
   settings = {},
+  initialDate,
+  initialTab,
 }: JadwalClientProps) {
-  const [activeTab, setActiveTab] = useState<string>(
-    user.role === "WAKA" ? "jadwal" : "today"
-  );
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (initialTab) return initialTab;
+    return user.role === "WAKA" ? "jadwal" : "today";
+  });
 
   // States
   const [schedules, setSchedules] = useState<ScheduleItem[]>(initialSchedules);
@@ -230,8 +235,22 @@ export default function JadwalClient({
     }).format(new Date());
   }, []);
 
-  // Selected Date for "Jadwal Mengajar" tab (Default: Today / todayWibStr)
+  // Selected Date for "Jadwal Mengajar" tab (Default: initialDate or query param or sessionStorage or Today / todayWibStr)
   const [selectedTeacherDate, setSelectedTeacherDate] = useState<string>(() => {
+    if (initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
+      return initialDate;
+    }
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const qDate = sp.get("tanggal");
+      if (qDate && /^\d{4}-\d{2}-\d{2}$/.test(qDate)) {
+        return qDate;
+      }
+      const saved = sessionStorage.getItem("kawal_selected_jadwal_date");
+      if (saved && /^\d{4}-\d{2}-\d{2}$/.test(saved)) {
+        return saved;
+      }
+    }
     return new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Jakarta",
       year: "numeric",
@@ -239,6 +258,53 @@ export default function JadwalClient({
       day: "2-digit",
     }).format(new Date());
   });
+
+  const handleTeacherDateChange = (newDate: string) => {
+    const targetDate = newDate || todayWibStr;
+    setSelectedTeacherDate(targetDate);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("kawal_selected_jadwal_date", targetDate);
+      const url = new URL(window.location.href);
+      url.searchParams.set("tanggal", targetDate);
+      if (activeTab) url.searchParams.set("tab", activeTab);
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
+
+  const handleTabChange = (tabName: string) => {
+    setActiveTab(tabName);
+    setActionError("");
+    setActionSuccess("");
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tabName);
+      if (selectedTeacherDate) {
+        url.searchParams.set("tanggal", selectedTeacherDate);
+      }
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const qDate = sp.get("tanggal");
+      if (qDate && /^\d{4}-\d{2}-\d{2}$/.test(qDate)) {
+        if (qDate !== selectedTeacherDate) {
+          setSelectedTeacherDate(qDate);
+        }
+        sessionStorage.setItem("kawal_selected_jadwal_date", qDate);
+      } else {
+        const saved = sessionStorage.getItem("kawal_selected_jadwal_date");
+        if (saved && /^\d{4}-\d{2}-\d{2}$/.test(saved) && saved !== selectedTeacherDate) {
+          setSelectedTeacherDate(saved);
+          const url = new URL(window.location.href);
+          url.searchParams.set("tanggal", saved);
+          window.history.replaceState(null, "", url.toString());
+        }
+      }
+    }
+  }, []);
 
   const selectedTeacherDateObj = useMemo(() => {
     if (!selectedTeacherDate) return new Date();
@@ -890,7 +956,7 @@ export default function JadwalClient({
     if (subjects.length > 0) setActivityMapelId(subjects[0].id);
     setEditingCustomActivityId(null);
     setActivityTitle("");
-    setActivityDate(todayWibStr);
+    setActivityDate(selectedTeacherDate || todayWibStr);
     setActivityJamMulai("07.00");
     setActivityJamSelesai("16.00");
     setActivityRencanaAksi(RENCANA_AKSI_OPTIONS[0]);
@@ -1054,7 +1120,14 @@ export default function JadwalClient({
             { file: null, preview: null, caption: "" },
             { file: null, preview: null, caption: "" },
           ]);
-          window.location.reload();
+          const targetDate = activityDate || selectedTeacherDate || todayWibStr;
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("kawal_selected_jadwal_date", targetDate);
+            const url = new URL(window.location.href);
+            url.searchParams.set("tanggal", targetDate);
+            url.searchParams.set("tab", activeTab || "today");
+            window.location.href = url.toString();
+          }
         }
       } catch (err: any) {
         console.error("Submit custom activity error:", err);
@@ -1078,7 +1151,14 @@ export default function JadwalClient({
       const res = await deleteCustomActivityJurnalAction(jurnalId);
       if (res.success) {
         alert(res.message || "Kegiatan tambahan berhasil dihapus.");
-        window.location.reload();
+        const targetDate = selectedTeacherDate || todayWibStr;
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("kawal_selected_jadwal_date", targetDate);
+          const url = new URL(window.location.href);
+          url.searchParams.set("tanggal", targetDate);
+          url.searchParams.set("tab", activeTab || "today");
+          window.location.href = url.toString();
+        }
       } else {
         alert(res.error || "Gagal menghapus kegiatan tambahan.");
       }
@@ -1487,11 +1567,7 @@ export default function JadwalClient({
         {user.role === "WAKA" ? (
           <>
             <button
-              onClick={() => {
-                setActiveTab("jadwal");
-                setActionError("");
-                setActionSuccess("");
-              }}
+              onClick={() => handleTabChange("jadwal")}
               className={`py-2.5 px-4 text-xs font-bold transition-all border-b-2 cursor-pointer ${
                 activeTab === "jadwal"
                   ? "border-indigo-500 text-indigo-400"
@@ -1501,11 +1577,7 @@ export default function JadwalClient({
               Jadwal Pelajaran
             </button>
             <button
-              onClick={() => {
-                setActiveTab("mapel");
-                setActionError("");
-                setActionSuccess("");
-              }}
+              onClick={() => handleTabChange("mapel")}
               className={`py-2.5 px-4 text-xs font-bold transition-all border-b-2 cursor-pointer ${
                 activeTab === "mapel"
                   ? "border-indigo-500 text-indigo-400"
@@ -1515,11 +1587,7 @@ export default function JadwalClient({
               Mata Pelajaran
             </button>
             <button
-              onClick={() => {
-                setActiveTab("jam");
-                setActionError("");
-                setActionSuccess("");
-              }}
+              onClick={() => handleTabChange("jam")}
               className={`py-2.5 px-4 text-xs font-bold transition-all border-b-2 cursor-pointer ${
                 activeTab === "jam"
                   ? "border-indigo-500 text-indigo-400"
@@ -1529,11 +1597,7 @@ export default function JadwalClient({
               Pengaturan Jam
             </button>
             <button
-              onClick={() => {
-                setActiveTab("jurnal");
-                setActionError("");
-                setActionSuccess("");
-              }}
+              onClick={() => handleTabChange("jurnal")}
               className={`py-2.5 px-4 text-xs font-bold transition-all border-b-2 cursor-pointer ${
                 activeTab === "jurnal"
                   ? "border-indigo-500 text-indigo-400"
@@ -1546,11 +1610,7 @@ export default function JadwalClient({
         ) : (
           <>
             <button
-              onClick={() => {
-                setActiveTab("today");
-                setActionError("");
-                setActionSuccess("");
-              }}
+              onClick={() => handleTabChange("today")}
               className={`py-2.5 px-4 text-xs font-bold transition-all border-b-2 cursor-pointer ${
                 activeTab === "today"
                   ? "border-indigo-500 text-indigo-400"
@@ -1560,11 +1620,7 @@ export default function JadwalClient({
               Jadwal Mengajar
             </button>
             <button
-              onClick={() => {
-                setActiveTab("jurnal_saya");
-                setActionError("");
-                setActionSuccess("");
-              }}
+              onClick={() => handleTabChange("jurnal_saya")}
               className={`py-2.5 px-4 text-xs font-bold transition-all border-b-2 cursor-pointer ${
                 activeTab === "jurnal_saya"
                   ? "border-indigo-500 text-indigo-400"
@@ -1600,14 +1656,14 @@ export default function JadwalClient({
                 <input
                   type="date"
                   value={selectedTeacherDate}
-                  onChange={(e) => setSelectedTeacherDate(e.target.value)}
+                  onChange={(e) => handleTeacherDateChange(e.target.value)}
                   className="bg-transparent text-xs text-white font-bold focus:outline-none cursor-pointer"
                 />
               </div>
 
               {selectedTeacherDate !== todayWibStr && (
                 <button
-                  onClick={() => setSelectedTeacherDate(todayWibStr)}
+                  onClick={() => handleTeacherDateChange(todayWibStr)}
                   className="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-bold rounded-xl transition cursor-pointer"
                 >
                   Hari Ini
@@ -3228,7 +3284,7 @@ export default function JadwalClient({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    Tanggal (Otomatis Hari Ini) *
+                    Tanggal Kegiatan *
                   </label>
                   <input
                     type="date"

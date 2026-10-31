@@ -66,6 +66,14 @@ interface IsiJurnalClientProps {
 export default function IsiJurnalClient({ user, jadwal, students, existingJurnal, targetDateStr, holidayInfo }: IsiJurnalClientProps) {
   const router = useRouter();
 
+  const backUrl = targetDateStr ? `/jadwal?tanggal=${targetDateStr}&tab=today` : "/jadwal";
+
+  useEffect(() => {
+    if (targetDateStr && typeof window !== "undefined") {
+      sessionStorage.setItem("kawal_selected_jadwal_date", targetDateStr);
+    }
+  }, [targetDateStr]);
+
   const formattedDateLabel = useMemo(() => {
     if (!targetDateStr) return "Hari Ini";
     const dateObj = new Date(`${targetDateStr}T12:00:00.000Z`);
@@ -358,9 +366,13 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
         setActionError(res.error);
       } else {
         setActionSuccess(res.message || "Jurnal berhasil disimpan.");
+        if (targetDateStr && typeof window !== "undefined") {
+          sessionStorage.setItem("kawal_selected_jadwal_date", targetDateStr);
+        }
         // Redirect to schedule dashboard
         setTimeout(() => {
-          router.push("/jadwal");
+          router.push(backUrl);
+          router.refresh();
         }, 1500);
       }
     });
@@ -371,7 +383,7 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link
-            href="/jadwal"
+            href={backUrl}
             className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-900/40 border border-slate-900 text-slate-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -648,7 +660,7 @@ export default function IsiJurnalClient({ user, jadwal, students, existingJurnal
 
           <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
             <Link
-              href="/jadwal"
+              href={backUrl}
               className="px-5 py-2.5 border border-slate-800 hover:bg-slate-800 text-xs font-bold text-slate-300 rounded-xl transition-all"
             >
               Kembali
