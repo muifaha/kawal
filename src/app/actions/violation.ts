@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import fs from "fs";
 import path from "path";
 import { getUploadDir } from "@/lib/uploadHelper";
+import { notifyWalasForViolations } from "@/lib/violationNotification";
 
 function saveBase64Image(base64Data: string, prefix: string): string | null {
   try {
@@ -135,8 +136,15 @@ export async function reportViolationAction(
     revalidatePath("/pelanggaran");
     revalidatePath("/approval");
 
+    // Jika diinput oleh Guru BK, status langsung APPROVED -> kirim notifikasi WA ke Wali Kelas masing-masing
+    if (isBK && newReports.length > 0) {
+      notifyWalasForViolations(newReports.map((r) => r.id)).catch((err) =>
+        console.error("Async WA violation notification error:", err)
+      );
+    }
+
     const message = isBK
-      ? `Laporan pelanggaran untuk ${studentIds.length} siswa berhasil disimpan dan disahkan.`
+      ? `Laporan pelanggaran untuk ${studentIds.length} siswa berhasil disimpan, disahkan, dan notifikasi WhatsApp sedang dikirim ke Wali Kelas.`
       : `Laporan pelanggaran untuk ${studentIds.length} siswa berhasil diajukan. Menunggu verifikasi Guru BK.`;
 
     return { success: true, message, newReports };

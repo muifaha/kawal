@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { ViolationStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { notifyWalasForViolations } from "@/lib/violationNotification";
 
 /**
  * Menyetujui (ACC) satu laporan pelanggaran.
@@ -30,7 +31,12 @@ export async function approveViolationAction(reportId: string) {
     revalidatePath("/pelanggaran");
     revalidatePath("/approval");
 
-    return { success: true, message: "Laporan pelanggaran berhasil disetujui." };
+    // Kirim notifikasi WA ke Wali Kelas setelah laporan disahkan
+    notifyWalasForViolations([reportId]).catch((err) =>
+      console.error("Async WA violation notification error:", err)
+    );
+
+    return { success: true, message: "Laporan pelanggaran berhasil disetujui dan notifikasi WhatsApp sedang dikirim ke Wali Kelas." };
   } catch (error) {
     console.error("Approve violation error:", error);
     return { error: "Terjadi kesalahan saat menyetujui laporan pelanggaran." };
@@ -99,7 +105,12 @@ export async function bulkApproveViolationsAction(reportIds: string[]) {
     revalidatePath("/pelanggaran");
     revalidatePath("/approval");
 
-    return { success: true, message: `${reportIds.length} laporan pelanggaran berhasil disetujui sekaligus.` };
+    // Kirim notifikasi WA ke Wali Kelas untuk laporan yang disetujui massal
+    notifyWalasForViolations(reportIds).catch((err) =>
+      console.error("Async WA violation notification error:", err)
+    );
+
+    return { success: true, message: `${reportIds.length} laporan pelanggaran berhasil disetujui sekaligus dan notifikasi WhatsApp sedang dikirim ke Wali Kelas.` };
   } catch (error) {
     console.error("Bulk approve violations error:", error);
     return { error: "Terjadi kesalahan saat menyetujui laporan secara massal." };
