@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { sendWhatsAppNotification } from "@/lib/whatsapp";
+import { getClassWaGroups } from "@/lib/classWaGroups";
 import { revalidatePath } from "next/cache";
 import { checkClassHoliday } from "@/lib/holidayUtils";
 import { formatDateWib } from "@/lib/dateUtils";
@@ -104,7 +105,7 @@ export async function saveAttendanceAction(
       },
     });
 
-    if (kelasInfo && kelasInfo.walas && kelasInfo.walas.whatsappNumber) {
+    if (kelasInfo) {
       const walas = kelasInfo.walas;
       const notHadirItems = items.filter((item) => item.status !== "H");
 
@@ -154,16 +155,44 @@ Terima kasih atas kerja samanya.
 _${schoolName} powered by Kawal_`;
       }
 
-      // Kirim via Helper WhatsApp di background tanpa membekukan response
-      sendWhatsAppNotification(walas.whatsappNumber!, waMessage).catch((err) =>
-        console.error("Async WA notification error:", err)
-      );
+      // Ambil ID Grup WA Kelas resmi
+      const classWaGroups = getClassWaGroups(kelasInfo.nama);
+
+      // 1. Kirim via WhatsApp ke Wali Kelas jika nomor tersedia
+      let walasSent = false;
+      if (walas && walas.whatsappNumber) {
+        walasSent = true;
+        sendWhatsAppNotification(walas.whatsappNumber, waMessage).catch((err) =>
+          console.error(`[WA ERROR] Gagal mengirim ke Walas ${walas.nama}:`, err)
+        );
+      }
+
+      // 2. Kirim via WhatsApp ke Grup WA Kelas (Fonnte API)
+      let groupSent = false;
+      if (classWaGroups && classWaGroups.length > 0) {
+        groupSent = true;
+        for (const groupId of classWaGroups) {
+          sendWhatsAppNotification(groupId, waMessage).catch((err) =>
+            console.error(`[WA ERROR] Gagal mengirim ke Grup WA Kelas ${kelasInfo.nama} (${groupId}):`, err)
+          );
+        }
+      }
 
       revalidatePath("/dashboard");
       revalidatePath("/absensi");
+
+      let successMessage = "Absensi berhasil disimpan.";
+      if (walasSent && groupSent) {
+        successMessage = `Absensi berhasil disimpan dan notifikasi WhatsApp sedang dikirim ke Wali Kelas (${walas?.nama}) serta Grup WA Kelas ${kelasInfo.nama}.`;
+      } else if (groupSent) {
+        successMessage = `Absensi berhasil disimpan dan notifikasi WhatsApp sedang dikirim ke Grup WA Kelas ${kelasInfo.nama}.`;
+      } else if (walasSent) {
+        successMessage = `Absensi berhasil disimpan dan notifikasi WhatsApp sedang dikirim ke Wali Kelas (${walas?.nama}).`;
+      }
+
       return {
         success: true,
-        message: `Absensi berhasil disimpan dan notifikasi WhatsApp sedang dikirim ke Wali Kelas (${walas.nama}).`,
+        message: successMessage,
       };
     }
 
